@@ -81,7 +81,6 @@
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
     
-    // CONFIGURARE FIREBASE
     const firebaseConfig = {
       apiKey: "AIzaSyCU2oefYIppsqJE2aVrhnIvm_D2oDhNZgQ",
       authDomain: "jw-teritorii.firebaseapp.com",
@@ -124,7 +123,7 @@
       return dateStr;
     };
 
-    // COMPONENTĂ CUSTOM: Textarea Redimensionabil prin tragere (Imbunatatita)
+    // COMPONENTĂ CUSTOM: Textarea Redimensionabil prin tragere
     const ResizableTextarea = ({ defaultValue, onBlur, placeholder, disabled }) => {
       const [height, setHeight] = useState(70);
       const isDragging = useRef(false);
@@ -177,10 +176,9 @@
             <div 
               onMouseDown={handleStart}
               onTouchStart={handleStart}
-              className="w-full h-10 flex items-center justify-center cursor-ns-resize bg-slate-200 dark:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 touch-none border-t border-slate-300 dark:border-slate-600"
+              className="w-full h-10 flex items-center justify-center cursor-ns-resize bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 touch-none border-t border-slate-200 dark:border-slate-600"
             >
-              {/* Pictograma super-vizibila pentru tragere */}
-              <span className="material-icons text-slate-900 dark:text-white text-[24px]">drag_handle</span>
+              <div className="w-16 h-1.5 bg-slate-600 dark:bg-slate-300 rounded-full"></div>
             </div>
           )}
         </div>
@@ -218,41 +216,36 @@
       const deleteLabel = (id) => { if(settings.labels.length > 1) updateSettingsLabels(settings.labels.filter(l => l.id !== id)); };
 
       return (
-        <div className="space-y-4 pb-12 flex flex-col items-start w-full">
-          <div ref={listRef} className="space-y-4 w-full flex flex-col items-start">
+        <div className="space-y-4 pb-12">
+          <div ref={listRef} className="space-y-4">
             {settings.labels.map(l => (
-              <div key={l.id} className="flex flex-wrap sm:flex-nowrap gap-4 bg-slate-50 dark:bg-slate-800 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm items-end w-fit max-w-full">
-                
-                <div className="flex items-center gap-2">
-                  <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0 pb-1">
-                     <span className="material-icons text-[28px]">drag_indicator</span>
+              <div key={l.id} className="flex flex-col sm:flex-row gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm items-start sm:items-end">
+                <div className="flex items-center gap-3 w-full sm:max-w-[220px]">
+                  <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0">
+                     <span className="material-icons text-2xl">drag_indicator</span>
                   </div>
-                  <div className="flex flex-col w-[160px] sm:w-[200px] shrink-0">
-                     <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nume</label>
+                  <div className="w-full">
+                     <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nume Etichetă</label>
                      <textarea rows="2" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden leading-tight" style={{minHeight: '44px'}} />
                   </div>
                 </div>
-
-                <div className="flex items-end gap-3 shrink-0 ml-10 sm:ml-0">
-                  <div className="flex flex-col items-center gap-1">
+                <div className="flex gap-4 w-full sm:w-auto items-end justify-end sm:justify-start">
+                  <div className="flex flex-col items-start gap-1">
                     <label className="text-[10px] font-black uppercase text-slate-400">Fundal</label>
                     <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
                   </div>
-                  <div className="flex flex-col items-center gap-1">
+                  <div className="flex flex-col items-start gap-1">
                     <label className="text-[10px] font-black uppercase text-slate-400">Text</label>
                     <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
                   </div>
                   {settings.labels.length > 1 && (
-                    <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm shrink-0">
-                      <span className="material-icons text-[20px]">delete</span>
-                    </button>
+                    <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm shrink-0 mb-[2px]"><span className="material-icons text-[20px]">delete</span></button>
                   )}
                 </div>
-
               </div>
             ))}
           </div>
-          <button onClick={addLabel} className="w-full sm:w-[300px] p-4 border-2 border-dashed border-blue-300 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 shadow-sm mt-2">
+          <button onClick={addLabel} className="w-full p-4 border-2 border-dashed border-blue-300 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 shadow-sm">
              <span className="material-icons">add</span> Adaugă Etichetă
           </button>
         </div>
@@ -501,19 +494,16 @@
       const isAdmin = user?.email === ADMIN_EMAIL;
       const currentUserName = user?.name || (isAdmin ? "Admin" : "Utilizator");
 
-      // VERIFICARE KICK-OUT UTILIZATORI STERSi
       useEffect(() => {
         if (!user || isAdmin) return;
         const unsubscribe = db.collection('app_users').doc(user.id).onSnapshot(doc => {
             if (!doc.exists) {
-                // Dacă documentul utilizatorului nu mai există, e dat afară!
                 localStorage.removeItem('custom_user');
                 setUser(null);
                 setUserDocId(null);
                 setModals(prev => ({...prev, auth: false}));
             } else {
                 const data = doc.data();
-                // Verifică dacă adminul i-a schimbat parola/numele
                 if (data.name !== user.name || data.password !== user.password) {
                     const updatedUser = { ...user, name: data.name, password: data.password };
                     setUser(updatedUser);
@@ -624,46 +614,6 @@
         else return db.collection('users').doc(userDocId).collection('territories').doc(id).update(data);
       };
 
-      // FUNCTIE ACTUALIZARE NUME RETROACTIV IN BAZA DE DATE
-      const updateUserNameInHistory = async (targetUserId, oldName, newName) => {
-          if(!oldName || !newName || oldName === newName) return;
-
-          const updateDocs = async (collectionRef) => {
-              const snap = await collectionRef.get();
-              const batch = db.batch();
-              let count = 0;
-              snap.docs.forEach(doc => {
-                  const data = doc.data();
-                  let updated = false;
-                  if(!data.blocks) return;
-                  
-                  const newBlocks = data.blocks.map(b => ({
-                      ...b,
-                      sections: b.sections?.map(s => ({
-                          ...s,
-                          locations: s.locations?.map(l => {
-                              let locUpd = false;
-                              const newHist = l.history?.map(h => {
-                                  if(h.name === oldName) { locUpd = true; updated = true; return {...h, name: newName}; }
-                                  return h;
-                              });
-                              return locUpd ? { ...l, history: newHist } : l;
-                          })
-                      }))
-                  }));
-
-                  if(updated) { batch.update(doc.ref, { blocks: newBlocks }); count++; }
-              });
-              if(count > 0) await batch.commit();
-          };
-
-          try {
-              // Actualizeaza atat in teritoriile personale cat si in grupa 5
-              await updateDocs(db.collection('shared_territories'));
-              await updateDocs(db.collection('users').doc(targetUserId).collection('territories'));
-          } catch(err) {}
-      };
-
       const parseNumbers = (input, forceEven = false, forceOdd = false) => {
         const locs = [];
         input.split(',').forEach(part => {
@@ -687,6 +637,40 @@
           }
         });
         return locs;
+      };
+
+      const updateUserNameInHistory = async (targetUserId, oldName, newName) => {
+          if(!oldName || !newName || oldName === newName) return;
+          const updateDocs = async (collectionRef) => {
+              const snap = await collectionRef.get();
+              const batch = db.batch();
+              let count = 0;
+              snap.docs.forEach(doc => {
+                  const data = doc.data();
+                  let updated = false;
+                  if(!data.blocks) return;
+                  const newBlocks = data.blocks.map(b => ({
+                      ...b,
+                      sections: b.sections?.map(s => ({
+                          ...s,
+                          locations: s.locations?.map(l => {
+                              let locUpd = false;
+                              const newHist = l.history?.map(h => {
+                                  if(h.name === oldName) { locUpd = true; updated = true; return {...h, name: newName}; }
+                                  return h;
+                              });
+                              return locUpd ? { ...l, history: newHist } : l;
+                          })
+                      }))
+                  }));
+                  if(updated) { batch.update(doc.ref, { blocks: newBlocks }); count++; }
+              });
+              if(count > 0) await batch.commit();
+          };
+          try {
+              await updateDocs(db.collection('shared_territories'));
+              await updateDocs(db.collection('users').doc(targetUserId).collection('territories'));
+          } catch(err) {}
       };
 
       const handleCreateTerritory = async (e) => {
@@ -817,7 +801,6 @@
         setModals({...modals, locationAppend: null});
       };
 
-      // Inregistram ID-ul etichetei in Istoric pentru a ramane sincronizat la modificari
       const recordHistory = (loc, actiuneStr, labelId = null) => {
         const h = loc.history || [];
         const newH = { name: currentUserName, date: new Date().toLocaleDateString('ro-RO'), time: new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'}), actiune: actiuneStr, labelId: labelId };
@@ -928,7 +911,6 @@
 
       if (loading || authLoading) return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
 
-      // FORMULAR LOGIN (Fara Email/Ex la Username)
       if (!user) {
         return (
           <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 p-4 transition-colors">
@@ -1022,7 +1004,6 @@
             </header>
           ) : (
             <header className="sticky top-0 z-30 p-4 pb-0 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md">
-              {/* INSULA 1: Sus, Blocata cu Nume, Creion si Bifa */}
               <div className={`${selectedTerritory.category === 'grupa 5' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3 relative`}>
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                   <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
@@ -1031,7 +1012,6 @@
                     <button onClick={() => setModals({...modals, territoryEdit: true})} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
                   )}
                 </div>
-
                 {((isAdmin || selectedTerritory.category === 'personal') && !isReadOnly) && (
                   <div className="shrink-0 flex items-center">
                     <button onClick={() => updateTerritory(selectedTerritory.id, selectedTerritory.category, { isDone: !selectedTerritory.isDone })} className={`material-icons p-3 rounded-full transition shadow-sm ${selectedTerritory.isDone ? 'bg-white text-green-600 shadow-xl' : 'bg-black/10 hover:bg-black/20 text-white/80'}`}>
@@ -1161,7 +1141,6 @@
 
                   </div>
 
-                  {/* Bara Progres Campanie */}
                   {selectedTerritory.type === 'Campanie' && (
                     <div className="mt-2 w-full shrink-0">
                       <div className="flex justify-between items-center mb-1.5">
@@ -1209,7 +1188,7 @@
             </main>
           )}
 
-          {/* MENIU UTILIZATOR (PROFIL) */}
+          {}
           {modals.auth && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center border-4 border-slate-100 dark:border-slate-700 relative">
@@ -1244,7 +1223,6 @@
             </div>
           )}
 
-          {/* MENIU EDITARE PROFIL ADMIN */}
           {modals.profileEdit && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
@@ -1289,7 +1267,6 @@
             </div>
           )}
 
-          {/* PANOUL DE ADMINISTRARE */}
           {modals.adminPanel && isAdmin && (
             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl border-4 border-blue-500 max-h-[90vh] flex flex-col">
@@ -1357,7 +1334,6 @@
             </div>
           )}
 
-          {/* EDITARE USER (Fereastra customizata in loc de alert/prompt) */}
           {modals.adminEditUser && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[210]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
@@ -1526,7 +1502,6 @@
             </div>
           )}
 
-          {/* FEREASTRA EDITARE LOCATIE & ISTORIC */}
           {modals.locationEdit && (
             <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-[110]">
               <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden border-4 border-slate-100 dark:border-slate-700 flex flex-col max-h-[90vh]">
@@ -1611,7 +1586,7 @@
                          <span className="material-icons text-slate-400 text-sm">history</span>
                          <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Istoric Editări</span>
                       </div>
-                      <div className="overflow-y-auto max-h-[160px] md:max-h-[230px] p-3 space-y-2 relative">
+                      <div className="overflow-y-auto max-h-[130px] md:max-h-[195px] p-3 space-y-2 relative">
                         {modals.locationEdit.loc.history.map((h, i) => {
                           let displayAction = h.actiune || 'A editat';
                           if (h.labelId) {
