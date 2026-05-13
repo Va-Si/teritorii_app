@@ -53,9 +53,8 @@
     .sortable-drag { cursor: grabbing !important; }
     .drag-handle { cursor: grab; }
     .drag-handle:active { cursor: grabbing; }
-    .history-scroll { max-height: 250px; overflow-y: auto; }
+    .history-scroll { max-height: 130px; overflow-y: auto; }
 
-    /* Colt pentru a mari chenarul cu notite vizual evident */
     textarea { resize: vertical; }
     textarea::-webkit-resizer {
       background-image: linear-gradient(135deg, transparent 40%, #94a3b8 40%, #94a3b8 50%, transparent 50%, transparent 60%, #94a3b8 60%, #94a3b8 70%, transparent 70%);
@@ -82,7 +81,16 @@
       messagingSenderId: "869337688836",
       appId: "1:869337688836:web:0b12b8276ae043e39e3e51"
     };
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+      // ACTIVARE PERSISTENTA OFFLINE (FIREBASE)
+      try {
+        firebase.firestore().enablePersistence({ synchronizeTabs: true });
+      } catch (err) {
+        console.warn("Modul offline nu s-a putut activa:", err);
+      }
+    }
     const db = firebase.firestore();
     const auth = firebase.auth();
     
@@ -107,15 +115,12 @@
       return dateStr;
     };
 
-    // COMPONENTA: Fereastra Setari Culori Etichete (Cu reordonare si editare)
     function SettingsLabelList({ settings, updateSettingsLabels }) {
       const listRef = useRef(null);
-
       useEffect(() => {
         if (!listRef.current) return;
         const sortable = Sortable.create(listRef.current, {
-          animation: 150,
-          handle: '.drag-handle',
+          animation: 150, handle: '.drag-handle',
           onEnd: (evt) => {
              if (evt.oldIndex !== evt.newIndex) {
                  const newLabels = [...settings.labels];
@@ -125,11 +130,8 @@
                  const item = evt.item;
                  const from = evt.from;
                  const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
-                 if (originalNextSibling) {
-                     from.insertBefore(item, originalNextSibling);
-                 } else {
-                     from.appendChild(item);
-                 }
+                 if (originalNextSibling) from.insertBefore(item, originalNextSibling);
+                 else from.appendChild(item);
                  
                  updateSettingsLabels(newLabels);
              }
@@ -138,34 +140,17 @@
         return () => sortable.destroy();
       }, [settings.labels, updateSettingsLabels]);
 
-      const handleColorChange = (id, field, value) => {
-        const newLabels = settings.labels.map(l => l.id === id ? { ...l, [field]: value } : l);
-        updateSettingsLabels(newLabels);
-      };
-      
-      const handleLabelNameChange = (id, newName) => {
-        const newLabels = settings.labels.map(l => l.id === id ? { ...l, label: newName } : l);
-        updateSettingsLabels(newLabels);
-      };
-      
-      const addLabel = () => {
-        const no = { id: Date.now().toString(), label: 'Nou', color: '#ffffff', textColor: '#000000', isCampaignTarget: false };
-        updateSettingsLabels([...settings.labels, no]);
-      };
-      
-      const deleteLabel = (id) => {
-        if(settings.labels.length <= 1) return;
-        updateSettingsLabels(settings.labels.filter(l => l.id !== id));
-      };
+      const handleColorChange = (id, field, value) => updateSettingsLabels(settings.labels.map(l => l.id === id ? { ...l, [field]: value } : l));
+      const handleLabelNameChange = (id, newName) => updateSettingsLabels(settings.labels.map(l => l.id === id ? { ...l, label: newName } : l));
+      const addLabel = () => updateSettingsLabels([...settings.labels, { id: Date.now().toString(), label: 'Nou', color: '#ffffff', textColor: '#000000', isCampaignTarget: false }]);
+      const deleteLabel = (id) => { if(settings.labels.length > 1) updateSettingsLabels(settings.labels.filter(l => l.id !== id)); };
 
       return (
         <div className="space-y-4 pb-12">
           <div ref={listRef} className="space-y-4">
             {settings.labels.map(l => (
               <div key={l.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm">
-                <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0">
-                  <span className="material-icons">drag_indicator</span>
-                </div>
+                <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0"><span className="material-icons">drag_indicator</span></div>
                 <div className="flex-1 w-full">
                    <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nume Etichetă</label>
                    <input type="text" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500" />
@@ -180,22 +165,19 @@
                     <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
                   </div>
                   {settings.labels.length > 1 && (
-                    <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 transition-colors shadow-sm">
-                      <span className="material-icons text-[20px]">delete</span>
-                    </button>
+                    <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm"><span className="material-icons text-[20px]">delete</span></button>
                   )}
                 </div>
               </div>
             ))}
           </div>
-          <button onClick={addLabel} className="w-full p-4 border-2 border-dashed border-blue-300 dark:border-blue-800 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors shadow-sm">
+          <button onClick={addLabel} className="w-full p-4 border-2 border-dashed border-blue-300 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 shadow-sm">
              <span className="material-icons">add</span> Adaugă Etichetă
           </button>
         </div>
       );
     }
 
-    // COMPONENTA: Fereastra Modala Custom (Alert/Confirm)
     function CustomDialog({ dialog, closeDialog }) {
       if (!dialog.isOpen) return null;
       return (
@@ -219,34 +201,24 @@
       );
     }
 
-    // COMPONENTA: Sectiunea cu locatii (Patratele)
-    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, canEditStructure, isGroupedStrada }) {
+    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly, showAlert }) {
       const gridRef = useRef(null);
+      const isUngroupedSection = !sec.name || sec.name === 'Case';
       
       useEffect(() => {
         if (!gridRef.current || !canEditStructure) return;
-        
         const sortable = Sortable.create(gridRef.current, {
-          group: 'shared-locations', 
-          animation: 150, 
-          delay: 200, 
-          delayOnTouchOnly: true,
+          group: 'shared-locations', animation: 150, delay: 200, delayOnTouchOnly: true,
           onEnd: (evt) => {
             const destBlockId = evt.to.dataset.blockId;
             const destSecId = evt.to.dataset.sectionId;
-            
             if (evt.from !== evt.to || evt.oldIndex !== evt.newIndex) {
                 const item = evt.item;
                 const from = evt.from;
                 const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
-                
-                if (originalNextSibling) {
-                    from.insertBefore(item, originalNextSibling);
-                } else {
-                    from.appendChild(item);
-                }
+                if (originalNextSibling) from.insertBefore(item, originalNextSibling);
+                else from.appendChild(item);
             }
-
             if (destBlockId && destSecId) {
               if (evt.from !== evt.to || evt.oldIndex !== evt.newIndex) {
                  handleReorderLocations(blockId, sec.id, destBlockId, destSecId, evt.oldIndex, evt.newIndex);
@@ -257,8 +229,6 @@
         return () => sortable.destroy();
       }, [blockId, sec.id, sec.locations, canEditStructure, handleReorderLocations]);
 
-      // AICI REZOLVAM COLOANELE: 5 pe telefon la ambele, 12 stradă normală pe PC, 6 scară/grupă pe PC
-      const isUngroupedSection = !sec.name || sec.name === 'Case';
       const gridClasses = `p-4 grid gap-2.5 min-h-[60px] ${
         isBlockStrada && isUngroupedSection
           ? 'grid-cols-5 lg:grid-cols-12' 
@@ -268,7 +238,14 @@
       return (
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
           {sec.locations.map((loc, lIdx) => (
-            <button key={loc.id} onClick={() => openEditModal(blockId, sec.id, loc, lIdx)} style={getLabelStyle(loc.status)} className="square-btn rounded-lg shadow-sm">
+            <button key={loc.id} onClick={() => {
+                if (isReadOnly) {
+                    showAlert("Ești offline! Modificările în Grupa 5 necesită conexiune la internet pentru a evita conflictele.");
+                    return;
+                }
+                openEditModal(blockId, sec.id, loc, lIdx);
+              }} 
+              style={getLabelStyle(loc.status)} className={`square-btn rounded-lg shadow-sm ${isReadOnly ? 'opacity-80 cursor-not-allowed' : ''}`}>
               <span className="btn-text-truncate">{loc.number}</span>
               {loc.notes && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white"></div>}
             </button>
@@ -277,49 +254,32 @@
       );
     }
 
-    // COMPONENTA: Bloc/Strada
-    function BlockComponent({ block, territory, getLabelStyle, openEditModal, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, showConfirm, isAdmin }) {
+    function BlockComponent({ block, territory, getLabelStyle, openEditModal, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, showConfirm, isReadOnly, showAlert }) {
       const isBlockStrada = block.type === 'strada';
       const isBlockCollapsed = collapsedBlocks[block.id];
       const isGroupedStrada = isBlockStrada;
-
       const sectionsGridRef = useRef(null);
 
-      // Separăm locațiile libere de grupe
       const unGroupedLocationsSections = (block.sections || []).filter(sec => !sec.name || sec.name === 'Case');
       const groupedSections = (block.sections || []).filter(sec => sec.name && sec.name !== 'Case');
 
       useEffect(() => {
           if (!sectionsGridRef.current || !canEditStructure) return;
           const sortable = Sortable.create(sectionsGridRef.current, {
-              group: 'shared-sections',
-              animation: 150, delay: 200, delayOnTouchOnly: true,
-              handle: '.section-header', 
-              filter: '.no-drag',
+              group: 'shared-sections', animation: 150, delay: 200, delayOnTouchOnly: true,
+              handle: '.section-header', filter: '.no-drag',
               onEnd: (evt) => {
                   const destBlockId = evt.to.dataset.blockId;
-                  
                   if (evt.from !== evt.to || evt.oldIndex !== evt.newIndex) {
                       const item = evt.item;
                       const from = evt.from;
                       const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
-                      
-                      if (originalNextSibling) {
-                          from.insertBefore(item, originalNextSibling);
-                      } else {
-                          from.appendChild(item);
-                      }
+                      if (originalNextSibling) from.insertBefore(item, originalNextSibling);
+                      else from.appendChild(item);
                   }
-                  
                   if (destBlockId && (block.id !== destBlockId || evt.oldIndex !== evt.newIndex)) {
-                    const oldIndexCorrected = oldIdx => {
-                      if (isBlockStrada && unGroupedLocationsSections.length > 0) return oldIdx + 1;
-                      return oldIdx;
-                    }
-                    const newIndexCorrected = newIdx => {
-                       if (isBlockStrada && unGroupedLocationsSections.length > 0) return newIdx + 1;
-                       return newIdx;
-                    }
+                    const oldIndexCorrected = oldIdx => isBlockStrada && unGroupedLocationsSections.length > 0 ? oldIdx + 1 : oldIdx;
+                    const newIndexCorrected = newIdx => isBlockStrada && unGroupedLocationsSections.length > 0 ? newIdx + 1 : newIdx;
                     handleReorderSections(block.id, destBlockId, oldIndexCorrected(evt.oldIndex), newIndexCorrected(evt.newIndex));
                   }
               }
@@ -352,14 +312,12 @@
           {!isBlockCollapsed && (
             <div ref={sectionsGridRef} data-block-id={block.id} className={(isBlockStrada && !isGroupedStrada) ? "flex flex-col gap-2 items-start w-full" : "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"}>
               
-              {/* Afisăm locațiile libere din strada */}
               {unGroupedLocationsSections.map((sec) => (
                   <div key={sec.id} className={`w-full section-item no-drag ${isGroupedStrada ? 'col-span-1 lg:col-span-2' : ''}`}>
-                    <SectionLocations blockId={block.id} sec={sec} getLabelStyle={getLabelStyle} openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} canEditStructure={canEditStructure} isGroupedStrada={isGroupedStrada} />
+                    <SectionLocations blockId={block.id} sec={sec} getLabelStyle={getLabelStyle} openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} isGroupedStrada={isGroupedStrada} canEditStructure={canEditStructure} isReadOnly={isReadOnly} showAlert={showAlert} />
                   </div>
               ))}
 
-              {/* Afisăm grupele/sectiunile */}
               {groupedSections.map((sec, sIdx) => {
                 const isSecCollapsed = collapsedSections[sec.id];
                 return (
@@ -371,9 +329,11 @@
                       {canEditStructure && <button onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600">edit</button>}
                     </div>
                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
-                        <span className="material-icons text-[20px] block">add</span>
-                      </button>
+                      {!isReadOnly && (
+                        <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
+                          <span className="material-icons text-[20px] block">add</span>
+                        </button>
+                      )}
                       {canEditStructure && (
                         <button onClick={() => { 
                            showConfirm(`Ștergi această grupare?`, () => {
@@ -387,28 +347,20 @@
                     </div>
                   </div>
                   {!isSecCollapsed && (
-                    <SectionLocations blockId={block.id} sec={sec} getLabelStyle={getLabelStyle} openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} canEditStructure={canEditStructure} isGroupedStrada={isGroupedStrada}/>
+                    <SectionLocations blockId={block.id} sec={sec} getLabelStyle={getLabelStyle} openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} isGroupedStrada={isGroupedStrada} canEditStructure={canEditStructure} isReadOnly={isReadOnly} showAlert={showAlert} />
                   )}
                 </div>
               )})}
 
-              {/* BUTOANE ADAUGARE IN BLOC/STRADA */}
               <div className={`no-drag flex flex-col gap-2 ${isGroupedStrada ? 'col-span-1 lg:col-span-2' : 'w-full mt-2'}`}>
-                {isBlockStrada && (
+                {isBlockStrada && !isReadOnly && (
                   <button onClick={() => setModals({...modals, stradaAddHouse: block.id})} className="w-full p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
                       <span className="material-icons text-3xl">home</span>
                       <span className="font-black text-[10px] uppercase tracking-widest">Adaugă Casă în stradă</span>
                   </button>
                 )}
-
                 {canEditStructure && (
-                   <button onClick={() => {
-                     if (isBlockStrada) {
-                        setModals({...modals, sectionAdd: block.id, isStradaGroup: true});
-                     } else {
-                         setModals({...modals, sectionAdd: block.id});
-                     }
-                   }} className="w-full p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
+                   <button onClick={() => setModals({...modals, sectionAdd: block.id, isStradaGroup: isBlockStrada})} className="w-full p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
                      <span className="material-icons text-3xl">{isBlockStrada ? 'maps_home_work' : 'add_business'}</span>
                      <span className="font-black text-[10px] uppercase tracking-widest">{isBlockStrada ? 'Adaugă Grupă de Case' : 'Adaugă Scară'}</span>
                    </button>
@@ -420,11 +372,10 @@
       );
     }
 
-    // COMPONENTA PRINCIPALA
     function App() {
       const [territories, setTerritories] = useState([]);
       const [settings, setSettings] = useState({ labels: DEFAULT_LABELS });
-      const [activeTab, setActiveTab] = useState('Personal');
+      const [activeTab, setActiveTab] = useState('personal');
       const [selectedTerritoryId, setSelectedTerritoryId] = useState(null);
       const [loading, setLoading] = useState(true);
       const [touchStart, setTouchStart] = useState(null);
@@ -436,7 +387,6 @@
       const [authLoading, setAuthLoading] = useState(true);
       const [authError, setAuthError] = useState(null);
       const [authForm, setAuthForm] = useState({ name: '', password: '' });
-
       const [adminUsersList, setAdminUsersList] = useState([]);
 
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false });
@@ -450,9 +400,22 @@
       const closeDialog = () => setDialog(prev => ({ ...prev, isOpen: false }));
 
       const blocksContainerRef = useRef(null);
+      
+      const [isOnline, setIsOnline] = useState(navigator.onLine);
 
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      // ASCULTARE STATUS INTERNET
+      useEffect(() => {
+        const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        return () => {
+          window.removeEventListener('online', updateOnlineStatus);
+          window.removeEventListener('offline', updateOnlineStatus);
+        };
+      }, []);
 
       useEffect(() => {
         const root = window.document.documentElement;
@@ -499,7 +462,6 @@
                 setUser(null);
                 setUserDocId(null);
                 setModals(prev => ({...prev, auth: false}));
-                showAlert("Contul tău a fost șters sau dezactivat de către administrator.");
             } else {
                 const data = doc.data();
                 if (data.name !== user.name || data.password !== user.password) {
@@ -525,7 +487,7 @@
           const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           
           unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
-             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: 'Grupa 5' }));
+             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: 'grupa 5' }));
              setTerritories([...persT, ...sharedT]);
              setLoading(false);
           }));
@@ -536,7 +498,6 @@
                setAdminUsersList(snap.docs.map(d => d.data()));
            }));
         }
-
         return () => unsubs.forEach(u => u());
       }, [userDocId, authLoading, isAdmin]);
 
@@ -553,8 +514,8 @@
       }, [territories, selectedTerritoryId, loading]);
 
       const filteredTerritories = useMemo(() => {
-        let list = territories.filter(t => t.category.toLowerCase() === activeTab.toLowerCase()).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
-        if (activeTab.toLowerCase() === 'grupa 5' && !isAdmin) list = list.filter(t => !t.isDone);
+        let list = territories.filter(t => t.category === activeTab).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+        if (activeTab === 'grupa 5' && !isAdmin) list = list.filter(t => !t.isDone);
         return list;
       }, [territories, activeTab, isAdmin]);
 
@@ -570,7 +531,7 @@
               reordered.splice(evt.newIndex, 0, moved);
               reordered.forEach((t, index) => { 
                 if (t.order !== index) {
-                   if (t.category.toLowerCase() === 'grupa 5') db.collection('shared_territories').doc(t.id).update({ order: index });
+                   if (t.category === 'grupa 5') db.collection('shared_territories').doc(t.id).update({ order: index });
                    else db.collection('users').doc(userDocId).collection('territories').doc(t.id).update({ order: index });
                 }
               });
@@ -585,8 +546,8 @@
       const handleTouchEnd = () => {
         if (!touchStart || !touchEnd) return;
         const dist = touchStart - touchEnd;
-        if (dist > 50) setActiveTab('Grupa 5');
-        if (dist < -50) setActiveTab('Personal');
+        if (dist > 50) setActiveTab('grupa 5');
+        if (dist < -50) setActiveTab('personal');
       };
       
       const toggleBlock = (id) => setCollapsedBlocks(prev => ({...prev, [id]: !prev[id]}));
@@ -609,7 +570,7 @@
       };
       
       const updateTerritory = (id, category, data) => {
-        if (category.toLowerCase() === 'grupa 5') return db.collection('shared_territories').doc(id).update(data);
+        if (category === 'grupa 5') return db.collection('shared_territories').doc(id).update(data);
         else return db.collection('users').doc(userDocId).collection('territories').doc(id).update(data);
       };
 
@@ -644,7 +605,7 @@
           try {
               await updateDocs(db.collection('shared_territories'));
               await updateDocs(db.collection('users').doc(targetUserId).collection('territories'));
-          } catch(err) { console.error(err); }
+          } catch(err) {}
       };
 
       const parseNumbers = (input, forceEven = false, forceOdd = false) => {
@@ -675,7 +636,7 @@
       const handleCreateTerritory = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        const category = isAdmin ? fd.get('category') : 'Personal'; 
+        const category = isAdmin ? fd.get('category') : 'personal'; 
         const start = new Date(fd.get('startDate'));
         const end = new Date(start); end.setMonth(end.getMonth() + 4);
         
@@ -685,7 +646,7 @@
           isDone: false, notes: '', blocks: [], order: territories.length
         };
 
-        if (category.toLowerCase() === 'grupa 5') {
+        if (category === 'grupa 5') {
            newTerritory.createdBy = userDocId;
            await db.collection('shared_territories').add(newTerritory);
         } else {
@@ -697,17 +658,17 @@
       const handleEditTerritory = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        const newCategory = isAdmin ? fd.get('category') : 'Personal';
+        const newCategory = isAdmin ? fd.get('category') : 'personal';
         
         const updateData = {
           name: fd.get('name'), type: fd.get('type'),
           startDate: fd.get('startDate'), endDate: fd.get('endDate')
         };
 
-        if (newCategory.toLowerCase() !== selectedTerritory.category.toLowerCase()) {
+        if (newCategory !== selectedTerritory.category) {
             updateData.category = newCategory;
             const fullTerritoryData = { ...selectedTerritory, ...updateData };
-            if (newCategory.toLowerCase() === 'grupa 5') {
+            if (newCategory === 'grupa 5') {
                await db.collection('shared_territories').doc(selectedTerritory.id).set(fullTerritoryData);
                await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).delete();
             } else {
@@ -725,14 +686,10 @@
         const fd = new FormData(e.target);
         const bName = fd.get('blocName').trim();
         const sName = fd.get('stradaName').trim();
-        
-        if (!bName && !sName) { showAlert('Te rog completează un Bloc sau o Stradă!'); return; }
+        if (!bName && !sName) return showAlert('Te rog completează un Bloc sau o Stradă!');
         const type = bName ? 'bloc' : 'strada';
         const name = bName || sName;
-        
-        const newBlock = { id: Date.now().toString(), name, type, sections: [] };
-
-        const upd = [...(selectedTerritory.blocks || []), newBlock];
+        const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
         setModals({...modals, blockAdd: false});
       };
@@ -741,9 +698,7 @@
         e.preventDefault();
         const fd = new FormData(e.target);
         const filterType = fd.get('filterType');
-        const forceEven = filterType === 'even';
-        const forceOdd = filterType === 'odd';
-        const nums = parseNumbers(fd.get('nums'), forceEven, forceOdd);
+        const nums = parseNumbers(fd.get('nums'), filterType === 'even', filterType === 'odd');
 
         const upd = selectedTerritory.blocks.map(b => {
           if (b.id === modals.stradaAddHouse) {
@@ -753,8 +708,7 @@
               newSections[defaultSectionIndex] = { ...newSections[defaultSectionIndex], locations: [...newSections[defaultSectionIndex].locations, ...nums] };
               return { ...b, sections: newSections };
             } else {
-               const newSectionName = ''; // Fortam gol ca sa stea liber pe strada mereu
-               return { ...b, sections: [{ id: Date.now().toString(), name: newSectionName, locations: nums }, ...(b.sections || [])] };
+               return { ...b, sections: [{ id: Date.now().toString(), name: '', locations: nums }, ...(b.sections || [])] };
             }
           }
           return b;
@@ -767,9 +721,7 @@
         e.preventDefault();
         const fd = new FormData(e.target);
         const filterType = fd.get('filterType');
-        const forceEven = filterType === 'even';
-        const forceOdd = filterType === 'odd';
-        const nums = parseNumbers(fd.get('nums'), forceEven, forceOdd);
+        const nums = parseNumbers(fd.get('nums'), filterType === 'even', filterType === 'odd');
 
         const upd = selectedTerritory.blocks.map(b => b.id === modals.sectionAdd ? { ...b, sections: [...(b.sections||[]), { id: Date.now().toString(), name: fd.get('name'), locations: nums }] } : b);
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
@@ -800,9 +752,7 @@
         e.preventDefault();
         const fd = new FormData(e.target);
         const filterType = fd.get('filterType');
-        const forceEven = filterType === 'even';
-        const forceOdd = filterType === 'odd';
-        const nums = parseNumbers(fd.get('nums'), forceEven, forceOdd);
+        const nums = parseNumbers(fd.get('nums'), filterType === 'even', filterType === 'odd');
 
         const { blockId, sectionId } = modals.locationAppend;
         const upd = selectedTerritory.blocks.map(b => b.id === blockId ? {
@@ -889,10 +839,7 @@
       };
 
       const handleExport = () => {
-        const dataToExport = {
-          territories: isAdmin ? territories : territories.filter(t => t.category.toLowerCase() === 'personal'),
-          settings: settings
-        };
+        const dataToExport = { territories: isAdmin ? territories : territories.filter(t => t.category === 'personal'), settings: settings };
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
@@ -909,25 +856,17 @@
         reader.onload = async (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                if (data.settings && isAdmin) {
-                    await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
-                }
+                if (data.settings && isAdmin) await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
                 if (data.territories && Array.isArray(data.territories)) {
                     for (const t of data.territories) {
-                        const targetCategory = isAdmin ? t.category : 'Personal'; 
+                        const targetCategory = isAdmin ? t.category : 'personal'; 
                         const tFixed = { ...t, category: targetCategory };
-                        
-                        if (targetCategory.toLowerCase() === 'grupa 5') {
-                            await db.collection('shared_territories').doc(t.id).set(tFixed);
-                        } else {
-                            await db.collection('users').doc(userDocId).collection('territories').doc(t.id).set(tFixed);
-                        }
+                        if (targetCategory === 'grupa 5') await db.collection('shared_territories').doc(t.id).set(tFixed);
+                        else await db.collection('users').doc(userDocId).collection('territories').doc(t.id).set(tFixed);
                     }
                 }
                 showAlert("Datele au fost importate cu succes!");
-            } catch (error) {
-                showAlert("Eroare la import! Verifică fișierul.");
-            }
+            } catch (error) { showAlert("Eroare la import! Verifică fișierul."); }
         };
         reader.readAsText(file);
         e.target.value = null; 
@@ -940,12 +879,9 @@
           <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 p-4 transition-colors">
             <CustomDialog dialog={dialog} closeDialog={closeDialog} />
             <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl border-4 border-blue-500/20 text-center">
-              <div className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                 <span className="material-icons text-4xl">map</span>
-              </div>
+              <div className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl"><span className="material-icons text-4xl">map</span></div>
               <h1 className="font-black text-2xl text-slate-800 dark:text-slate-100 mb-2 uppercase tracking-widest">Teritorii</h1>
               <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8">Conectează-te pentru a continua</p>
-              
               {authError && <div className="bg-red-50 text-red-600 p-3 rounded-2xl text-xs font-bold mb-4">{authError}</div>}
               
               <form onSubmit={async (e) => {
@@ -962,9 +898,7 @@
                           setUser(customUser);
                           setUserDocId(customUser.id);
                           localStorage.setItem('custom_user', JSON.stringify(customUser));
-                      } else {
-                          setAuthError('Nume sau parolă incorectă!');
-                      }
+                      } else setAuthError('Nume sau parolă incorectă!');
                   }
                 } catch(err) { setAuthError('Eroare: ' + err.message); }
               }} className="space-y-4">
@@ -984,19 +918,20 @@
       }
 
       const isSelectedOverdue = selectedTerritory && !selectedTerritory.isDone && selectedTerritory.endDate < todayStr;
-      const canEditStructure = isAdmin || (selectedTerritory && selectedTerritory.category.toLowerCase() === 'personal');
       
+      // LOGICA OFFLINE:
+      const isReadOnly = !isOnline && selectedTerritory?.category === 'grupa 5';
+      const canEditStructure = (isAdmin || (selectedTerritory && selectedTerritory.category === 'personal')) && !isReadOnly;
+
       return (
         <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
           <CustomDialog dialog={dialog} closeDialog={closeDialog} />
 
-          {/* ANTET PAGINA PRINCIPALA */}
           {!selectedTerritoryId ? (
             <header className="sticky top-0 z-20 p-4">
               <div className="bg-blue-600 text-white shadow-xl p-3 sm:p-4 md:p-5 rounded-[2rem] flex flex-col gap-4">
                 
                 <div className="flex flex-row items-center justify-between gap-2 px-1 w-full">
-                  
                   <div className="flex items-center gap-2 sm:gap-3 font-black text-xl sm:text-2xl tracking-tighter shrink-0">
                     <button onClick={() => setModals({...modals, auth: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner overflow-hidden shrink-0" title="Profil">
                         <span className="text-base sm:text-lg font-black uppercase">{currentUserName.charAt(0)}</span>
@@ -1029,8 +964,8 @@
                 </div>
                 
                 <div className="flex bg-blue-700/50 rounded-2xl p-1.5">
-                  {['Personal', 'Grupa 5'].map(tab => (
-                    <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 md:py-4 font-black text-sm md:text-base uppercase tracking-widest rounded-xl transition-all ${activeTab.toLowerCase() === tab.toLowerCase() ? 'bg-white text-blue-700 shadow-md' : 'text-blue-100 hover:text-white'}`}>
+                  {['personal', 'grupa 5'].map(tab => (
+                    <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 md:py-4 font-black text-sm md:text-base uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white text-blue-700 shadow-md' : 'text-blue-100 hover:text-white'}`}>
                       {tab}
                     </button>
                   ))}
@@ -1039,19 +974,15 @@
             </header>
           ) : (
             <header className="sticky top-0 z-30 p-4 pb-0 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md">
-              {/* INSULA 1: Nume Teritoriu + Edit + Finalizare */}
-              <div className={`${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3 relative`}>
-                
+              <div className={`${selectedTerritory.category === 'grupa 5' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3 relative`}>
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                   <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
                   <h1 className="font-black text-white uppercase text-base md:text-xl truncate">{selectedTerritory.name}</h1>
-                  
                   {canEditStructure && (
                     <button onClick={() => setModals({...modals, territoryEdit: true})} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
                   )}
                 </div>
-
-                {(isAdmin || selectedTerritory.category.toLowerCase() === 'personal') && (
+                {((isAdmin || selectedTerritory.category === 'personal') && !isReadOnly) && (
                   <div className="shrink-0 flex items-center">
                     <button onClick={() => updateTerritory(selectedTerritory.id, selectedTerritory.category, { isDone: !selectedTerritory.isDone })} className={`material-icons p-3 rounded-full transition shadow-sm ${selectedTerritory.isDone ? 'bg-white text-green-600 shadow-xl' : 'bg-black/10 hover:bg-black/20 text-white/80'}`}>
                       {selectedTerritory.isDone ? 'check' : 'radio_button_unchecked'}
@@ -1060,6 +991,14 @@
                 )}
               </div>
             </header>
+          )}
+
+          {/* BANNER OFFLINE */}
+          {!isOnline && selectedTerritoryId && (
+            <div className={`mx-4 mt-2 mb-[-10px] py-1.5 px-3 rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 z-20 ${selectedTerritory?.category === 'grupa 5' ? 'bg-red-500' : 'bg-orange-500'}`}>
+              <span className="material-icons text-[14px]">wifi_off</span>
+              {selectedTerritory?.category === 'grupa 5' ? 'Ești Offline - Vizualizare Blocată' : 'Ești Offline - Se salvează local'}
+            </div>
           )}
 
           {!selectedTerritoryId ? (
@@ -1099,17 +1038,17 @@
                         )}
                         
                         <div className="no-drag absolute right-3 top-4 flex items-center gap-2">
-                          {(isAdmin || t.category.toLowerCase() === 'personal') && (
+                          {(isAdmin || t.category === 'personal') && (
                             <button onClick={(e) => { e.stopPropagation(); updateTerritory(t.id, t.category, { isDone: !t.isDone }); }} className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all active:scale-90 z-10 ${t.isDone ? 'bg-green-600 border-green-600 text-white shadow-lg' : isOverdue ? 'bg-white dark:bg-slate-700 border-red-400 text-red-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-400 hover:text-blue-500 hover:border-blue-300'}`}>
                               <span className="material-icons text-3xl">{t.isDone ? 'check' : 'radio_button_unchecked'}</span>
                             </button>
                           )}
                           
-                          {(isAdmin || t.category.toLowerCase() === 'personal') && (
+                          {(isAdmin || t.category === 'personal') && (
                             <button onClick={(e) => { 
                               e.stopPropagation(); 
                               showConfirm(`Ești sigur că vrei să ștergi definitiv teritoriul "${t.name}"?`, () => {
-                                if(t.category.toLowerCase() === 'grupa 5') db.collection('shared_territories').doc(t.id).delete();
+                                if(t.category === 'grupa 5') db.collection('shared_territories').doc(t.id).delete();
                                 else db.collection('users').doc(userDocId).collection('territories').doc(t.id).delete();
                               });
                             }} className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl text-red-400 hover:text-red-600 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm active:scale-90 z-10">
@@ -1122,23 +1061,34 @@
                   })}
                 </div>
               )}
+
+              {/* BUTON ADAUGARE TERITORIU FLOAT */}
+              {!selectedTerritoryId && (isAdmin || activeTab === 'personal') && (
+                <button 
+                  onClick={() => setModals({...modals, territoryAdd: true})} 
+                  className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800"
+                >
+                  <span className="material-icons text-3xl">add</span>
+                </button>
+              )}
+
             </main>
           ) : (
             <main className="flex-1 flex flex-col pt-4 transition-colors relative z-10">
               <div className="px-4 space-y-6">
                 
                 {/* INSULA 2: Filtre, Date, Notificare - Simetrie la Treimi */}
-                <div className={`p-4 rounded-[2rem] shadow-sm border-2 ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/30' : 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30'} flex flex-col gap-3`}>
+                <div className={`p-4 rounded-[2rem] shadow-sm border-2 ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/30' : 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30'} flex flex-col gap-3`}>
                   
                   <div className="flex flex-row flex-wrap md:flex-nowrap w-full items-stretch justify-start gap-2 h-full">
 
                     {/* COLOANA 1: Filtre */}
                     <div className="flex-[1] md:flex-none flex flex-col md:flex-row gap-2 items-stretch md:items-center">
-                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
-                          <span className="material-icons text-[14px]">{selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'groups' : 'person'}</span>
+                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
+                          <span className="material-icons text-[14px]">{selectedTerritory.category === 'grupa 5' ? 'groups' : 'person'}</span>
                           {selectedTerritory.category}
                        </div>
-                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
+                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
                           <span className="material-icons text-[14px]">{selectedTerritory.type === 'Campanie' ? 'campaign' : 'folder'}</span>
                           {selectedTerritory.type}
                        </div>
@@ -1175,11 +1125,11 @@
                   {selectedTerritory.type === 'Campanie' && (
                     <div className="mt-2 w-full shrink-0">
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'text-orange-800 dark:text-orange-400' : 'text-green-800 dark:text-green-400'}`}>Progres Campanie</span>
-                        <span className={`text-[10px] font-black ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'text-orange-900 dark:text-orange-300' : 'text-green-900 dark:text-green-300'}`}>{calculateProgress(selectedTerritory)}%</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${selectedTerritory.category === 'grupa 5' ? 'text-orange-800 dark:text-orange-400' : 'text-green-800 dark:text-green-400'}`}>Progres Campanie</span>
+                        <span className={`text-[10px] font-black ${selectedTerritory.category === 'grupa 5' ? 'text-orange-900 dark:text-orange-300' : 'text-green-900 dark:text-green-300'}`}>{calculateProgress(selectedTerritory)}%</span>
                       </div>
-                      <div className={`h-2.5 w-full rounded-full overflow-hidden border ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-200/50 border-orange-300 dark:bg-orange-900/30 dark:border-orange-800' : 'bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:border-green-800'}`}>
-                        <div className={`h-full progress-bar shadow-sm rounded-full ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-500' : 'bg-green-500'}`} style={{ width: `${calculateProgress(selectedTerritory)}%` }}></div>
+                      <div className={`h-2.5 w-full rounded-full overflow-hidden border ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-200/50 border-orange-300 dark:bg-orange-900/30 dark:border-orange-800' : 'bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:border-green-800'}`}>
+                        <div className={`h-full progress-bar shadow-sm rounded-full ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-500' : 'bg-green-500'}`} style={{ width: `${calculateProgress(selectedTerritory)}%` }}></div>
                       </div>
                     </div>
                   )}
@@ -1195,6 +1145,7 @@
                     defaultValue={selectedTerritory.notes}
                     onBlur={(e) => updateTerritory(selectedTerritory.id, selectedTerritory.category, { notes: e.target.value })}
                     placeholder="Notițe generale pentru teritoriu..."
+                    disabled={isReadOnly}
                   ></textarea>
                 </div>
 
@@ -1204,7 +1155,7 @@
                       key={block.id} block={block} territory={selectedTerritory} getLabelStyle={getLabelStyle}
                       openEditModal={openEditModal} openRenameModal={openRenameModal} handleReorderLocations={handleReorderLocations} handleReorderSections={handleReorderSections}
                       updateTerritory={updateTerritory} collapsedBlocks={collapsedBlocks} toggleBlock={toggleBlock}
-                      collapsedSections={collapsedSections} toggleSection={toggleSection} setModals={setModals} modals={modals} canEditStructure={canEditStructure} showConfirm={showConfirm} isAdmin={isAdmin}
+                      collapsedSections={collapsedSections} toggleSection={toggleSection} setModals={setModals} modals={modals} canEditStructure={canEditStructure} showConfirm={showConfirm} isReadOnly={isReadOnly} showAlert={showAlert}
                     />
                   ))}
                 </div>
@@ -1217,12 +1168,6 @@
                 )}
               </div>
             </main>
-          )}
-
-          {(!selectedTerritoryId && (activeTab.toLowerCase() === 'personal' || isAdmin)) && (
-            <button onClick={() => setModals({...modals, territoryAdd: true})} className="fixed bottom-8 right-8 w-16 h-16 bg-blue-600 text-white rounded-[1.5rem] shadow-2xl flex items-center justify-center hover:scale-105 transition-transform z-40">
-               <span className="material-icons text-4xl">add</span>
-            </button>
           )}
 
           {/* MENIU UTILIZATOR */}
@@ -1249,9 +1194,7 @@
                   )}
 
                   <button onClick={async () => {
-                    try {
-                      await auth.signOut();
-                    } catch(e) {}
+                    try { await auth.signOut(); } catch(e) {}
                     localStorage.removeItem('custom_user');
                     setUser(null);
                     setUserDocId(null);
@@ -1281,7 +1224,7 @@
                        const oldName = currentUserName;
                        if(newName && newName !== oldName) {
                            await auth.currentUser.updateProfile({ displayName: newName });
-                           setUser(prev => ({...prev, name: newName})); // Do not clear email!
+                           setUser(prev => ({...prev, name: newName})); 
                            await updateUserNameInHistory(userDocId, oldName, newName);
                        }
                        if(newPass && newPass.length >= 6) {
@@ -1436,8 +1379,8 @@
                       <div>
                         <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Locație</label>
                         <select name="category" defaultValue={modals.territoryEdit ? selectedTerritory.category : activeTab} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl font-black text-xs uppercase border border-slate-200 dark:border-slate-700 outline-none text-slate-800 dark:text-slate-100">
-                          <option value="Personal">Personal</option>
-                          <option value="Grupa 5">Grupa 5</option>
+                          <option value="personal">Personal</option>
+                          <option value="grupa 5">Grupa 5</option>
                         </select>
                       </div>
                     )}
@@ -1573,7 +1516,7 @@
                           setModals(m => ({ ...m, locationEdit: { ...m.locationEdit, loc: { ...m.locationEdit.loc, number: val } } }));
                         }
                       }}
-                      disabled={!canEditStructure}
+                      disabled={isReadOnly}
                     />
                   </div>
                   <div className="flex gap-3">
@@ -1629,6 +1572,7 @@
                              updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
                          }
                       }}
+                      disabled={isReadOnly}
                     ></textarea>
                   </div>
                   
