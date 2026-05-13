@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Teritorii</title>
   
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -69,6 +76,15 @@
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 overscroll-none overflow-y-scroll !overflow-y-scroll">
   <div id="root"></div>
+
+  <script>
+    // Înregistrare Service Worker pentru Offline Support (Refresh fără net)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW refuzat:', err));
+      });
+    }
+  </script>
 
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
@@ -635,50 +651,62 @@
 
       const handleCreateTerritory = async (e) => {
         e.preventDefault();
-        const fd = new FormData(e.target);
-        const category = isAdmin ? fd.get('category') : 'personal'; 
-        const start = new Date(fd.get('startDate'));
-        const end = new Date(start); end.setMonth(end.getMonth() + 4);
-        
-        const newTerritory = {
-          name: fd.get('name'), category: category, type: fd.get('type'),
-          startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0],
-          isDone: false, notes: '', blocks: [], order: territories.length
-        };
+        try {
+            const fd = new FormData(e.target);
+            const category = isAdmin ? fd.get('category') : 'personal'; 
+            const start = new Date(fd.get('startDate'));
+            const end = new Date(start); end.setMonth(end.getMonth() + 4);
+            
+            const newTerritory = {
+              name: fd.get('name'), category: category, type: fd.get('type'),
+              startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0],
+              isDone: false, notes: '', blocks: [], order: territories.length
+            };
 
-        if (category === 'grupa 5') {
-           newTerritory.createdBy = userDocId;
-           await db.collection('shared_territories').add(newTerritory);
-        } else {
-           await db.collection('users').doc(userDocId).collection('territories').add(newTerritory);
+            // Închidem fereastra IMEDIAT pentru feedback vizual instant
+            setModals({...modals, territoryAdd: false});
+
+            if (category === 'grupa 5') {
+               newTerritory.createdBy = userDocId;
+               await db.collection('shared_territories').add(newTerritory);
+            } else {
+               await db.collection('users').doc(userDocId).collection('territories').add(newTerritory);
+            }
+        } catch(err) {
+            showAlert("Eroare la creare: " + err.message);
         }
-        setModals({...modals, territoryAdd: false});
       };
 
       const handleEditTerritory = async (e) => {
         e.preventDefault();
-        const fd = new FormData(e.target);
-        const newCategory = isAdmin ? fd.get('category') : 'personal';
-        
-        const updateData = {
-          name: fd.get('name'), type: fd.get('type'),
-          startDate: fd.get('startDate'), endDate: fd.get('endDate')
-        };
+        try {
+            const fd = new FormData(e.target);
+            const newCategory = isAdmin ? fd.get('category') : 'personal';
+            
+            const updateData = {
+              name: fd.get('name'), type: fd.get('type'),
+              startDate: fd.get('startDate'), endDate: fd.get('endDate')
+            };
 
-        if (newCategory !== selectedTerritory.category) {
-            updateData.category = newCategory;
-            const fullTerritoryData = { ...selectedTerritory, ...updateData };
-            if (newCategory === 'grupa 5') {
-               await db.collection('shared_territories').doc(selectedTerritory.id).set(fullTerritoryData);
-               await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).delete();
+            // Închidem fereastra IMEDIAT
+            setModals({...modals, territoryEdit: false});
+
+            if (newCategory !== selectedTerritory.category) {
+                updateData.category = newCategory;
+                const fullTerritoryData = { ...selectedTerritory, ...updateData };
+                if (newCategory === 'grupa 5') {
+                   await db.collection('shared_territories').doc(selectedTerritory.id).set(fullTerritoryData);
+                   await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).delete();
+                } else {
+                   await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).set(fullTerritoryData);
+                   await db.collection('shared_territories').doc(selectedTerritory.id).delete();
+                }
             } else {
-               await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).set(fullTerritoryData);
-               await db.collection('shared_territories').doc(selectedTerritory.id).delete();
+                await updateTerritory(selectedTerritory.id, selectedTerritory.category, updateData);
             }
-        } else {
-            await updateTerritory(selectedTerritory.id, selectedTerritory.category, updateData);
+        } catch(err) {
+            showAlert("Eroare la editare: " + err.message);
         }
-        setModals({...modals, territoryEdit: false});
       };
 
       const handleAddBlock = (e) => {
