@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Teritorii</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+  
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <style>
+    .square-btn { 
+      width: 100%;
+      aspect-ratio: 1 / 1; max-width: 48px; margin: 0 auto; 
+      border-width: 2px; touch-action: manipulation;
+      display: flex; align-items: center; justify-content: center;
+      padding: 2px; overflow: hidden; position: relative;
+    }
+    .btn-text-truncate {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      word-break: break-word;
+      line-height: 1.1;
+      font-size: clamp(0.55rem, 3vw, 0.75rem);
+      font-weight: 800;
+      text-align: center;
+      width: 100%;
+    }
+    .progress-bar { transition: width 0.5s ease-in-out; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    body { -webkit-tap-highlight-color: transparent; }
+    
+    .sortable-ghost { opacity: 0.4; }
+    .sortable-drag { cursor: grabbing !important; }
+    .drag-handle { cursor: grab; }
+    .drag-handle:active { cursor: grabbing; }
+    .history-scroll { max-height: 250px; overflow-y: auto; }
+
+    /* Colt pentru a mari chenarul cu notite vizual evident */
+    textarea { resize: vertical; }
+    textarea::-webkit-resizer {
+      background-image: linear-gradient(135deg, transparent 40%, #94a3b8 40%, #94a3b8 50%, transparent 50%, transparent 60%, #94a3b8 60%, #94a3b8 70%, transparent 70%);
+      background-size: 14px 14px;
+      background-position: bottom 2px right 2px;
+      background-repeat: no-repeat;
+    }
+    .dark textarea::-webkit-resizer {
+      background-image: linear-gradient(135deg, transparent 40%, #475569 40%, #475569 50%, transparent 50%, transparent 60%, #475569 60%, #475569 70%, transparent 70%);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 overscroll-none overflow-y-scroll !overflow-y-scroll">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+    
+    const firebaseConfig = {
+      apiKey: "AIzaSyCU2oefYIppsqJE2aVrhnIvm_D2oDhNZgQ",
+      authDomain: "jw-teritorii.firebaseapp.com",
+      projectId: "jw-teritorii",
+      storageBucket: "jw-teritorii.firebasestorage.app",
+      messagingSenderId: "869337688836",
+      appId: "1:869337688836:web:0b12b8276ae043e39e3e51"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    
+    const ADMIN_EMAIL = 'valeriu.siminitchi@gmail.com';
+
+    const DEFAULT_LABELS = [
+      { id: 'nevizitat', label: 'Nevizitat', color: '#ffffff', textColor: '#1e293b', isCampaignTarget: false },
+      { id: 'lipsa', label: 'Lipsă', color: '#94a3b8', textColor: '#ffffff', isCampaignTarget: false },
+      { id: 'initiala', label: 'V. Inițială', color: '#facc15', textColor: '#000000', isCampaignTarget: false },
+      { id: 'ulterioara', label: 'V. Ulterioară', color: '#22c55e', textColor: '#ffffff', isCampaignTarget: false },
+      { id: 'rusa', label: 'Rusă', color: '#3b82f6', textColor: '#ffffff', isCampaignTarget: false },
+      { id: 'posta', label: 'În poștă', color: '#dc2626', textColor: '#ffffff', isCampaignTarget: true },
+      { id: 'invitatie', label: 'Invitație', color: '#a855f7', textColor: '#ffffff', isCampaignTarget: true },
+      { id: 'refuz', label: 'Refuz', color: '#ef4444', textColor: '#ffffff', isCampaignTarget: false },
+      { id: 'refuz-categoric', label: 'R. Categoric', color: '#7f1d1d', textColor: '#ffffff', isCampaignTarget: false }
+    ];
+    
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length === 3) return `${parts[2]}.${parts[1]}.${parts[0]}`;
+      return dateStr;
+    };
+
+    // COMPONENTA: Fereastra Setari Culori Etichete (Cu reordonare si editare)
+    function SettingsLabelList({ settings, updateSettingsLabels }) {
+      const listRef = useRef(null);
+
+      useEffect(() => {
+        if (!listRef.current) return;
+        const sortable = Sortable.create(listRef.current, {
+          animation: 150,
+          handle: '.drag-handle',
+          onEnd: (evt) => {
+             if (evt.oldIndex !== evt.newIndex) {
+                 const newLabels = [...settings.labels];
+                 const [movedItem] = newLabels.splice(evt.oldIndex, 1);
+                 newLabels.splice(evt.newIndex, 0, movedItem);
+                 
+                 const item = evt.item;
+                 const from = evt.from;
+                 const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
+                 if (originalNextSibling) {
+                     from.insertBefore(item, originalNextSibling);
+                 } else {
+                     from.appendChild(item);
+                 }
+                 
+                 updateSettingsLabels(newLabels);
+             }
+          }
+        });
+        return () => sortable.destroy();
+      }, [settings.labels, updateSettingsLabels]);
+
+      const handleColorChange = (id, field, value) => {
+        const newLabels = settings.labels.map(l => l.id === id ? { ...l, [field]: value } : l);
+        updateSettingsLabels(newLabels);
+      };
+      
+      const handleLabelNameChange = (id, newName) => {
+        const newLabels = settings.labels.map(l => l.id === id ? { ...l, label: newName } : l);
+        updateSettingsLabels(newLabels);
+      };
+      
+      const addLabel = () => {
+        const no = { id: Date.now().toString(), label: 'Nou', color: '#ffffff', textColor: '#000000', isCampaignTarget: false };
+        updateSettingsLabels([...settings.labels, no]);
+      };
+      
+      const deleteLabel = (id) => {
+        if(settings.labels.length <= 1) return;
+        updateSettingsLabels(settings.labels.filter(l => l.id !== id));
+      };
+
+      return (
+        <div className="space-y-4 pb-12">
+          <div ref={listRef} className="space-y-4">
+            {settings.labels.map(l => (
+              <div key={l.id} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm">
+                <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 shrink-0">
+                  <span className="material-icons">drag_indicator</span>
+                </div>
+                <div className="flex-1 w-full">
+                   <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nume Etichetă</label>
+                   <input type="text" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+                <div className="flex gap-4 w-full sm:w-auto mt-2 sm:mt-0 items-end">
+                  <div className="flex flex-col items-start gap-1">
+                    <label className="text-[10px] font-black uppercase text-slate-400">Fundal</label>
+                    <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
+                  </div>
+                  <div className="flex flex-col items-start gap-1">
+                    <label className="text-[10px] font-black uppercase text-slate-400">Text</label>
+                    <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
+                  </div>
+                  {settings.labels.length > 1 && (
+                    <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 transition-colors shadow-sm">
+                      <span className="material-icons text-[20px]">delete</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={addLabel} className="w-full p-4 border-2 border-dashed border-blue-300 dark:border-blue-800 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors shadow-sm">
+             <span className="material-icons">add</span> Adaugă Etichetă
+          </button>
+        </div>
+      );
+    }
+
+    // COMPONENTA: Fereastra Modala Custom (Alert/Confirm)
+    function CustomDialog({ dialog, closeDialog }) {
+      if (!dialog.isOpen) return null;
+      return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[500]">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700 text-center transform scale-100 animate-in fade-in zoom-in duration-200">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner ${dialog.type === 'confirm' ? 'bg-orange-100 text-orange-500' : 'bg-blue-100 text-blue-500'}`}>
+              <span className="material-icons text-3xl">{dialog.type === 'confirm' ? 'help_outline' : 'info'}</span>
+            </div>
+            <h3 className="font-black text-lg text-slate-800 dark:text-slate-100 mb-2 uppercase tracking-widest">{dialog.type === 'confirm' ? 'Confirmare' : 'Notificare'}</h3>
+            <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-6">{dialog.message}</p>
+            <div className="flex gap-3">
+              {dialog.type === 'confirm' && (
+                <button onClick={closeDialog} className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-300 rounded-xl font-black uppercase text-xs hover:bg-slate-200 transition-colors">Anulează</button>
+              )}
+              <button onClick={() => { if(dialog.onConfirm) dialog.onConfirm(); closeDialog(); }} className={`flex-1 py-3 text-white rounded-xl font-black uppercase text-xs shadow-sm transition-colors ${dialog.type === 'confirm' ? 'bg-orange-500 hover:bg-orange-600' : 'bg-blue-500 hover:bg-blue-600'}`}>
+                {dialog.type === 'confirm' ? 'Da, continuă' : 'Am înțeles'}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // COMPONENTA: Sectiunea cu locatii (Patratele)
+    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, canEditStructure, isGroupedStrada }) {
+      const gridRef = useRef(null);
+      
+      useEffect(() => {
+        if (!gridRef.current || !canEditStructure) return;
+        
+        const sortable = Sortable.create(gridRef.current, {
+          group: 'shared-locations', 
+          animation: 150, 
+          delay: 200, 
+          delayOnTouchOnly: true,
+          onEnd: (evt) => {
+            const destBlockId = evt.to.dataset.blockId;
+            const destSecId = evt.to.dataset.sectionId;
+            
+            if (evt.from !== evt.to || evt.oldIndex !== evt.newIndex) {
+                const item = evt.item;
+                const from = evt.from;
+                const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
+                
+                if (originalNextSibling) {
+                    from.insertBefore(item, originalNextSibling);
+                } else {
+                    from.appendChild(item);
+                }
+            }
+
+            if (destBlockId && destSecId) {
+              if (evt.from !== evt.to || evt.oldIndex !== evt.newIndex) {
+                 handleReorderLocations(blockId, sec.id, destBlockId, destSecId, evt.oldIndex, evt.newIndex);
+              }
+            }
+          }
+        });
+        return () => sortable.destroy();
+      }, [blockId, sec.id, sec.locations, canEditStructure, handleReorderLocations]);
+
+      // AICI REZOLVAM COLOANELE: 5 pe telefon la ambele, 12 stradă normală pe PC, 6 scară/grupă pe PC
+      const isUngroupedSection = !sec.name || sec.name === 'Case';
+      const gridClasses = `p-4 grid gap-2.5 min-h-[60px] ${
+        isBlockStrada && isUngroupedSection
+          ? 'grid-cols-5 lg:grid-cols-12' 
+          : 'grid-cols-5 lg:grid-cols-6'
+      }`;
+
+      return (
+        <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
+          {sec.locations.map((loc, lIdx) => (
+            <button key={loc.id} onClick={() => openEditModal(blockId, sec.id, loc, lIdx)} style={getLabelStyle(loc.status)} className="square-btn rounded-lg shadow-sm">
+              <span className="btn-text-truncate">{loc.number}</span>
+              {loc.notes && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white"></div>}
+            </button>
+          ))}
+        </div>
+      );
+    }
+
+    // COMPONENTA: Bloc/Strada
+    function BlockComponent({ block, territory, getLabelStyle, openEditModal, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, showConfirm, isAdmin }) {
+      const isBlockStrada = block.type === 'strada';
+      const isBlockCollapsed = collapsedBlocks[block.id];
+      const isGroupedStrada = isBlockStrada;
+
+      const sectionsGridRef = useRef(null);
+
+      // Separăm locațiile libere de grupe
+      const unGroupedLocationsSections = (block.sections || []).filter(sec => !sec.name || sec.name === 'Case');
+      const groupedSections = (block.sections || []).filter(sec => sec.name && sec.name !== 'Case');
+
+      useEffect(() => {
+          if (!sectionsGridRef.current || !canEditStructure) return;
+          const sortable = Sortable.create(sectionsGridRef.current, {
+              group: 'shared-sections',
+              animation: 150, delay: 200, delayOnTouchOnly: true,
+              handle: '.section-header', 
+              filter: '.no-drag',
+              onEnd: (evt) => {
+                  const destBlockId = evt.to.dataset.blockId;
+                  
+                  if (evt.from !== evt.to || evt.oldIndex !== evt.newIndex) {
+                      const item = evt.item;
+                      const from = evt.from;
+                      const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
+                      
+                      if (originalNextSibling) {
+                          from.insertBefore(item, originalNextSibling);
+                      } else {
+                          from.appendChild(item);
+                      }
+                  }
+                  
+                  if (destBlockId && (block.id !== destBlockId || evt.oldIndex !== evt.newIndex)) {
+                    const oldIndexCorrected = oldIdx => {
+                      if (isBlockStrada && unGroupedLocationsSections.length > 0) return oldIdx + 1;
+                      return oldIdx;
+                    }
+                    const newIndexCorrected = newIdx => {
+                       if (isBlockStrada && unGroupedLocationsSections.length > 0) return newIdx + 1;
+                       return newIdx;
+                    }
+                    handleReorderSections(block.id, destBlockId, oldIndexCorrected(evt.oldIndex), newIndexCorrected(evt.newIndex));
+                  }
+              }
+          });
+          return () => sortable.destroy();
+      }, [block.sections, canEditStructure, block.id, handleReorderSections, isGroupedStrada, unGroupedLocationsSections.length]);
+
+      return (
+        <div className="bg-slate-200/50 dark:bg-slate-800/50 p-3 md:p-5 rounded-[2rem] border-2 border-slate-200/60 dark:border-slate-700/60 relative block-item" data-block-id={block.id}>
+          <div className="block-header flex justify-between items-center mb-4 px-2 cursor-pointer select-none" onClick={() => toggleBlock(block.id)}>
+            <div className="flex items-center gap-2">
+              <span className="material-icons text-slate-500 text-2xl transition-transform duration-200" style={{ transform: isBlockCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
+              <span className="material-icons text-slate-400 text-xl">{isBlockStrada ? 'signpost' : 'domain'}</span>
+              <div className="flex items-center gap-2 overflow-hidden">
+                <h2 className="font-black text-sm md:text-base text-slate-800 dark:text-slate-200 uppercase tracking-widest truncate">{isBlockStrada ? 'STRADĂ:' : 'BLOC:'} {block.name}</h2>
+                {canEditStructure && <button onClick={(e) => { e.stopPropagation(); openRenameModal('block', block.id, null, block.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[18px] bg-slate-100 dark:bg-slate-800 p-1 rounded-lg transition-colors">edit</button>}
+              </div>
+            </div>
+            {canEditStructure && (
+              <div className="flex items-center" onClick={e => e.stopPropagation()}>
+                <button onClick={() => { 
+                   showConfirm(`Ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'}?`, () => {
+                       updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
+                   });
+                }} className="material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-2xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
+              </div>
+            )}
+          </div>
+
+          {!isBlockCollapsed && (
+            <div ref={sectionsGridRef} data-block-id={block.id} className={(isBlockStrada && !isGroupedStrada) ? "flex flex-col gap-2 items-start w-full" : "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"}>
+              
+              {/* Afisăm locațiile libere din strada */}
+              {unGroupedLocationsSections.map((sec) => (
+                  <div key={sec.id} className={`w-full section-item no-drag ${isGroupedStrada ? 'col-span-1 lg:col-span-2' : ''}`}>
+                    <SectionLocations blockId={block.id} sec={sec} getLabelStyle={getLabelStyle} openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} canEditStructure={canEditStructure} isGroupedStrada={isGroupedStrada} />
+                  </div>
+              ))}
+
+              {/* Afisăm grupele/sectiunile */}
+              {groupedSections.map((sec, sIdx) => {
+                const isSecCollapsed = collapsedSections[sec.id];
+                return (
+                <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item">
+                  <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-center border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
+                    <div className="flex items-center gap-2">
+                      <span className="material-icons text-slate-400 text-xl transition-transform duration-200" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
+                      <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider">{sec.name}</h3>
+                      {canEditStructure && <button onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600">edit</button>}
+                    </div>
+                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
+                        <span className="material-icons text-[20px] block">add</span>
+                      </button>
+                      {canEditStructure && (
+                        <button onClick={() => { 
+                           showConfirm(`Ștergi această grupare?`, () => {
+                              const upd = territory.blocks.map(b => b.id === block.id ? { ...b, sections: b.sections.filter(x => x.id !== sec.id) } : b);
+                              updateTerritory(territory.id, territory.category, { blocks: upd });
+                           });
+                        }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 transition shadow-inner">
+                          <span className="material-icons text-[20px] block">delete</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  {!isSecCollapsed && (
+                    <SectionLocations blockId={block.id} sec={sec} getLabelStyle={getLabelStyle} openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} canEditStructure={canEditStructure} isGroupedStrada={isGroupedStrada}/>
+                  )}
+                </div>
+              )})}
+
+              {/* BUTOANE ADAUGARE IN BLOC/STRADA */}
+              <div className={`no-drag flex flex-col gap-2 ${isGroupedStrada ? 'col-span-1 lg:col-span-2' : 'w-full mt-2'}`}>
+                {isBlockStrada && (
+                  <button onClick={() => setModals({...modals, stradaAddHouse: block.id})} className="w-full p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
+                      <span className="material-icons text-3xl">home</span>
+                      <span className="font-black text-[10px] uppercase tracking-widest">Adaugă Casă în stradă</span>
+                  </button>
+                )}
+
+                {canEditStructure && (
+                   <button onClick={() => {
+                     if (isBlockStrada) {
+                        setModals({...modals, sectionAdd: block.id, isStradaGroup: true});
+                     } else {
+                         setModals({...modals, sectionAdd: block.id});
+                     }
+                   }} className="w-full p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
+                     <span className="material-icons text-3xl">{isBlockStrada ? 'maps_home_work' : 'add_business'}</span>
+                     <span className="font-black text-[10px] uppercase tracking-widest">{isBlockStrada ? 'Adaugă Grupă de Case' : 'Adaugă Scară'}</span>
+                   </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // COMPONENTA PRINCIPALA
+    function App() {
+      const [territories, setTerritories] = useState([]);
+      const [settings, setSettings] = useState({ labels: DEFAULT_LABELS });
+      const [activeTab, setActiveTab] = useState('Personal');
+      const [selectedTerritoryId, setSelectedTerritoryId] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [touchStart, setTouchStart] = useState(null);
+      const [touchEnd, setTouchEnd] = useState(null);
+      const [theme, setTheme] = useState(localStorage.getItem('app-theme') || 'system');
+      
+      const [user, setUser] = useState(null); 
+      const [userDocId, setUserDocId] = useState(null);
+      const [authLoading, setAuthLoading] = useState(true);
+      const [authError, setAuthError] = useState(null);
+      const [authForm, setAuthForm] = useState({ name: '', password: '' });
+
+      const [adminUsersList, setAdminUsersList] = useState([]);
+
+      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false });
+      const [editLocNumber, setEditLocNumber] = useState('');
+      const [collapsedBlocks, setCollapsedBlocks] = useState({});
+      const [collapsedSections, setCollapsedSections] = useState({});
+      
+      const [dialog, setDialog] = useState({ isOpen: false, type: 'alert', message: '', onConfirm: null });
+      const showAlert = (msg) => setDialog({ isOpen: true, type: 'alert', message: msg, onConfirm: null });
+      const showConfirm = (msg, onConfirmAction) => setDialog({ isOpen: true, type: 'confirm', message: msg, onConfirm: onConfirmAction });
+      const closeDialog = () => setDialog(prev => ({ ...prev, isOpen: false }));
+
+      const blocksContainerRef = useRef(null);
+
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      useEffect(() => {
+        const root = window.document.documentElement;
+        const applyTheme = (t) => {
+          if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            root.classList.add('dark');
+          } else {
+            root.classList.remove('dark');
+          }
+        };
+        applyTheme(theme);
+      }, [theme]);
+
+      useEffect(() => {
+        const unsubAuth = auth.onAuthStateChanged(firebaseUser => {
+          if (firebaseUser && firebaseUser.email === ADMIN_EMAIL) {
+              setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'Admin', email: firebaseUser.email });
+              setUserDocId(firebaseUser.uid);
+          } else {
+              const customUserStr = localStorage.getItem('custom_user');
+              if (customUserStr) {
+                  try {
+                      const cu = JSON.parse(customUserStr);
+                      setUser(cu);
+                      setUserDocId(cu.id);
+                  } catch(e) {}
+              } else {
+                 setUser(null);
+              }
+          }
+          setAuthLoading(false);
+        });
+        return () => unsubAuth();
+      }, []);
+
+      const isAdmin = user?.email === ADMIN_EMAIL;
+      const currentUserName = user?.name || (isAdmin ? "Admin" : "Utilizator");
+
+      useEffect(() => {
+        if (!user || isAdmin) return;
+        const unsubscribe = db.collection('app_users').doc(user.id).onSnapshot(doc => {
+            if (!doc.exists) {
+                localStorage.removeItem('custom_user');
+                setUser(null);
+                setUserDocId(null);
+                setModals(prev => ({...prev, auth: false}));
+                showAlert("Contul tău a fost șters sau dezactivat de către administrator.");
+            } else {
+                const data = doc.data();
+                if (data.name !== user.name || data.password !== user.password) {
+                    const updatedUser = { ...user, name: data.name, password: data.password };
+                    setUser(updatedUser);
+                    localStorage.setItem('custom_user', JSON.stringify(updatedUser));
+                }
+            }
+        });
+        return () => unsubscribe();
+      }, [user, isAdmin]);
+
+      useEffect(() => {
+        if (authLoading || !user) { setLoading(false); return; }
+        setLoading(true);
+        const unsubs = [];
+        
+        unsubs.push(db.collection('users').doc(userDocId).collection('config').doc('settings').onSnapshot(doc => { 
+          if(doc.exists) setSettings(doc.data()); 
+        }));
+
+        unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot(snap => {
+          const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
+             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: 'Grupa 5' }));
+             setTerritories([...persT, ...sharedT]);
+             setLoading(false);
+          }));
+        }));
+
+        if (isAdmin) {
+           unsubs.push(db.collection('app_users').onSnapshot(snap => {
+               setAdminUsersList(snap.docs.map(d => d.data()));
+           }));
+        }
+
+        return () => unsubs.forEach(u => u());
+      }, [userDocId, authLoading, isAdmin]);
+
+      const selectedTerritory = useMemo(() => {
+        const t = territories.find(t => t.id === selectedTerritoryId);
+        if (t && !t.blocks) t.blocks = t.sections && t.sections.length > 0 ? [{ id: 'legacy_block', name: 'Grupare Veche', type: 'bloc', sections: t.sections }] : [];
+        return t;
+      }, [territories, selectedTerritoryId]);
+
+      useEffect(() => {
+        if (selectedTerritoryId && !loading && !territories.find(t => t.id === selectedTerritoryId)) {
+          setSelectedTerritoryId(null);
+        }
+      }, [territories, selectedTerritoryId, loading]);
+
+      const filteredTerritories = useMemo(() => {
+        let list = territories.filter(t => t.category.toLowerCase() === activeTab.toLowerCase()).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+        if (activeTab.toLowerCase() === 'grupa 5' && !isAdmin) list = list.filter(t => !t.isDone);
+        return list;
+      }, [territories, activeTab, isAdmin]);
+
+      const territoriesListRef = useRef(null);
+      useEffect(() => {
+        if (!territoriesListRef.current || selectedTerritoryId) return;
+        const sortable = Sortable.create(territoriesListRef.current, {
+          animation: 150, delay: 200, delayOnTouchOnly: true, filter: '.no-drag',
+          onEnd: (evt) => {
+            if (evt.oldIndex !== evt.newIndex) {
+              const reordered = [...filteredTerritories];
+              const [moved] = reordered.splice(evt.oldIndex, 1);
+              reordered.splice(evt.newIndex, 0, moved);
+              reordered.forEach((t, index) => { 
+                if (t.order !== index) {
+                   if (t.category.toLowerCase() === 'grupa 5') db.collection('shared_territories').doc(t.id).update({ order: index });
+                   else db.collection('users').doc(userDocId).collection('territories').doc(t.id).update({ order: index });
+                }
+              });
+            }
+          }
+        });
+        return () => sortable.destroy();
+      }, [filteredTerritories, selectedTerritoryId, activeTab]);
+
+      const handleTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
+      const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+      const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const dist = touchStart - touchEnd;
+        if (dist > 50) setActiveTab('Grupa 5');
+        if (dist < -50) setActiveTab('Personal');
+      };
+      
+      const toggleBlock = (id) => setCollapsedBlocks(prev => ({...prev, [id]: !prev[id]}));
+      const toggleSection = (id) => setCollapsedSections(prev => ({...prev, [id]: !prev[id]}));
+      
+      const getLabelStyle = (statusId) => {
+        const label = settings.labels.find(l => l.id === statusId) || settings.labels[0];
+        return { backgroundColor: label.color, color: label.textColor, borderColor: label.color === '#ffffff' ? '#e2e8f0' : label.color };
+      };
+      
+      const calculateProgress = (territory) => {
+        if (!territory) return 0;
+        let total = 0, targets = 0;
+        const blocks = territory.blocks || (territory.sections ? [{sections: territory.sections}] : []);
+        blocks.forEach(b => b.sections?.forEach(s => {
+          total += s.locations.length;
+          targets += s.locations.filter(l => settings.labels.find(lab => lab.id === l.status)?.isCampaignTarget).length;
+        }));
+        return total === 0 ? 0 : Math.round((targets / total) * 100);
+      };
+      
+      const updateTerritory = (id, category, data) => {
+        if (category.toLowerCase() === 'grupa 5') return db.collection('shared_territories').doc(id).update(data);
+        else return db.collection('users').doc(userDocId).collection('territories').doc(id).update(data);
+      };
+
+      const updateUserNameInHistory = async (targetUserId, oldName, newName) => {
+          if(!oldName || !newName || oldName === newName) return;
+          const updateDocs = async (collectionRef) => {
+              const snap = await collectionRef.get();
+              const batch = db.batch();
+              let count = 0;
+              snap.docs.forEach(doc => {
+                  const data = doc.data();
+                  let updated = false;
+                  if(!data.blocks) return;
+                  const newBlocks = data.blocks.map(b => ({
+                      ...b,
+                      sections: b.sections?.map(s => ({
+                          ...s,
+                          locations: s.locations?.map(l => {
+                              let locUpd = false;
+                              const newHist = l.history?.map(h => {
+                                  if(h.name === oldName) { locUpd = true; updated = true; return {...h, name: newName}; }
+                                  return h;
+                              });
+                              return locUpd ? { ...l, history: newHist } : l;
+                          })
+                      }))
+                  }));
+                  if(updated) { batch.update(doc.ref, { blocks: newBlocks }); count++; }
+              });
+              if(count > 0) await batch.commit();
+          };
+          try {
+              await updateDocs(db.collection('shared_territories'));
+              await updateDocs(db.collection('users').doc(targetUserId).collection('territories'));
+          } catch(err) { console.error(err); }
+      };
+
+      const parseNumbers = (input, forceEven = false, forceOdd = false) => {
+        const locs = [];
+        input.split(',').forEach(part => {
+          const p = part.trim();
+          if (p.includes('-')) {
+            const [s, e] = p.split('-').map(n => parseInt(n.trim()));
+            if (!isNaN(s) && !isNaN(e)) {
+               for (let i = s; i <= e; i++) {
+                 if (forceEven && i % 2 !== 0) continue;
+                 if (forceOdd && i % 2 === 0) continue;
+                 locs.push({ id: Math.random().toString(36).substr(2, 9), number: i.toString(), status: 'nevizitat', notes: '', history: [] });
+               }
+            }
+          } else if (p) {
+             const num = parseInt(p);
+             if (!isNaN(num)) {
+                 if (forceEven && num % 2 !== 0) return;
+                 if (forceOdd && num % 2 === 0) return;
+             }
+             locs.push({ id: Math.random().toString(36).substr(2, 9), number: p, status: 'nevizitat', notes: '', history: [] });
+          }
+        });
+        return locs;
+      };
+
+      const handleCreateTerritory = async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const category = isAdmin ? fd.get('category') : 'Personal'; 
+        const start = new Date(fd.get('startDate'));
+        const end = new Date(start); end.setMonth(end.getMonth() + 4);
+        
+        const newTerritory = {
+          name: fd.get('name'), category: category, type: fd.get('type'),
+          startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0],
+          isDone: false, notes: '', blocks: [], order: territories.length
+        };
+
+        if (category.toLowerCase() === 'grupa 5') {
+           newTerritory.createdBy = userDocId;
+           await db.collection('shared_territories').add(newTerritory);
+        } else {
+           await db.collection('users').doc(userDocId).collection('territories').add(newTerritory);
+        }
+        setModals({...modals, territoryAdd: false});
+      };
+
+      const handleEditTerritory = async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const newCategory = isAdmin ? fd.get('category') : 'Personal';
+        
+        const updateData = {
+          name: fd.get('name'), type: fd.get('type'),
+          startDate: fd.get('startDate'), endDate: fd.get('endDate')
+        };
+
+        if (newCategory.toLowerCase() !== selectedTerritory.category.toLowerCase()) {
+            updateData.category = newCategory;
+            const fullTerritoryData = { ...selectedTerritory, ...updateData };
+            if (newCategory.toLowerCase() === 'grupa 5') {
+               await db.collection('shared_territories').doc(selectedTerritory.id).set(fullTerritoryData);
+               await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).delete();
+            } else {
+               await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).set(fullTerritoryData);
+               await db.collection('shared_territories').doc(selectedTerritory.id).delete();
+            }
+        } else {
+            await updateTerritory(selectedTerritory.id, selectedTerritory.category, updateData);
+        }
+        setModals({...modals, territoryEdit: false});
+      };
+
+      const handleAddBlock = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const bName = fd.get('blocName').trim();
+        const sName = fd.get('stradaName').trim();
+        
+        if (!bName && !sName) { showAlert('Te rog completează un Bloc sau o Stradă!'); return; }
+        const type = bName ? 'bloc' : 'strada';
+        const name = bName || sName;
+        
+        const newBlock = { id: Date.now().toString(), name, type, sections: [] };
+
+        const upd = [...(selectedTerritory.blocks || []), newBlock];
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        setModals({...modals, blockAdd: false});
+      };
+
+      const handleAddStradaHouses = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const filterType = fd.get('filterType');
+        const forceEven = filterType === 'even';
+        const forceOdd = filterType === 'odd';
+        const nums = parseNumbers(fd.get('nums'), forceEven, forceOdd);
+
+        const upd = selectedTerritory.blocks.map(b => {
+          if (b.id === modals.stradaAddHouse) {
+            const defaultSectionIndex = b.sections ? b.sections.findIndex(s => !s.name || s.name === 'Case') : -1;
+            if (defaultSectionIndex >= 0) {
+              const newSections = [...b.sections];
+              newSections[defaultSectionIndex] = { ...newSections[defaultSectionIndex], locations: [...newSections[defaultSectionIndex].locations, ...nums] };
+              return { ...b, sections: newSections };
+            } else {
+               const newSectionName = ''; // Fortam gol ca sa stea liber pe strada mereu
+               return { ...b, sections: [{ id: Date.now().toString(), name: newSectionName, locations: nums }, ...(b.sections || [])] };
+            }
+          }
+          return b;
+        });
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        setModals({...modals, stradaAddHouse: null});
+      };
+
+      const handleAddSection = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const filterType = fd.get('filterType');
+        const forceEven = filterType === 'even';
+        const forceOdd = filterType === 'odd';
+        const nums = parseNumbers(fd.get('nums'), forceEven, forceOdd);
+
+        const upd = selectedTerritory.blocks.map(b => b.id === modals.sectionAdd ? { ...b, sections: [...(b.sections||[]), { id: Date.now().toString(), name: fd.get('name'), locations: nums }] } : b);
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        setCollapsedBlocks(prev => ({...prev, [modals.sectionAdd]: false}));
+        setModals({...modals, sectionAdd: null});
+      };
+      
+      const handleRename = (e) => {
+        e.preventDefault();
+        const newName = new FormData(e.target).get('newName').trim();
+        if (!newName) return;
+        
+        const { type, blockId, sectionId } = modals.renameItem;
+        const upd = selectedTerritory.blocks.map(b => {
+            if (b.id === blockId) {
+                if (type === 'block') return { ...b, name: newName };
+                else if (type === 'section') return { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, name: newName } : s) };
+            }
+            return b;
+        });
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        setModals({ ...modals, renameItem: null });
+      };
+
+      const openRenameModal = (type, blockId, sectionId, currentName) => setModals({ ...modals, renameItem: { type, blockId, sectionId, currentName } });
+
+      const handleAppendLocations = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const filterType = fd.get('filterType');
+        const forceEven = filterType === 'even';
+        const forceOdd = filterType === 'odd';
+        const nums = parseNumbers(fd.get('nums'), forceEven, forceOdd);
+
+        const { blockId, sectionId } = modals.locationAppend;
+        const upd = selectedTerritory.blocks.map(b => b.id === blockId ? {
+          ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: [...s.locations, ...nums] } : s)
+        } : b);
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        setCollapsedSections(prev => ({...prev, [sectionId]: false}));
+        setModals({...modals, locationAppend: null});
+      };
+
+      const recordHistory = (loc, actiune) => {
+        const h = loc.history || [];
+        const newH = { name: currentUserName, date: new Date().toLocaleDateString('ro-RO'), time: new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'}), actiune };
+        return [newH, ...h].slice(0, 5); 
+      };
+
+      const handleReorderSections = (srcBlockId, destBlockId, oldIdx, newIdx) => {
+        if (srcBlockId === destBlockId && oldIdx === newIdx) return;
+        let movedSec = null;
+        let upd = selectedTerritory.blocks.map(b => {
+            if (b.id === srcBlockId) {
+                const newSecs = [...b.sections];
+                movedSec = newSecs.splice(oldIdx, 1)[0];
+                return { ...b, sections: newSecs };
+            }
+            return b;
+        });
+        if (movedSec) {
+            upd = upd.map(b => {
+                if (b.id === destBlockId) {
+                    const newSecs = [...(b.sections || [])];
+                    newSecs.splice(newIdx, 0, movedSec);
+                    return { ...b, sections: newSecs };
+                }
+                return b;
+            });
+            updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        }
+      };
+
+      const handleReorderLocations = (srcBlockId, srcSecId, destBlockId, destSecId, oldIdx, newIdx) => {
+        if (srcBlockId === destBlockId && srcSecId === destSecId) {
+            const upd = selectedTerritory.blocks.map(b => {
+              if (b.id !== srcBlockId) return b;
+              return { ...b, sections: b.sections.map(s => {
+                  if (s.id !== srcSecId) return s;
+                  const newLocs = [...s.locations];
+                  const [moved] = newLocs.splice(oldIdx, 1);
+                  newLocs.splice(newIdx, 0, moved);
+                  return { ...s, locations: newLocs };
+              })};
+            });
+            updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        } else {
+            let movedItem = null;
+            let upd = selectedTerritory.blocks.map(b => ({
+              ...b, sections: b.sections.map(s => {
+                if (b.id === srcBlockId && s.id === srcSecId) {
+                  const newLocs = [...s.locations];
+                  movedItem = newLocs.splice(oldIdx, 1)[0];
+                  return { ...s, locations: newLocs };
+                }
+                return s;
+            })}));
+            if (movedItem) {
+              upd = upd.map(b => ({
+                ...b, sections: b.sections.map(s => {
+                  if (b.id === destBlockId && s.id === destSecId) {
+                    const newLocs = [...s.locations];
+                    newLocs.splice(newIdx, 0, movedItem);
+                    return { ...s, locations: newLocs };
+                  }
+                  return s;
+                })
+              }));
+              updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+            }
+        }
+      };
+
+      const openEditModal = (blockId, sectionId, loc, locIdx) => {
+        setEditLocNumber(loc.number);
+        setModals({...modals, locationEdit: { blockId, sectionId, loc, locIdx }});
+      };
+
+      const handleExport = () => {
+        const dataToExport = {
+          territories: isAdmin ? territories : territories.filter(t => t.category.toLowerCase() === 'personal'),
+          settings: settings
+        };
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `teritorii_backup_${todayStr}.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+      };
+
+      const handleImport = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (data.settings && isAdmin) {
+                    await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
+                }
+                if (data.territories && Array.isArray(data.territories)) {
+                    for (const t of data.territories) {
+                        const targetCategory = isAdmin ? t.category : 'Personal'; 
+                        const tFixed = { ...t, category: targetCategory };
+                        
+                        if (targetCategory.toLowerCase() === 'grupa 5') {
+                            await db.collection('shared_territories').doc(t.id).set(tFixed);
+                        } else {
+                            await db.collection('users').doc(userDocId).collection('territories').doc(t.id).set(tFixed);
+                        }
+                    }
+                }
+                showAlert("Datele au fost importate cu succes!");
+            } catch (error) {
+                showAlert("Eroare la import! Verifică fișierul.");
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = null; 
+      };
+
+      if (loading || authLoading) return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
+
+      if (!user) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 p-4 transition-colors">
+            <CustomDialog dialog={dialog} closeDialog={closeDialog} />
+            <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl border-4 border-blue-500/20 text-center">
+              <div className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
+                 <span className="material-icons text-4xl">map</span>
+              </div>
+              <h1 className="font-black text-2xl text-slate-800 dark:text-slate-100 mb-2 uppercase tracking-widest">Teritorii</h1>
+              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-8">Conectează-te pentru a continua</p>
+              
+              {authError && <div className="bg-red-50 text-red-600 p-3 rounded-2xl text-xs font-bold mb-4">{authError}</div>}
+              
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                setAuthError(null);
+                try {
+                  if (authForm.name.includes('@')) {
+                      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                      await auth.signInWithEmailAndPassword(authForm.name.trim(), authForm.password.trim());
+                  } else {
+                      const snapshot = await db.collection('app_users').where('name', '==', authForm.name.trim()).where('password', '==', authForm.password.trim()).get();
+                      if (!snapshot.empty) {
+                          const customUser = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+                          setUser(customUser);
+                          setUserDocId(customUser.id);
+                          localStorage.setItem('custom_user', JSON.stringify(customUser));
+                      } else {
+                          setAuthError('Nume sau parolă incorectă!');
+                      }
+                  }
+                } catch(err) { setAuthError('Eroare: ' + err.message); }
+              }} className="space-y-4">
+                <div className="text-left">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume</label>
+                  <input required type="text" placeholder="Nume" value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 mt-1" />
+                </div>
+                <div className="text-left">
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă</label>
+                  <input required type="password" placeholder="Parola" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 mt-1" />
+                </div>
+                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase shadow-sm transition-colors mt-4">Conectare</button>
+              </form>
+            </div>
+          </div>
+        );
+      }
+
+      const isSelectedOverdue = selectedTerritory && !selectedTerritory.isDone && selectedTerritory.endDate < todayStr;
+      const canEditStructure = isAdmin || (selectedTerritory && selectedTerritory.category.toLowerCase() === 'personal');
+      
+      return (
+        <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
+          <CustomDialog dialog={dialog} closeDialog={closeDialog} />
+
+          {/* ANTET PAGINA PRINCIPALA */}
+          {!selectedTerritoryId ? (
+            <header className="sticky top-0 z-20 p-4">
+              <div className="bg-blue-600 text-white shadow-xl p-3 sm:p-4 md:p-5 rounded-[2rem] flex flex-col gap-4">
+                
+                <div className="flex flex-row items-center justify-between gap-2 px-1 w-full">
+                  
+                  <div className="flex items-center gap-2 sm:gap-3 font-black text-xl sm:text-2xl tracking-tighter shrink-0">
+                    <button onClick={() => setModals({...modals, auth: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner overflow-hidden shrink-0" title="Profil">
+                        <span className="text-base sm:text-lg font-black uppercase">{currentUserName.charAt(0)}</span>
+                    </button>
+                    <span className="truncate">Teritorii</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-end gap-1.5 sm:gap-3 md:gap-4 shrink-0">
+                    {isAdmin && (
+                      <button onClick={() => setModals({...modals, adminPanel: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Panou Administrare">
+                          <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">admin_panel_settings</span>
+                      </button>
+                    )}
+                    <input type="file" id="importData" style={{display: 'none'}} accept=".json" onChange={handleImport} />
+                    <button onClick={() => document.getElementById('importData').click()} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Importă Date">
+                        <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">upload</span>
+                    </button>
+                    <button onClick={handleExport} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Exportă Date">
+                        <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">download</span>
+                    </button>
+                    <button onClick={() => setModals({...modals, theme: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Schimbă Tema">
+                        <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">palette</span>
+                    </button>
+                    {isAdmin && (
+                      <button onClick={() => setModals({...modals, settings: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Setări Culori">
+                          <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">settings</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex bg-blue-700/50 rounded-2xl p-1.5">
+                  {['Personal', 'Grupa 5'].map(tab => (
+                    <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 md:py-4 font-black text-sm md:text-base uppercase tracking-widest rounded-xl transition-all ${activeTab.toLowerCase() === tab.toLowerCase() ? 'bg-white text-blue-700 shadow-md' : 'text-blue-100 hover:text-white'}`}>
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </header>
+          ) : (
+            <header className="sticky top-0 z-30 p-4 pb-0 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md">
+              {/* INSULA 1: Nume Teritoriu + Edit + Finalizare */}
+              <div className={`${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3 relative`}>
+                
+                <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
+                  <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
+                  <h1 className="font-black text-white uppercase text-base md:text-xl truncate">{selectedTerritory.name}</h1>
+                  
+                  {canEditStructure && (
+                    <button onClick={() => setModals({...modals, territoryEdit: true})} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
+                  )}
+                </div>
+
+                {(isAdmin || selectedTerritory.category.toLowerCase() === 'personal') && (
+                  <div className="shrink-0 flex items-center">
+                    <button onClick={() => updateTerritory(selectedTerritory.id, selectedTerritory.category, { isDone: !selectedTerritory.isDone })} className={`material-icons p-3 rounded-full transition shadow-sm ${selectedTerritory.isDone ? 'bg-white text-green-600 shadow-xl' : 'bg-black/10 hover:bg-black/20 text-white/80'}`}>
+                      {selectedTerritory.isDone ? 'check' : 'radio_button_unchecked'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </header>
+          )}
+
+          {!selectedTerritoryId ? (
+            <main onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="p-4 pt-2 space-y-4 flex-1 transition-colors">
+              {filteredTerritories.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-24 text-slate-300 dark:text-slate-700">
+                  <span className="material-icons text-8xl mb-4 drop-shadow-sm">explore</span>
+                  <p className="font-black uppercase tracking-widest text-sm text-slate-400">Niciun teritoriu</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" ref={territoriesListRef}>
+                  {filteredTerritories.map(t => {
+                    const prog = calculateProgress(t);
+                    const isOverdue = !t.isDone && t.endDate < todayStr;
+                    return (
+                      <div key={t.id} onClick={() => setSelectedTerritoryId(t.id)} className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
+                        <div className="flex justify-between items-start mb-2 pr-[110px]">
+                          <div>
+                            <h3 className={`font-black text-lg leading-tight uppercase ${t.isDone ? 'text-green-900 dark:text-green-400' : isOverdue ? 'text-red-900 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>{t.name}</h3>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <p className={`text-[10px] font-bold uppercase ${t.isDone ? 'text-green-700 dark:text-green-500' : isOverdue ? 'text-red-700 dark:text-red-500' : 'text-slate-400'}`}>{formatDate(t.startDate)} ➔ {formatDate(t.endDate)}</p>
+                              {isOverdue && <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md bg-red-600 text-white shadow-sm shrink-0">Returnare Întârziată</span>}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {t.type === 'Campanie' && (
+                          <div className={`mt-3 p-2.5 rounded-2xl border ${t.isDone ? 'bg-green-100/50 dark:bg-green-900/20 border-green-300 dark:border-green-800' : isOverdue ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700'}`}>
+                            <div className={`flex justify-between text-[10px] font-black mb-1.5 uppercase tracking-widest ${t.isDone ? 'text-green-800 dark:text-green-400' : isOverdue ? 'text-red-800 dark:text-red-400' : 'text-slate-500'}`}>
+                              <span>Campanie</span>
+                              <span className={t.isDone ? 'text-green-900 dark:text-green-300' : isOverdue ? 'text-red-900 dark:text-red-300' : 'text-blue-600 dark:text-blue-400'}>{prog}%</span>
+                            </div>
+                            <div className={`h-2.5 w-full rounded-full overflow-hidden ${t.isDone ? 'bg-green-200/50' : isOverdue ? 'bg-red-200' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                              <div className={`h-full progress-bar shadow-sm rounded-full ${t.isDone ? 'bg-green-600' : isOverdue ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${prog}%` }}></div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="no-drag absolute right-3 top-4 flex items-center gap-2">
+                          {(isAdmin || t.category.toLowerCase() === 'personal') && (
+                            <button onClick={(e) => { e.stopPropagation(); updateTerritory(t.id, t.category, { isDone: !t.isDone }); }} className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all active:scale-90 z-10 ${t.isDone ? 'bg-green-600 border-green-600 text-white shadow-lg' : isOverdue ? 'bg-white dark:bg-slate-700 border-red-400 text-red-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-400 hover:text-blue-500 hover:border-blue-300'}`}>
+                              <span className="material-icons text-3xl">{t.isDone ? 'check' : 'radio_button_unchecked'}</span>
+                            </button>
+                          )}
+                          
+                          {(isAdmin || t.category.toLowerCase() === 'personal') && (
+                            <button onClick={(e) => { 
+                              e.stopPropagation(); 
+                              showConfirm(`Ești sigur că vrei să ștergi definitiv teritoriul "${t.name}"?`, () => {
+                                if(t.category.toLowerCase() === 'grupa 5') db.collection('shared_territories').doc(t.id).delete();
+                                else db.collection('users').doc(userDocId).collection('territories').doc(t.id).delete();
+                              });
+                            }} className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl text-red-400 hover:text-red-600 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm active:scale-90 z-10">
+                              <span className="material-icons text-2xl">delete</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </main>
+          ) : (
+            <main className="flex-1 flex flex-col pt-4 transition-colors relative z-10">
+              <div className="px-4 space-y-6">
+                
+                {/* INSULA 2: Filtre, Date, Notificare - Simetrie la Treimi */}
+                <div className={`p-4 rounded-[2rem] shadow-sm border-2 ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/30' : 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30'} flex flex-col gap-3`}>
+                  
+                  <div className="flex flex-row flex-wrap md:flex-nowrap w-full items-stretch justify-start gap-2 h-full">
+
+                    {/* COLOANA 1: Filtre */}
+                    <div className="flex-[1] md:flex-none flex flex-col md:flex-row gap-2 items-stretch md:items-center">
+                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
+                          <span className="material-icons text-[14px]">{selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'groups' : 'person'}</span>
+                          {selectedTerritory.category}
+                       </div>
+                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
+                          <span className="material-icons text-[14px]">{selectedTerritory.type === 'Campanie' ? 'campaign' : 'folder'}</span>
+                          {selectedTerritory.type}
+                       </div>
+                    </div>
+
+                    <div className="hidden md:block w-px h-6 bg-green-200 dark:bg-green-800 shrink-0 self-center mx-2"></div>
+
+                    {/* COLOANA 2: Date */}
+                    <div className="flex-[1] md:flex-none flex flex-col md:flex-row gap-2 items-stretch md:items-center">
+                       <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold px-3 py-2 rounded-xl shadow-sm bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200 h-full">
+                          <span className="material-icons text-[14px] text-emerald-600 dark:text-emerald-400 shrink-0">play_circle</span>
+                          <span>{formatDate(selectedTerritory.startDate)}</span>
+                       </div>
+                       <div className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-bold px-3 py-2 rounded-xl shadow-sm bg-rose-100 text-rose-900 dark:bg-rose-900/40 dark:text-rose-200 h-full">
+                          <span className="material-icons text-[14px] text-rose-600 dark:text-rose-400 shrink-0">stop_circle</span>
+                          <span>{formatDate(selectedTerritory.endDate)}</span>
+                       </div>
+                    </div>
+
+                    {isSelectedOverdue && <div className="hidden md:block w-px h-6 bg-red-200 dark:bg-red-800 shrink-0 self-center mx-2"></div>}
+
+                    {/* COLOANA 3: Notificare (Invizibila daca nu e intarziat) */}
+                    <div className={`flex-[1] md:flex-none flex flex-col md:flex-row items-stretch md:items-center ${isSelectedOverdue ? '' : 'invisible md:hidden'}`}>
+                       <div className="flex flex-col md:flex-row items-center justify-center text-center text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm bg-red-500 text-white h-full leading-tight md:gap-1.5">
+                          <span className="material-icons text-[16px] hidden md:block">warning</span>
+                          <span className="whitespace-nowrap md:whitespace-normal">Returnare</span>
+                          <span className="whitespace-nowrap md:whitespace-normal">Întârziată</span>
+                       </div>
+                    </div>
+
+                  </div>
+
+                  {/* Bara Progres Campanie */}
+                  {selectedTerritory.type === 'Campanie' && (
+                    <div className="mt-2 w-full shrink-0">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'text-orange-800 dark:text-orange-400' : 'text-green-800 dark:text-green-400'}`}>Progres Campanie</span>
+                        <span className={`text-[10px] font-black ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'text-orange-900 dark:text-orange-300' : 'text-green-900 dark:text-green-300'}`}>{calculateProgress(selectedTerritory)}%</span>
+                      </div>
+                      <div className={`h-2.5 w-full rounded-full overflow-hidden border ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-200/50 border-orange-300 dark:bg-orange-900/30 dark:border-orange-800' : 'bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:border-green-800'}`}>
+                        <div className={`h-full progress-bar shadow-sm rounded-full ${selectedTerritory.category.toLowerCase() === 'grupa 5' ? 'bg-orange-500' : 'bg-green-500'}`} style={{ width: `${calculateProgress(selectedTerritory)}%` }}></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2 ml-2 mb-2">
+                    <span className="material-icons text-slate-400 text-sm">description</span>
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notițe</span>
+                  </div>
+                  <textarea 
+                    className="w-full text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-2xl p-4 shadow-sm focus:ring-2 focus:ring-blue-400 outline-none transition-shadow min-h-[70px]" 
+                    defaultValue={selectedTerritory.notes}
+                    onBlur={(e) => updateTerritory(selectedTerritory.id, selectedTerritory.category, { notes: e.target.value })}
+                    placeholder="Notițe generale pentru teritoriu..."
+                  ></textarea>
+                </div>
+
+                <div className="space-y-8 pb-4" ref={blocksContainerRef}>
+                  {(selectedTerritory.blocks || []).map((block, bIdx) => (
+                    <BlockComponent 
+                      key={block.id} block={block} territory={selectedTerritory} getLabelStyle={getLabelStyle}
+                      openEditModal={openEditModal} openRenameModal={openRenameModal} handleReorderLocations={handleReorderLocations} handleReorderSections={handleReorderSections}
+                      updateTerritory={updateTerritory} collapsedBlocks={collapsedBlocks} toggleBlock={toggleBlock}
+                      collapsedSections={collapsedSections} toggleSection={toggleSection} setModals={setModals} modals={modals} canEditStructure={canEditStructure} showConfirm={showConfirm} isAdmin={isAdmin}
+                    />
+                  ))}
+                </div>
+                
+                {canEditStructure && (
+                  <button onClick={() => setModals({...modals, blockAdd: true})} className="no-drag w-full py-8 bg-blue-100/50 dark:bg-blue-900/20 border-4 border-dashed border-blue-200 dark:border-blue-900 rounded-[2rem] text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all flex flex-col items-center gap-2 shadow-sm mb-20">
+                    <span className="material-icons text-4xl">domain_add</span>
+                    <span className="font-black text-xs uppercase tracking-widest">Adaugă Bloc / Stradă</span>
+                  </button>
+                )}
+              </div>
+            </main>
+          )}
+
+          {(!selectedTerritoryId && (activeTab.toLowerCase() === 'personal' || isAdmin)) && (
+            <button onClick={() => setModals({...modals, territoryAdd: true})} className="fixed bottom-8 right-8 w-16 h-16 bg-blue-600 text-white rounded-[1.5rem] shadow-2xl flex items-center justify-center hover:scale-105 transition-transform z-40">
+               <span className="material-icons text-4xl">add</span>
+            </button>
+          )}
+
+          {/* MENIU UTILIZATOR */}
+          {modals.auth && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center border-4 border-slate-100 dark:border-slate-700 relative">
+                <button onClick={() => setModals({...modals, auth: false})} className="absolute top-4 right-4 material-icons text-slate-400 hover:text-slate-600 transition-colors">close</button>
+                
+                <div className="space-y-6 pt-4">
+                  <div className="flex flex-col items-center gap-3 bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center text-white border-4 border-white dark:border-slate-800 shadow-md">
+                      <span className="text-4xl font-black uppercase">{currentUserName.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <div className="font-black text-slate-800 dark:text-slate-100 text-lg">{currentUserName}</div>
+                      {isAdmin && <div className="text-[10px] font-bold text-white bg-blue-500 px-2 py-1 rounded-lg mt-1 uppercase tracking-widest">Administrator</div>}
+                    </div>
+                  </div>
+                  
+                  {isAdmin && (
+                    <button onClick={() => setModals({...modals, auth: false, profileEdit: true})} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
+                      <span className="material-icons">edit</span> Editează Profilul Meu
+                    </button>
+                  )}
+
+                  <button onClick={async () => {
+                    try {
+                      await auth.signOut();
+                    } catch(e) {}
+                    localStorage.removeItem('custom_user');
+                    setUser(null);
+                    setUserDocId(null);
+                    setModals(prev => ({...prev, auth: false}));
+                  }} className="w-full bg-red-100 dark:bg-red-900/30 hover:bg-red-200 text-red-600 dark:text-red-400 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
+                    <span className="material-icons">logout</span> Deconectare
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* MENIU EDITARE PROFIL ADMIN */}
+          {modals.profileEdit && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
+                <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <span className="material-icons text-blue-500">manage_accounts</span> Editare Profil
+                </h3>
+                <form onSubmit={async (e) => {
+                   e.preventDefault();
+                   const fd = new FormData(e.target);
+                   const newName = fd.get('name').trim();
+                   const newPass = fd.get('password').trim();
+                   
+                   try {
+                       const oldName = currentUserName;
+                       if(newName && newName !== oldName) {
+                           await auth.currentUser.updateProfile({ displayName: newName });
+                           setUser(prev => ({...prev, name: newName})); // Do not clear email!
+                           await updateUserNameInHistory(userDocId, oldName, newName);
+                       }
+                       if(newPass && newPass.length >= 6) {
+                           await auth.currentUser.updatePassword(newPass);
+                       }
+                       showAlert("Profilul a fost actualizat cu succes!");
+                       setModals({...modals, profileEdit: false});
+                   } catch(err) {
+                       showAlert("Eroare la actualizare: " + err.message);
+                   }
+                }} className="space-y-4">
+                  <div className="text-left">
+                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume Nou</label>
+                     <input name="name" defaultValue={currentUserName} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
+                  </div>
+                  <div className="text-left">
+                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă Nouă (Opțional)</label>
+                     <input name="password" type="password" placeholder="Minim 6 caractere" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={() => setModals({...modals, profileEdit: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition">Anulează</button>
+                    <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition">Salvează</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* PANOUL DE ADMINISTRARE UTILIZATORI */}
+          {modals.adminPanel && isAdmin && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl border-4 border-blue-500 max-h-[90vh] flex flex-col">
+                <div className="flex justify-between items-center mb-6 shrink-0">
+                  <h3 className="font-black text-lg uppercase tracking-widest text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <span className="material-icons text-blue-500">admin_panel_settings</span> Utilizatori
+                  </h3>
+                  <button onClick={() => setModals({...modals, adminPanel: false})} className="material-icons text-slate-400 hover:text-red-500 transition-colors">close</button>
+                </div>
+
+                <div className="overflow-y-auto flex-1 pr-2 space-y-6">
+                  <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                    <h4 className="text-xs font-black uppercase text-slate-500 mb-3">Adaugă Cont Nou</h4>
+                    <form onSubmit={async (e) => {
+                      e.preventDefault();
+                      const fd = new FormData(e.target);
+                      const nume = fd.get('nume').trim();
+                      const parola = fd.get('parola').trim();
+                      
+                      if(nume.length < 3) return showAlert('Numele e prea scurt!');
+                      if(parola.length < 4) return showAlert('Parola trebuie să aibă minim 4 caractere!');
+
+                      try {
+                        const check = await db.collection('app_users').where('name', '==', nume).get();
+                        if(!check.empty) return showAlert('Acest nume există deja!');
+
+                        const userId = db.collection('app_users').doc().id;
+                        await db.collection('app_users').doc(userId).set({ id: userId, name: nume, password: parola });
+                        showAlert('Utilizator adăugat cu succes!');
+                        e.target.reset();
+                      } catch(err) { showAlert('Eroare: ' + err.message); }
+                    }} className="space-y-3">
+                      <input required type="text" name="nume" placeholder="Nume" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm" />
+                      <input required type="text" name="parola" placeholder="Parolă" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm" />
+                      <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-xl font-black uppercase text-xs shadow-sm hover:bg-blue-700 transition">Creează Utilizator</button>
+                    </form>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-black uppercase text-slate-500 mb-3">Utilizatori Existenți</h4>
+                    <div className="space-y-2">
+                      {adminUsersList.length === 0 ? (
+                        <p className="text-xs font-bold text-slate-400 text-center py-4">Niciun utilizator creat încă.</p>
+                      ) : (
+                        adminUsersList.map(u => (
+                          <div key={u.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm">
+                            <div>
+                              <div className="font-black text-sm text-slate-800 dark:text-slate-100">{u.name}</div>
+                              <div className="text-[10px] text-slate-400 font-bold">Parolă: {u.password}</div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors">edit</button>
+                              <button onClick={() => {
+                                  showConfirm(`Ești sigur că vrei să ștergi utilizatorul "${u.name}"? Acesta va fi deconectat instantaneu.`, () => {
+                                      db.collection('app_users').doc(u.id).delete();
+                                  });
+                              }} className="material-icons text-slate-400 hover:text-red-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors">delete</button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* EDITARE USER CUSTOM */}
+          {modals.adminEditUser && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[210]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
+                <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <span className="material-icons text-blue-500">manage_accounts</span> Editare Utilizator
+                </h3>
+                <form onSubmit={async (e) => {
+                   e.preventDefault();
+                   const fd = new FormData(e.target);
+                   const newName = fd.get('name').trim();
+                   const newPass = fd.get('password').trim();
+                   
+                   try {
+                       const oldName = modals.adminEditUser.name;
+                       await db.collection('app_users').doc(modals.adminEditUser.id).update({ name: newName, password: newPass });
+                       await updateUserNameInHistory(modals.adminEditUser.id, oldName, newName);
+                       setModals({...modals, adminEditUser: null, adminPanel: true});
+                   } catch(err) {
+                       showAlert("Eroare la actualizare: " + err.message);
+                   }
+                }} className="space-y-4">
+                  <div className="text-left">
+                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume</label>
+                     <input required name="name" defaultValue={modals.adminEditUser.name} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
+                  </div>
+                  <div className="text-left">
+                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă</label>
+                     <input required name="password" defaultValue={modals.adminEditUser.password} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={() => setModals({...modals, adminEditUser: null, adminPanel: true})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition">Anulează</button>
+                    <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition">Salvează</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ADAUGA/EDITEAZA TERITORIU */}
+          {(modals.territoryAdd || modals.territoryEdit) && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700 relative">
+                <h3 className="font-black text-xl mb-6 text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
+                  <span className="material-icons text-blue-500">{modals.territoryEdit ? 'edit' : 'add_location'}</span> 
+                  {modals.territoryEdit ? 'Editare Teritoriu' : 'Teritoriu Nou'}
+                </h3>
+                <form onSubmit={modals.territoryEdit ? handleEditTerritory : handleCreateTerritory} className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Denumire</label>
+                    <input required name="name" defaultValue={modals.territoryEdit ? selectedTerritory.name : ''} placeholder="Ex: Cartierul 1" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {isAdmin && (
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Locație</label>
+                        <select name="category" defaultValue={modals.territoryEdit ? selectedTerritory.category : activeTab} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl font-black text-xs uppercase border border-slate-200 dark:border-slate-700 outline-none text-slate-800 dark:text-slate-100">
+                          <option value="Personal">Personal</option>
+                          <option value="Grupa 5">Grupa 5</option>
+                        </select>
+                      </div>
+                    )}
+                    <div className={!isAdmin ? "col-span-2" : ""}>
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Tip</label>
+                      <select name="type" defaultValue={modals.territoryEdit ? selectedTerritory.type : 'Obisnuit'} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl font-black text-xs uppercase border border-slate-200 dark:border-slate-700 outline-none text-slate-800 dark:text-slate-100">
+                        <option value="Obisnuit">Obișnuit</option>
+                        <option value="Campanie">Campanie</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Începere</label>
+                      <input required name="startDate" type="date" defaultValue={modals.territoryEdit ? selectedTerritory.startDate : new Date().toISOString().split('T')[0]} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl font-black text-xs border border-slate-200 dark:border-slate-700 outline-none text-slate-800 dark:text-slate-100" />
+                    </div>
+                    {modals.territoryEdit && (
+                      <div>
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Finalizare</label>
+                        <input required name="endDate" type="date" defaultValue={selectedTerritory.endDate} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl font-black text-xs border border-slate-200 dark:border-slate-700 outline-none text-slate-800 dark:text-slate-100" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <button type="button" onClick={() => setModals({...modals, territoryAdd: false, territoryEdit: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs rounded-2xl transition-colors">Anulează</button>
+                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-sm hover:bg-blue-700 transition">SALVEAZĂ</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ADAUGA BLOC/STRADA */}
+          {modals.blockAdd && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+                <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100">Bloc / Stradă Nouă</h3>
+                <form onSubmit={handleAddBlock} className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dacă este Bloc:</label>
+                    <input name="blocName" placeholder="Nume Bloc (ex: Bloc 4)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div><span className="text-[10px] font-black uppercase text-slate-300">SAU</span><div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dacă este Stradă:</label>
+                    <input name="stradaName" placeholder="Nume Stradă (ex: Str. Lalelelor)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <button type="button" onClick={() => setModals({...modals, blockAdd: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs">Anulează</button>
+                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black shadow-sm">SALVEAZĂ</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ADAUGA SECTIUNE/LOCATIE/CASA */}
+          {(modals.sectionAdd || modals.locationAppend || modals.stradaAddHouse) && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+                <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100">
+                  {modals.stradaAddHouse ? 'Adaugă Case' : (modals.isStradaGroup ? 'Adaugă Grupă de Case' : (modals.locationAppend ? 'Adaugă Apartamente' : 'Adăugare Secțiune'))}
+                </h3>
+                <form onSubmit={modals.stradaAddHouse ? handleAddStradaHouses : (modals.locationAppend ? handleAppendLocations : handleAddSection)} className="space-y-4">
+                  {(!modals.locationAppend && !modals.stradaAddHouse) && (
+                    <input required name="name" placeholder={modals.isStradaGroup ? "Nume Grupă (ex: Numere Pare)" : "Nume (ex: Scara A)"} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
+                  )}
+                  
+                  <textarea required name="nums" placeholder="Nr. (ex: 1-15 sau 1, 5, 20)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 min-h-[100px]"></textarea>
+                  
+                  <div className="flex gap-4 items-center justify-center mb-2">
+                     <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="filterType" value="all" defaultChecked className="text-blue-500 focus:ring-blue-500" />
+                        <span className="text-[10px] font-black uppercase text-slate-500">Toate</span>
+                     </label>
+                     <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="filterType" value="even" className="text-blue-500 focus:ring-blue-500" />
+                        <span className="text-[10px] font-black uppercase text-slate-500">Doar Pare</span>
+                     </label>
+                     <label className="flex items-center gap-1.5 cursor-pointer">
+                        <input type="radio" name="filterType" value="odd" className="text-blue-500 focus:ring-blue-500" />
+                        <span className="text-[10px] font-black uppercase text-slate-500">Doar Impare</span>
+                     </label>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={() => setModals({...modals, sectionAdd: null, locationAppend: null, stradaAddHouse: null, isStradaGroup: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs">Anulează</button>
+                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black shadow-sm">SALVEAZĂ</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* REDENUMESTE */}
+          {modals.renameItem && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
+                <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                  <span className="material-icons text-blue-500">edit</span> Redenumește
+                </h3>
+                <form onSubmit={handleRename} className="space-y-4">
+                  <input required name="newName" defaultValue={modals.renameItem.currentName} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={() => setModals({...modals, renameItem: null})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs">Anulează</button>
+                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black shadow-sm">SALVEAZĂ</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* EDITARE CULOARE/STATUS */}
+          {modals.locationEdit && (
+            <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-[110]">
+              <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden border-4 border-slate-100 dark:border-slate-700 flex flex-col max-h-[90vh]">
+                
+                <div className="bg-slate-50 dark:bg-slate-900 p-5 flex justify-between items-center border-b border-slate-200 dark:border-slate-700 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-slate-400 text-sm uppercase">Număr:</span>
+                    <input 
+                      className="font-black text-slate-800 dark:text-slate-100 text-lg uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 w-20 outline-none focus:border-blue-500 shadow-inner"
+                      value={editLocNumber}
+                      onChange={(e) => setEditLocNumber(e.target.value)}
+                      onBlur={() => {
+                        const val = editLocNumber.trim();
+                        if(val) {
+                          const { blockId, sectionId, loc } = modals.locationEdit;
+                          const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, number: val } : x) } : s) } : b);
+                          updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+                          setModals(m => ({ ...m, locationEdit: { ...m.locationEdit, loc: { ...m.locationEdit.loc, number: val } } }));
+                        }
+                      }}
+                      disabled={!canEditStructure}
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                   {canEditStructure && (
+                     <button onClick={() => {
+                        showConfirm('Ștergi definitiv acest număr?', () => {
+                          const { blockId, sectionId, loc } = modals.locationEdit;
+                          const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.filter(l => l.id !== loc.id) } : s) } : b);
+                          updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+                          setModals({...modals, locationEdit: null});
+                        });
+                      }} className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
+                   )}
+                    <button onClick={() => setModals({...modals, locationEdit: null})} className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600">close</button>
+                  </div>
+                </div>
+
+                <div className="p-5 flex-1 overflow-y-auto space-y-6">
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    {settings.labels.map(l => (
+                      <button key={l.id} 
+                        onClick={() => {
+                          const { blockId, sectionId, loc } = modals.locationEdit;
+                          const newHistory = recordHistory(loc, l.label);
+                          const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, status: l.id, history: newHistory } : x) } : s) } : b);
+                          updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+                          setModals({...modals, locationEdit: null});
+                        }}
+                        style={{ backgroundColor: l.color, color: l.textColor }}
+                        className="p-2 rounded-xl text-[9px] font-black uppercase border border-black/5 flex items-center justify-center text-center leading-tight min-h-[44px] shadow-sm active:scale-90 transition-transform"
+                      >
+                        {l.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 ml-2 mb-2">
+                      <span className="material-icons text-slate-400 text-sm">edit_note</span>
+                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notițe</span>
+                    </div>
+                    <textarea 
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-100 min-h-[70px]" 
+                      placeholder="Scrie o notiță (Ex: Revin mâine)..." 
+                      defaultValue={modals.locationEdit.loc.notes}
+                      onBlur={(e) => {
+                         const val = e.target.value.trim();
+                         const { blockId, sectionId, loc } = modals.locationEdit;
+                         if (val !== loc.notes) {
+                             const newHistory = recordHistory(loc, 'A modificat Notița');
+                             const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, notes: val, history: newHistory } : x) } : s) } : b);
+                             updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+                         }
+                      }}
+                    ></textarea>
+                  </div>
+                  
+                  {modals.locationEdit.loc.history && modals.locationEdit.loc.history.length > 0 && (
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                      <div className="bg-slate-200/50 dark:bg-slate-900/50 p-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2">
+                         <span className="material-icons text-slate-400 text-sm">history</span>
+                         <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Istoric Editări</span>
+                      </div>
+                      <div className="history-scroll p-3 space-y-2">
+                        {modals.locationEdit.loc.history.map((h, i) => (
+                          <div key={i} className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
+                            <div className="flex justify-between items-start w-full gap-2 mb-1">
+                                <span className="text-xs font-black text-slate-700 dark:text-slate-200 leading-tight break-words flex-1">{h.name || 'Utilizator'}</span>
+                                <div className="flex flex-col items-end shrink-0">
+                                  <span className="text-[9px] font-bold text-slate-400">{h.date}</span>
+                                  <span className="text-[9px] font-bold text-slate-400">{h.time}</span>
+                                </div>
+                            </div>
+                            <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest">{h.actiune || 'A editat'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {canEditStructure && (
+                     <p className="text-[10px] font-bold text-center text-slate-400 bg-slate-100 dark:bg-slate-900 p-2 rounded-xl flex items-center justify-center gap-1 shrink-0">
+                       <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pe pătrățel pentru a muta
+                     </p>
+                  )}
+
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* SETARI CULORI ETICHETE */}
+          {modals.settings && (
+            <div className="fixed inset-0 bg-white dark:bg-slate-900 z-[200] flex flex-col p-6 overflow-y-auto transition-colors">
+              <div className="flex items-center justify-between mb-8 shrink-0">
+                <h2 className="font-black text-2xl text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
+                  <span className="material-icons text-blue-500 text-3xl">palette</span> Culori și Etichete
+                </h2>
+                <button onClick={() => setModals({...modals, settings: false})} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
+              </div>
+              <SettingsLabelList settings={settings} updateSettingsLabels={(newLabels) => db.collection('users').doc(userDocId).collection('config').doc('settings').set({ labels: newLabels })} />
+            </div>
+          )}
+
+          {/* TEMA APP */}
+          {modals.theme && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-black text-lg uppercase tracking-widest text-slate-800 dark:text-slate-100">Aspect Aplicație</h3>
+                  <button onClick={() => setModals({...modals, theme: false})} className="material-icons text-slate-400 transition-colors">close</button>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { id: 'light', label: 'Tema Alba', icon: 'wb_sunny' },
+                    { id: 'dark', label: 'Tema Neagra', icon: 'nightlight' },
+                    { id: 'system', label: 'Sistem', icon: 'settings_brightness' }
+                  ].map(t => (
+                    <button 
+                      key={t.id} 
+                      onClick={() => { setTheme(t.id); localStorage.setItem('app-theme', t.id); setModals({...modals, theme: false}); }}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl font-black uppercase text-xs transition-all ${theme === t.id ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'}`}
+                    >
+                      <span className="material-icons">{t.icon}</span>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
