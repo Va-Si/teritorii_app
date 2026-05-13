@@ -70,7 +70,7 @@
   <div id="root"></div>
 
   <script>
-    // Înregistrare Service Worker pentru Offline Support
+    // Inregistrare Service Worker pentru Offline Support
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW refuzat:', err));
@@ -123,7 +123,7 @@
       return dateStr;
     };
 
-    // COMPONENTĂ CUSTOM: Textarea Redimensionabil prin tragere din partea de jos (Mobile & PC)
+    // COMPONENTĂ CUSTOM: Textarea Redimensionabil prin tragere
     const ResizableTextarea = ({ defaultValue, onBlur, placeholder, disabled }) => {
       const [height, setHeight] = useState(70);
       const isDragging = useRef(false);
@@ -176,10 +176,9 @@
             <div 
               onMouseDown={handleStart}
               onTouchStart={handleStart}
-              className="w-full h-8 flex items-center justify-center cursor-ns-resize bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 touch-none border-t border-slate-100 dark:border-slate-700/50"
+              className="w-full h-10 flex items-center justify-center cursor-ns-resize bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 touch-none border-t border-slate-200 dark:border-slate-600"
             >
-              {/* Linia (Handelul) evident pentru deget/mouse */}
-              <div className="w-12 h-[5px] bg-black dark:bg-white rounded-full opacity-30"></div>
+              <div className="w-16 h-1.5 bg-slate-600 dark:bg-slate-300 rounded-full"></div>
             </div>
           )}
         </div>
@@ -220,18 +219,17 @@
         <div className="space-y-4 pb-12">
           <div ref={listRef} className="space-y-4">
             {settings.labels.map(l => (
-              <div key={l.id} className="flex flex-col sm:flex-row gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm items-start sm:items-center">
-                {/* 6 puncte mutate complet in stanga + input pe acelasi rand */}
-                <div className="flex items-center gap-3 flex-1 w-full">
+              <div key={l.id} className="flex flex-col sm:flex-row gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm items-start sm:items-end">
+                <div className="flex items-center gap-3 w-full sm:max-w-[220px]">
                   <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0">
-                     <span className="material-icons">drag_indicator</span>
+                     <span className="material-icons text-2xl">drag_indicator</span>
                   </div>
-                  <div className="flex-1 w-full">
+                  <div className="w-full">
                      <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nume Etichetă</label>
-                     <input type="text" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-4 py-2 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500" />
+                     <textarea rows="2" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden leading-tight" style={{minHeight: '44px'}} />
                   </div>
                 </div>
-                <div className="flex gap-4 w-full sm:w-auto items-end sm:items-center justify-end sm:justify-start">
+                <div className="flex gap-4 w-full sm:w-auto items-end justify-end sm:justify-start">
                   <div className="flex flex-col items-start gap-1">
                     <label className="text-[10px] font-black uppercase text-slate-400">Fundal</label>
                     <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
@@ -241,7 +239,7 @@
                     <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
                   </div>
                   {settings.labels.length > 1 && (
-                    <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm shrink-0"><span className="material-icons text-[20px]">delete</span></button>
+                    <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm shrink-0 mb-[2px]"><span className="material-icons text-[20px]">delete</span></button>
                   )}
                 </div>
               </div>
@@ -496,12 +494,10 @@
       const isAdmin = user?.email === ADMIN_EMAIL;
       const currentUserName = user?.name || (isAdmin ? "Admin" : "Utilizator");
 
-      // Verificare Kick-Out sau Update pe profil
       useEffect(() => {
         if (!user || isAdmin) return;
         const unsubscribe = db.collection('app_users').doc(user.id).onSnapshot(doc => {
             if (!doc.exists) {
-                // Kick-out automat daca admin-ul a sters userul
                 localStorage.removeItem('custom_user');
                 setUser(null);
                 setUserDocId(null);
@@ -643,7 +639,6 @@
         return locs;
       };
 
-      // Fuctia de cautare retroactiva a numelui in tot istoricul
       const updateUserNameInHistory = async (targetUserId, oldName, newName) => {
           if(!oldName || !newName || oldName === newName) return;
           const updateDocs = async (collectionRef) => {
@@ -806,7 +801,6 @@
         setModals({...modals, locationAppend: null});
       };
 
-      // Modificam functia de history sa suporte noul format de date (LabelId)
       const recordHistory = (loc, actiuneStr, labelId = null) => {
         const h = loc.history || [];
         const newH = { name: currentUserName, date: new Date().toLocaleDateString('ro-RO'), time: new Date().toLocaleTimeString('ro-RO', {hour: '2-digit', minute:'2-digit'}), actiune: actiuneStr, labelId: labelId };
@@ -909,8 +903,7 @@
                         else await db.collection('users').doc(userDocId).collection('territories').doc(t.id).set(tFixed);
                     }
                 }
-                alert("Datele au fost importate cu succes!");
-            } catch (error) { alert("Eroare la import! Verifică fișierul."); }
+            } catch (error) { alert("Eroare la import!"); }
         };
         reader.readAsText(file);
         e.target.value = null; 
@@ -960,13 +953,13 @@
       }
 
       const isSelectedOverdue = selectedTerritory && !selectedTerritory.isDone && selectedTerritory.endDate < todayStr;
-      
       const isReadOnly = !isOnline && selectedTerritory?.category === 'grupa 5';
       const canEditStructure = (isAdmin || (selectedTerritory && selectedTerritory.category === 'personal')) && !isReadOnly;
 
       return (
         <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
           
+          {/* Antet Principal */}
           {!selectedTerritoryId ? (
             <header className="sticky top-0 z-20 p-4">
               <div className="bg-blue-600 text-white shadow-xl p-3 sm:p-4 md:p-5 rounded-[2rem] flex flex-col gap-4">
@@ -1011,7 +1004,6 @@
             </header>
           ) : (
             <header className="sticky top-0 z-30 p-4 pb-0 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md">
-              {/* INSULA 1: Titlu, Editare, Finalizare */}
               <div className={`${selectedTerritory.category === 'grupa 5' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3 relative`}>
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                   <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
@@ -1038,6 +1030,7 @@
             </div>
           )}
 
+          {/* Vizualizare Lista Teritorii */}
           {!selectedTerritoryId ? (
             <main onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="p-4 pt-2 space-y-4 flex-1 transition-colors">
               {filteredTerritories.length === 0 ? (
@@ -1195,7 +1188,7 @@
             </main>
           )}
 
-          {/* MENIU UTILIZATOR (PROFIL) */}
+          {}
           {modals.auth && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center border-4 border-slate-100 dark:border-slate-700 relative">
@@ -1230,7 +1223,6 @@
             </div>
           )}
 
-          {/* EDITARE PROFIL ADMIN */}
           {modals.profileEdit && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
@@ -1275,7 +1267,6 @@
             </div>
           )}
 
-          {/* PANOUL DE ADMINISTRARE */}
           {modals.adminPanel && isAdmin && (
             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-md p-6 shadow-2xl border-4 border-blue-500 max-h-[90vh] flex flex-col">
@@ -1343,7 +1334,6 @@
             </div>
           )}
 
-          {/* EDITARE USER CUSTOM */}
           {modals.adminEditUser && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[210]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
@@ -1382,7 +1372,6 @@
             </div>
           )}
 
-          {/* ADAUGA/EDITEAZA TERITORIU */}
           {(modals.territoryAdd || modals.territoryEdit) && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700 relative">
@@ -1434,7 +1423,6 @@
             </div>
           )}
 
-          {/* ADAUGA BLOC/STRADA */}
           {modals.blockAdd && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
@@ -1460,7 +1448,6 @@
             </div>
           )}
 
-          {/* ADAUGA SECTIUNE/LOCATIE/CASA */}
           {(modals.sectionAdd || modals.locationAppend || modals.stradaAddHouse) && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
@@ -1498,7 +1485,6 @@
             </div>
           )}
 
-          {/* REDENUMESTE */}
           {modals.renameItem && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
@@ -1516,7 +1502,6 @@
             </div>
           )}
 
-          {/* EDITARE CULOARE/STATUS */}
           {modals.locationEdit && (
             <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-[110]">
               <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden border-4 border-slate-100 dark:border-slate-700 flex flex-col max-h-[90vh]">
@@ -1556,7 +1541,6 @@
                 </div>
 
                 <div className="p-5 flex-1 overflow-y-auto space-y-6">
-                  
                   <div className="grid grid-cols-3 gap-2">
                     {settings.labels.map(l => (
                       <button key={l.id} 
@@ -1602,15 +1586,13 @@
                          <span className="material-icons text-slate-400 text-sm">history</span>
                          <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Istoric Editări</span>
                       </div>
-                      <div className="overflow-y-auto max-h-[110px] md:max-h-[165px] p-3 space-y-2 relative">
+                      <div className="overflow-y-auto max-h-[130px] md:max-h-[195px] p-3 space-y-2 relative">
                         {modals.locationEdit.loc.history.map((h, i) => {
                           let displayAction = h.actiune || 'A editat';
-                          // Daca este setat labelId, cautam numele proaspat din setari
                           if (h.labelId) {
                               const foundLabel = settings.labels.find(lbl => lbl.id === h.labelId);
                               if (foundLabel) displayAction = foundLabel.label;
                           } else {
-                              // Suport retroactiv (pentru editarile vechi care salvau direct textul)
                               const foundLabel = settings.labels.find(lbl => lbl.label === h.actiune);
                               if (foundLabel && !h.actiune.includes('Notiț')) displayAction = foundLabel.label;
                           }
@@ -1643,7 +1625,6 @@
             </div>
           )}
 
-          {/* SETARI CULORI ETICHETE */}
           {modals.settings && (
             <div className="fixed inset-0 bg-white dark:bg-slate-900 z-[200] flex flex-col p-6 overflow-y-auto transition-colors">
               <div className="flex items-center justify-between mb-8 shrink-0">
@@ -1656,7 +1637,6 @@
             </div>
           )}
 
-          {/* TEMA APP */}
           {modals.theme && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
