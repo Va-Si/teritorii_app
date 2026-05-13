@@ -58,7 +58,10 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-track { margin: 4px; }
-    body { -webkit-tap-highlight-color: transparent; }
+    body { 
+        -webkit-tap-highlight-color: transparent; 
+        scrollbar-gutter: stable; /* Previne sacadarea paginii la aparitia scroll-ului */
+    }
     
     .sortable-ghost { opacity: 0.4; }
     .sortable-drag { cursor: grabbing !important; }
@@ -70,12 +73,9 @@
   <div id="root"></div>
 
   <script>
-    // Inregistrare Service Worker pentru Offline Support (Cu Auto-Update adaugat)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').then(reg => {
-          reg.update(); // Forteaza verificarea pentru fisiere noi la fiecare incarcare a paginii
-        }).catch(err => console.log('SW refuzat:', err));
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW refuzat:', err));
       });
     }
   </script>
@@ -94,7 +94,6 @@
 
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
-      // ACTIVARE PERSISTENTA OFFLINE (FIREBASE)
       try {
         firebase.firestore().enablePersistence({ synchronizeTabs: true });
       } catch (err) {
@@ -105,6 +104,7 @@
     const auth = firebase.auth();
     
     const ADMIN_EMAIL = 'valeriu.siminitchi@gmail.com';
+    const DEFAULT_GROUPS = ['Grupa 1', 'Grupa 2', 'Grupa 3', 'Grupa 4', 'Grupa 5'];
 
     const DEFAULT_LABELS = [
       { id: 'nevizitat', label: 'Nevizitat', color: '#ffffff', textColor: '#1e293b', isCampaignTarget: false },
@@ -125,7 +125,6 @@
       return dateStr;
     };
 
-    // COMPONENTĂ CUSTOM: Textarea Redimensionabil prin tragere
     const ResizableTextarea = ({ defaultValue, onBlur, placeholder, disabled }) => {
       const [height, setHeight] = useState(70);
       const isDragging = useRef(false);
@@ -167,7 +166,7 @@
       return (
         <div className={`flex flex-col w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-blue-400 transition-shadow overflow-hidden ${disabled ? 'opacity-80' : ''}`}>
           <textarea 
-            className="w-full text-xs font-bold text-slate-600 dark:text-slate-300 bg-transparent p-4 outline-none border-none resize-none" 
+            className="w-full text-xs font-bold text-slate-600 dark:text-slate-300 bg-transparent p-4 pb-2 outline-none border-none resize-none" 
             style={{ height: `${height}px` }}
             defaultValue={defaultValue}
             onBlur={onBlur}
@@ -178,9 +177,10 @@
             <div 
               onMouseDown={handleStart}
               onTouchStart={handleStart}
-              className="w-full h-10 flex items-center justify-center cursor-ns-resize bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 touch-none border-t border-slate-200 dark:border-slate-600"
+              className="w-full h-6 flex items-center justify-center cursor-ns-resize group bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 border-t border-slate-100 dark:border-slate-700 transition-colors"
             >
-              <div className="w-16 h-1.5 bg-slate-600 dark:bg-slate-300 rounded-full"></div>
+              {/* Linia simpla si lunga pentru tragere */}
+              <div className="w-1/3 max-w-[120px] h-1 bg-slate-300 dark:bg-slate-500 rounded-full group-hover:bg-slate-400 dark:group-hover:bg-slate-400 transition-colors"></div>
             </div>
           )}
         </div>
@@ -218,36 +218,34 @@
       const deleteLabel = (id) => { if(settings.labels.length > 1) updateSettingsLabels(settings.labels.filter(l => l.id !== id)); };
 
       return (
-        <div className="space-y-4 pb-12">
-          <div ref={listRef} className="space-y-4">
+        <div className="space-y-4 pb-12 flex flex-col items-center">
+          <div ref={listRef} className="space-y-4 w-full">
             {settings.labels.map(l => (
-              <div key={l.id} className="flex flex-col sm:flex-row gap-4 bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm items-start sm:items-end">
-                <div className="flex items-center gap-3 w-full sm:max-w-[220px]">
-                  <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0">
-                     <span className="material-icons text-2xl">drag_indicator</span>
-                  </div>
-                  <div className="w-full">
-                     <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nume Etichetă</label>
-                     <textarea rows="2" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden leading-tight" style={{minHeight: '44px'}} />
-                  </div>
+              <div key={l.id} className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm max-w-[700px] w-full mx-auto">
+                <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0">
+                   <span className="material-icons text-2xl">drag_indicator</span>
                 </div>
-                <div className="flex gap-4 w-full sm:w-auto items-end justify-end sm:justify-start">
+                <div className="flex-1 w-full sm:w-auto">
+                   <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nume Etichetă</label>
+                   <textarea rows="2" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden leading-tight h-[44px]" />
+                </div>
+                <div className="flex gap-3 w-full sm:w-auto items-end justify-between sm:justify-end shrink-0">
                   <div className="flex flex-col items-start gap-1">
                     <label className="text-[10px] font-black uppercase text-slate-400">Fundal</label>
-                    <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
+                    <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-12 h-[44px] rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
                   </div>
                   <div className="flex flex-col items-start gap-1">
                     <label className="text-[10px] font-black uppercase text-slate-400">Text</label>
-                    <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-10 h-10 rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
+                    <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-12 h-[44px] rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
                   </div>
                   {settings.labels.length > 1 && (
-                    <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm shrink-0 mb-[2px]"><span className="material-icons text-[20px]">delete</span></button>
+                    <button onClick={() => deleteLabel(l.id)} className="w-12 h-[44px] bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm shrink-0"><span className="material-icons text-[20px]">delete</span></button>
                   )}
                 </div>
               </div>
             ))}
           </div>
-          <button onClick={addLabel} className="w-full p-4 border-2 border-dashed border-blue-300 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 shadow-sm">
+          <button onClick={addLabel} className="w-full max-w-[700px] mx-auto p-4 border-2 border-dashed border-blue-300 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 shadow-sm">
              <span className="material-icons">add</span> Adaugă Etichetă
           </button>
         </div>
@@ -292,7 +290,7 @@
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
           {sec.locations.map((loc, lIdx) => (
             <button key={loc.id} onClick={() => {
-                if (isReadOnly) return alert("Ești offline! Modificările în Grupa 5 necesită conexiune la internet.");
+                if (isReadOnly) return alert("Ești offline! Modificările la alte grupe necesită conexiune la internet.");
                 openEditModal(blockId, sec.id, loc, lIdx);
               }} 
               style={getLabelStyle(loc.status)} className={`square-btn rounded-lg shadow-sm ${isReadOnly ? 'opacity-80 cursor-not-allowed' : ''}`}>
@@ -339,16 +337,21 @@
       return (
         <div className="bg-slate-200/50 dark:bg-slate-800/50 p-3 md:p-5 rounded-[2rem] border-2 border-slate-200/60 dark:border-slate-700/60 relative block-item" data-block-id={block.id}>
           <div className="block-header flex justify-between items-center mb-4 px-2 cursor-pointer select-none" onClick={() => toggleBlock(block.id)}>
-            <div className="flex items-center gap-2">
-              <span className="material-icons text-slate-500 text-2xl transition-transform duration-200" style={{ transform: isBlockCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
-              <span className="material-icons text-slate-400 text-xl">{isBlockStrada ? 'signpost' : 'domain'}</span>
-              <div className="flex items-center gap-2 overflow-hidden">
-                <h2 className="font-black text-sm md:text-base text-slate-800 dark:text-slate-200 uppercase tracking-widest truncate">{isBlockStrada ? 'STRADĂ:' : 'BLOC:'} {block.name}</h2>
-              </div>
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="material-icons text-slate-500 text-2xl transition-transform duration-200 shrink-0" style={{ transform: isBlockCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
+              <span className="material-icons text-slate-400 text-xl shrink-0">{isBlockStrada ? 'signpost' : 'domain'}</span>
+              
+              {/* Titlul cu creionul mutat imediat langa el */}
+              <h2 className="font-black text-sm md:text-base text-slate-800 dark:text-slate-200 uppercase tracking-widest truncate flex items-center gap-2">
+                {isBlockStrada ? 'STRADĂ:' : 'BLOC:'} {block.name}
+                {canEditStructure && (
+                  <button onClick={(e) => { e.stopPropagation(); openRenameModal('block', block.id, null, block.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[18px] bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg transition-colors shadow-sm ml-1 shrink-0">edit</button>
+                )}
+              </h2>
+
             </div>
             {canEditStructure && (
-              <div className="flex items-center" onClick={e => e.stopPropagation()}>
-                <button onClick={(e) => { e.stopPropagation(); openRenameModal('block', block.id, null, block.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[18px] bg-slate-100 dark:bg-slate-800 p-2 rounded-xl transition-colors mr-2 shadow-sm">edit</button>
+              <div className="flex items-center shrink-0" onClick={e => e.stopPropagation()}>
                 <button onClick={() => { 
                    if(confirm(`Ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'}?`)) {
                        updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
@@ -372,12 +375,17 @@
                 return (
                 <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
                   <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-center border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
-                    <div className="flex items-center gap-2">
-                      <span className="material-icons text-slate-400 text-xl transition-transform duration-200" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
-                      <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider">{sec.name}</h3>
-                      {canEditStructure && <button onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600">edit</button>}
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="material-icons text-slate-400 text-xl transition-transform duration-200 shrink-0" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
+                      
+                      {/* Titlul cu creionul mutat imediat langa el */}
+                      <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 truncate">
+                        {sec.name}
+                        {canEditStructure && <button onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1.5 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600 shrink-0">edit</button>}
+                      </h3>
+
                     </div>
-                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
                       {!isReadOnly && (
                         <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
                           <span className="material-icons text-[20px] block">add</span>
@@ -423,8 +431,10 @@
 
     function App() {
       const [territories, setTerritories] = useState([]);
-      const [settings, setSettings] = useState({ labels: DEFAULT_LABELS });
+      const [settings, setSettings] = useState({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
       const [activeTab, setActiveTab] = useState('personal');
+      const [activeGroupView, setActiveGroupView] = useState('Grupa 5'); // Implicit
+      
       const [selectedTerritoryId, setSelectedTerritoryId] = useState(null);
       const [loading, setLoading] = useState(true);
       const [touchStart, setTouchStart] = useState(null);
@@ -476,6 +486,7 @@
           if (firebaseUser && firebaseUser.email === ADMIN_EMAIL) {
               setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'Admin', email: firebaseUser.email });
               setUserDocId(firebaseUser.uid);
+              setActiveGroupView('Grupa 5');
           } else {
               const customUserStr = localStorage.getItem('custom_user');
               if (customUserStr) {
@@ -483,6 +494,7 @@
                       const cu = JSON.parse(customUserStr);
                       setUser(cu);
                       setUserDocId(cu.id);
+                      setActiveGroupView(cu.group || 'Grupa 5');
                   } catch(e) {}
               } else {
                  setUser(null);
@@ -494,6 +506,7 @@
       }, []);
 
       const isAdmin = user?.email === ADMIN_EMAIL;
+      const isGroupAdmin = user?.isAdminGroup === true;
       const currentUserName = user?.name || (isAdmin ? "Admin" : "Utilizator");
 
       useEffect(() => {
@@ -506,15 +519,16 @@
                 setModals(prev => ({...prev, auth: false}));
             } else {
                 const data = doc.data();
-                if (data.name !== user.name || data.password !== user.password) {
-                    const updatedUser = { ...user, name: data.name, password: data.password };
+                if (data.name !== user.name || data.password !== user.password || data.group !== user.group || data.isAdminGroup !== user.isAdminGroup) {
+                    const updatedUser = { ...user, name: data.name, password: data.password, group: data.group, isAdminGroup: data.isAdminGroup };
                     setUser(updatedUser);
                     localStorage.setItem('custom_user', JSON.stringify(updatedUser));
+                    if(data.group && activeGroupView !== data.group) setActiveGroupView(data.group);
                 }
             }
         });
         return () => unsubscribe();
-      }, [user, isAdmin]);
+      }, [user, isAdmin, activeGroupView]);
 
       useEffect(() => {
         if (authLoading || !user) { setLoading(false); return; }
@@ -522,14 +536,18 @@
         const unsubs = [];
         
         unsubs.push(db.collection('users').doc(userDocId).collection('config').doc('settings').onSnapshot(doc => { 
-          if(doc.exists) setSettings(doc.data()); 
+          if(doc.exists) {
+             const data = doc.data();
+             setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
+          }
         }));
 
         unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot(snap => {
           const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           
           unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
-             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: 'grupa 5' }));
+             // Toate teritoriile "shared" folosesc parametrul group, daca nu exista sunt by default Grupa 5
+             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().group || 'Grupa 5' }));
              setTerritories([...persT, ...sharedT]);
              setLoading(false);
           }));
@@ -542,6 +560,51 @@
         }
         return () => unsubs.forEach(u => u());
       }, [userDocId, authLoading, isAdmin]);
+
+      const handleAddGroup = async (newGroupName) => {
+        const finalName = newGroupName.trim();
+        if(!finalName || (settings.groups || DEFAULT_GROUPS).includes(finalName)) return;
+        const updatedGroups = [...(settings.groups || DEFAULT_GROUPS), finalName];
+        await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+      };
+
+      const handleRenameGroup = async (oldName, newName) => {
+        const finalName = newName.trim();
+        if(!finalName || oldName === finalName || (settings.groups || DEFAULT_GROUPS).includes(finalName)) return;
+        
+        if(!confirm(`Schimbi denumirea din "${oldName}" în "${finalName}"? Aceasta va actualiza automat toți utilizatorii și teritoriile asociate.`)) return;
+
+        try {
+            const updatedGroups = (settings.groups || DEFAULT_GROUPS).map(g => g === oldName ? finalName : g);
+            await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+
+            // Actualizare Automata
+            const usersSnap = await db.collection('app_users').where('group', '==', oldName).get();
+            const batch1 = db.batch();
+            usersSnap.docs.forEach(d => batch1.update(d.ref, { group: finalName }));
+            if(!usersSnap.empty) await batch1.commit();
+
+            const terrSnap = await db.collection('shared_territories').where('group', '==', oldName).get();
+            const batch2 = db.batch();
+            terrSnap.docs.forEach(d => batch2.update(d.ref, { group: finalName }));
+            if(!terrSnap.empty) await batch2.commit();
+
+            if(activeGroupView === oldName) setActiveGroupView(finalName);
+            if(user?.group === oldName) {
+                const updatedUser = {...user, group: finalName};
+                setUser(updatedUser);
+                localStorage.setItem('custom_user', JSON.stringify(updatedUser));
+            }
+        } catch(err) {
+            alert("Eroare la redenumirea grupei: " + err.message);
+        }
+      };
+
+      const handleDeleteGroup = async (groupName) => {
+        if(!confirm(`Sigur ștergi definitv "${groupName}" din listă? (Notă: teritoriile și utilizatorii existenți nu vor fi șterși, doar ascunși)`)) return;
+        const updatedGroups = (settings.groups || DEFAULT_GROUPS).filter(g => g !== groupName);
+        await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+      };
 
       const selectedTerritory = useMemo(() => {
         const t = territories.find(t => t.id === selectedTerritoryId);
@@ -557,9 +620,9 @@
 
       const filteredTerritories = useMemo(() => {
         let list = territories.filter(t => t.category === activeTab).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
-        if (activeTab === 'grupa 5' && !isAdmin) list = list.filter(t => !t.isDone);
+        if (activeTab !== 'personal' && !isAdmin && !isGroupAdmin) list = list.filter(t => !t.isDone);
         return list;
-      }, [territories, activeTab, isAdmin]);
+      }, [territories, activeTab, isAdmin, isGroupAdmin]);
 
       const territoriesListRef = useRef(null);
       useEffect(() => {
@@ -573,7 +636,7 @@
               reordered.splice(evt.newIndex, 0, moved);
               reordered.forEach((t, index) => { 
                 if (t.order !== index) {
-                   if (t.category === 'grupa 5') db.collection('shared_territories').doc(t.id).update({ order: index });
+                   if (t.category !== 'personal') db.collection('shared_territories').doc(t.id).update({ order: index });
                    else db.collection('users').doc(userDocId).collection('territories').doc(t.id).update({ order: index });
                 }
               });
@@ -588,7 +651,7 @@
       const handleTouchEnd = () => {
         if (!touchStart || !touchEnd) return;
         const dist = touchStart - touchEnd;
-        if (dist > 50) setActiveTab('grupa 5');
+        if (dist > 50) setActiveTab(activeGroupView);
         if (dist < -50) setActiveTab('personal');
       };
       
@@ -610,9 +673,9 @@
         }));
         return total === 0 ? 0 : Math.round((targets / total) * 100);
       };
-      
+
       const updateTerritory = (id, category, data) => {
-        if (category === 'grupa 5') return db.collection('shared_territories').doc(id).update(data);
+        if (category !== 'personal') return db.collection('shared_territories').doc(id).update(data);
         else return db.collection('users').doc(userDocId).collection('territories').doc(id).update(data);
       };
 
@@ -678,7 +741,7 @@
       const handleCreateTerritory = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        const category = isAdmin ? fd.get('category') : 'personal'; 
+        const category = (isAdmin || isGroupAdmin) ? fd.get('category') : 'personal'; 
         const start = new Date(fd.get('startDate'));
         const end = new Date(start); end.setMonth(end.getMonth() + 4);
         
@@ -689,8 +752,9 @@
         };
 
         setModals({...modals, territoryAdd: false});
-        if (category === 'grupa 5') {
+        if (category !== 'personal') {
            newTerritory.createdBy = userDocId;
+           newTerritory.group = category; // Asociere ferma a grupei
            await db.collection('shared_territories').add(newTerritory);
         } else {
            await db.collection('users').doc(userDocId).collection('territories').add(newTerritory);
@@ -700,7 +764,7 @@
       const handleEditTerritory = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
-        const newCategory = isAdmin ? fd.get('category') : 'personal';
+        const newCategory = (isAdmin || isGroupAdmin) ? fd.get('category') : 'personal';
         
         const updateData = {
           name: fd.get('name'), type: fd.get('type'),
@@ -710,8 +774,10 @@
 
         if (newCategory !== selectedTerritory.category) {
             updateData.category = newCategory;
+            if(newCategory !== 'personal') updateData.group = newCategory;
+            
             const fullTerritoryData = { ...selectedTerritory, ...updateData };
-            if (newCategory === 'grupa 5') {
+            if (newCategory !== 'personal') {
                await db.collection('shared_territories').doc(selectedTerritory.id).set(fullTerritoryData);
                await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).delete();
             } else {
@@ -899,9 +965,9 @@
                 if (data.settings && isAdmin) await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
                 if (data.territories && Array.isArray(data.territories)) {
                     for (const t of data.territories) {
-                        const targetCategory = isAdmin ? t.category : 'personal'; 
+                        const targetCategory = (isAdmin || isGroupAdmin) ? t.category : 'personal'; 
                         const tFixed = { ...t, category: targetCategory };
-                        if (targetCategory === 'grupa 5') await db.collection('shared_territories').doc(t.id).set(tFixed);
+                        if (targetCategory !== 'personal') await db.collection('shared_territories').doc(t.id).set(tFixed);
                         else await db.collection('users').doc(userDocId).collection('territories').doc(t.id).set(tFixed);
                     }
                 }
@@ -934,6 +1000,7 @@
                           const customUser = snapshot.docs[0].data();
                           setUser(customUser);
                           setUserDocId(customUser.id);
+                          setActiveGroupView(customUser.group || 'Grupa 5');
                           localStorage.setItem('custom_user', JSON.stringify(customUser));
                       } else setAuthError('Nume sau parolă incorectă!');
                   }
@@ -955,8 +1022,8 @@
       }
 
       const isSelectedOverdue = selectedTerritory && !selectedTerritory.isDone && selectedTerritory.endDate < todayStr;
-      const isReadOnly = !isOnline && selectedTerritory?.category === 'grupa 5';
-      const canEditStructure = (isAdmin || (selectedTerritory && selectedTerritory.category === 'personal')) && !isReadOnly;
+      const isReadOnly = !isOnline && selectedTerritory?.category !== 'personal';
+      const canEditStructure = (isAdmin || (isGroupAdmin && activeTab !== 'personal') || activeTab === 'personal') && !isReadOnly;
 
       return (
         <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
@@ -996,7 +1063,7 @@
                   </div>
                 </div>
                 <div className="flex bg-blue-700/50 rounded-2xl p-1.5">
-                  {['personal', 'grupa 5'].map(tab => (
+                  {['personal', activeGroupView].map(tab => (
                     <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-3 md:py-4 font-black text-sm md:text-base uppercase tracking-widest rounded-xl transition-all ${activeTab === tab ? 'bg-white text-blue-700 shadow-md' : 'text-blue-100 hover:text-white'}`}>
                       {tab}
                     </button>
@@ -1006,7 +1073,7 @@
             </header>
           ) : (
             <header className="sticky top-0 z-30 p-4 pb-0 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md">
-              <div className={`${selectedTerritory.category === 'grupa 5' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3 relative`}>
+              <div className={`${selectedTerritory.category !== 'personal' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3 relative`}>
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                   <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
                   <h1 className="font-black text-white uppercase text-base md:text-xl truncate">{selectedTerritory.name}</h1>
@@ -1014,8 +1081,7 @@
                     <button onClick={() => setModals({...modals, territoryEdit: true})} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
                   )}
                 </div>
-
-                {((isAdmin || selectedTerritory.category === 'personal') && !isReadOnly) && (
+                {((isAdmin || isGroupAdmin || selectedTerritory.category === 'personal') && !isReadOnly) && (
                   <div className="shrink-0 flex items-center">
                     <button onClick={() => updateTerritory(selectedTerritory.id, selectedTerritory.category, { isDone: !selectedTerritory.isDone })} className={`material-icons p-3 rounded-full transition shadow-sm ${selectedTerritory.isDone ? 'bg-white text-green-600 shadow-xl' : 'bg-black/10 hover:bg-black/20 text-white/80'}`}>
                       {selectedTerritory.isDone ? 'check' : 'radio_button_unchecked'}
@@ -1027,13 +1093,13 @@
           )}
 
           {!isOnline && selectedTerritoryId && (
-            <div className={`mx-4 mt-2 mb-[-10px] py-1.5 px-3 rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 z-20 ${selectedTerritory?.category === 'grupa 5' ? 'bg-red-500' : 'bg-orange-500'}`}>
+            <div className={`mx-4 mt-2 mb-[-10px] py-1.5 px-3 rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 z-20 ${selectedTerritory?.category !== 'personal' ? 'bg-red-500' : 'bg-orange-500'}`}>
               <span className="material-icons text-[14px]">wifi_off</span>
-              {selectedTerritory?.category === 'grupa 5' ? 'Ești Offline - Vizualizare Blocată' : 'Ești Offline - Se salvează local'}
+              {selectedTerritory?.category !== 'personal' ? 'Ești Offline - Vizualizare Blocată' : 'Ești Offline - Se salvează local'}
             </div>
           )}
 
-          {/* Vizualizare Lista Teritorii */}
+          {}
           {!selectedTerritoryId ? (
             <main onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="p-4 pt-2 space-y-4 flex-1 transition-colors">
               {filteredTerritories.length === 0 ? (
@@ -1069,16 +1135,16 @@
                           </div>
                         )}
                         <div className="no-drag absolute right-3 top-4 flex items-center gap-2">
-                          {(isAdmin || t.category === 'personal') && (
+                          {(isAdmin || isGroupAdmin || t.category === 'personal') && (
                             <button onClick={(e) => { e.stopPropagation(); updateTerritory(t.id, t.category, { isDone: !t.isDone }); }} className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all active:scale-90 z-10 ${t.isDone ? 'bg-green-600 border-green-600 text-white shadow-lg' : isOverdue ? 'bg-white dark:bg-slate-700 border-red-400 text-red-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-400 hover:text-blue-500 hover:border-blue-300'}`}>
                               <span className="material-icons text-3xl">{t.isDone ? 'check' : 'radio_button_unchecked'}</span>
                             </button>
                           )}
-                          {(isAdmin || t.category === 'personal') && (
+                          {(isAdmin || isGroupAdmin || t.category === 'personal') && (
                             <button onClick={(e) => { 
                               e.stopPropagation(); 
                               if(confirm(`Ești sigur că vrei să ștergi definitiv teritoriul "${t.name}"?`)) {
-                                if(t.category === 'grupa 5') db.collection('shared_territories').doc(t.id).delete();
+                                if(t.category !== 'personal') db.collection('shared_territories').doc(t.id).delete();
                                 else db.collection('users').doc(userDocId).collection('territories').doc(t.id).delete();
                               }
                             }} className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl text-red-400 hover:text-red-600 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm active:scale-90 z-10">
@@ -1091,7 +1157,7 @@
                   })}
                 </div>
               )}
-              {!selectedTerritoryId && (isAdmin || activeTab === 'personal') && (
+              {!selectedTerritoryId && (isAdmin || isGroupAdmin || activeTab === 'personal') && (
                 <button onClick={() => setModals({...modals, territoryAdd: true})} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
                   <span className="material-icons text-3xl">add</span>
                 </button>
@@ -1101,16 +1167,15 @@
             <main className="flex-1 flex flex-col pt-4 transition-colors relative z-10">
               <div className="px-4 space-y-6">
                 
-                {/* INSULA 2: Filtre, Date, Notificare - Simetrie la Treimi */}
-                <div className={`p-4 rounded-[2rem] shadow-sm border-2 ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/30' : 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30'} flex flex-col gap-3`}>
+                {}
+                <div className={`p-4 rounded-[2rem] shadow-sm border-2 ${selectedTerritory.category !== 'personal' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/30' : 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30'} flex flex-col gap-3`}>
                   <div className="flex flex-row flex-wrap md:flex-nowrap w-full items-stretch justify-start gap-2 h-full">
-
                     <div className="flex-[1] flex flex-col md:flex-row gap-2 items-stretch md:items-center">
-                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
-                          <span className="material-icons text-[14px]">{selectedTerritory.category === 'grupa 5' ? 'groups' : 'person'}</span>
+                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category !== 'personal' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
+                          <span className="material-icons text-[14px]">{selectedTerritory.category !== 'personal' ? 'groups' : 'person'}</span>
                           {selectedTerritory.category}
                        </div>
-                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
+                       <div className={`inline-flex items-center gap-1.5 text-[10px] sm:text-xs font-black uppercase px-3 py-2 rounded-xl shadow-sm h-full ${selectedTerritory.category !== 'personal' ? 'bg-orange-200 text-orange-900 dark:bg-orange-900/40 dark:text-orange-200' : 'bg-green-200 text-green-900 dark:bg-green-900/40 dark:text-green-200'}`}>
                           <span className="material-icons text-[14px]">{selectedTerritory.type === 'Campanie' ? 'campaign' : 'folder'}</span>
                           {selectedTerritory.type}
                        </div>
@@ -1138,17 +1203,16 @@
                           <span className="whitespace-nowrap">Întârziată</span>
                        </div>
                     </div>
-
                   </div>
 
                   {selectedTerritory.type === 'Campanie' && (
                     <div className="mt-2 w-full shrink-0">
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${selectedTerritory.category === 'grupa 5' ? 'text-orange-800 dark:text-orange-400' : 'text-green-800 dark:text-green-400'}`}>Progres Campanie</span>
-                        <span className={`text-[10px] font-black ${selectedTerritory.category === 'grupa 5' ? 'text-orange-900 dark:text-orange-300' : 'text-green-900 dark:text-green-300'}`}>{calculateProgress(selectedTerritory)}%</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${selectedTerritory.category !== 'personal' ? 'text-orange-800 dark:text-orange-400' : 'text-green-800 dark:text-green-400'}`}>Progres Campanie</span>
+                        <span className={`text-[10px] font-black ${selectedTerritory.category !== 'personal' ? 'text-orange-900 dark:text-orange-300' : 'text-green-900 dark:text-green-300'}`}>{calculateProgress(selectedTerritory)}%</span>
                       </div>
-                      <div className={`h-2.5 w-full rounded-full overflow-hidden border ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-200/50 border-orange-300 dark:bg-orange-900/30 dark:border-orange-800' : 'bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:border-green-800'}`}>
-                        <div className={`h-full progress-bar shadow-sm rounded-full ${selectedTerritory.category === 'grupa 5' ? 'bg-orange-500' : 'bg-green-500'}`} style={{ width: `${calculateProgress(selectedTerritory)}%` }}></div>
+                      <div className={`h-2.5 w-full rounded-full overflow-hidden border ${selectedTerritory.category !== 'personal' ? 'bg-orange-200/50 border-orange-300 dark:bg-orange-900/30 dark:border-orange-800' : 'bg-green-200/50 border-green-300 dark:bg-green-900/30 dark:border-green-800'}`}>
+                        <div className={`h-full progress-bar shadow-sm rounded-full ${selectedTerritory.category !== 'personal' ? 'bg-orange-500' : 'bg-green-500'}`} style={{ width: `${calculateProgress(selectedTerritory)}%` }}></div>
                       </div>
                     </div>
                   )}
@@ -1157,7 +1221,7 @@
                 <div>
                   <div className="flex items-center gap-2 ml-2 mb-2">
                     <span className="material-icons text-slate-400 text-sm">description</span>
-                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notițe</span>
+                    <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notițe Generale</span>
                   </div>
                   <ResizableTextarea 
                     defaultValue={selectedTerritory.notes}
@@ -1201,13 +1265,28 @@
                     </div>
                     <div>
                       <div className="font-black text-slate-800 dark:text-slate-100 text-lg">{currentUserName}</div>
-                      {isAdmin && <div className="text-[10px] font-bold text-white bg-blue-500 px-2 py-1 rounded-lg mt-1 uppercase tracking-widest">Administrator</div>}
+                      {isAdmin && <div className="text-[10px] font-bold text-white bg-blue-500 px-2 py-1 rounded-lg mt-1 uppercase tracking-widest">Super Administrator</div>}
+                      {isGroupAdmin && !isAdmin && <div className="text-[10px] font-bold text-white bg-blue-500 px-2 py-1 rounded-lg mt-1 uppercase tracking-widest">Admin {user?.group}</div>}
                     </div>
+
+                    {/* SELECTOR ASCUNS PT ADMIN */}
+                    {isAdmin && (
+                       <div className="mt-4 w-full text-left border-t border-slate-200 dark:border-slate-700 pt-4">
+                          <label className="text-[10px] font-black uppercase text-slate-400 ml-2 block mb-2">Vizualizare Grupă</label>
+                          <select 
+                            value={activeGroupView}
+                            onChange={(e) => { setActiveGroupView(e.target.value); setActiveTab(e.target.value); setModals({...modals, auth: false}); }}
+                            className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl font-black text-sm uppercase outline-none focus:ring-2 focus:ring-blue-500 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 cursor-pointer shadow-sm"
+                          >
+                            {(settings.groups || DEFAULT_GROUPS).map(g => <option key={g} value={g}>{g}</option>)}
+                          </select>
+                       </div>
+                    )}
                   </div>
                   
                   {isAdmin && (
                     <button onClick={() => setModals({...modals, auth: false, profileEdit: true})} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
-                      <span className="material-icons">edit</span> Editează Profilul Meu
+                      <span className="material-icons">edit</span> Editează Nume/Parolă
                     </button>
                   )}
 
@@ -1285,6 +1364,8 @@
                       const fd = new FormData(e.target);
                       const nume = fd.get('nume').trim();
                       const parola = fd.get('parola').trim();
+                      const grupa = fd.get('group');
+                      const isAdminGroup = fd.get('isAdminGroup') === 'on';
                       
                       if(nume.length < 3) return alert('Numele e prea scurt!');
                       if(parola.length < 4) return alert('Parola trebuie să aibă minim 4 caractere!');
@@ -1294,12 +1375,21 @@
                         if(!check.empty) return alert('Acest nume există deja!');
 
                         const userId = db.collection('app_users').doc().id;
-                        await db.collection('app_users').doc(userId).set({ id: userId, name: nume, password: parola });
+                        await db.collection('app_users').doc(userId).set({ id: userId, name: nume, password: parola, group: grupa, isAdminGroup: isAdminGroup });
                         e.target.reset();
                       } catch(err) { alert('Eroare: ' + err.message); }
                     }} className="space-y-3">
-                      <input required type="text" name="nume" placeholder="Nume" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm" />
-                      <input required type="text" name="parola" placeholder="Parolă" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm" />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input required type="text" name="nume" placeholder="Nume" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm" />
+                        <input required type="text" name="parola" placeholder="Parolă" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm" />
+                      </div>
+                      <select name="group" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm cursor-pointer">
+                        {(settings.groups || DEFAULT_GROUPS).map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                      <label className="flex items-center gap-2 px-1 pb-1 cursor-pointer">
+                        <input type="checkbox" name="isAdminGroup" className="w-4 h-4 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500" />
+                        <span className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300">Este Administrator de Grupă</span>
+                      </label>
                       <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-xl font-black uppercase text-xs shadow-sm hover:bg-blue-700 transition">Creează</button>
                     </form>
                   </div>
@@ -1313,16 +1403,18 @@
                         adminUsersList.map(u => (
                           <div key={u.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm">
                             <div>
-                              <div className="font-black text-sm text-slate-800 dark:text-slate-100">{u.name}</div>
-                              <div className="text-[10px] text-slate-400 font-bold">Parolă: {u.password}</div>
+                              <div className="font-black text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1">
+                                {u.name} {u.isAdminGroup && <span className="material-icons text-blue-500 text-[14px]" title="Admin Grupă">verified</span>}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-bold uppercase">{u.group || 'Grupa 5'} • Parolă: {u.password}</div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors">edit</button>
+                              <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
                               <button onClick={() => {
                                   if(confirm(`Ești sigur că vrei să ștergi utilizatorul "${u.name}"? Acesta va fi deconectat instantaneu.`)) {
                                       db.collection('app_users').doc(u.id).delete();
                                   }
-                              }} className="material-icons text-slate-400 hover:text-red-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors">delete</button>
+                              }} className="material-icons text-slate-400 hover:text-red-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">delete</button>
                             </div>
                           </div>
                         ))
@@ -1345,10 +1437,12 @@
                    const fd = new FormData(e.target);
                    const newName = fd.get('name').trim();
                    const newPass = fd.get('password').trim();
+                   const newGroup = fd.get('group');
+                   const newIsAdminGroup = fd.get('isAdminGroup') === 'on';
                    
                    try {
                        const oldName = modals.adminEditUser.name;
-                       await db.collection('app_users').doc(modals.adminEditUser.id).update({ name: newName, password: newPass });
+                       await db.collection('app_users').doc(modals.adminEditUser.id).update({ name: newName, password: newPass, group: newGroup, isAdminGroup: newIsAdminGroup });
                        await updateUserNameInHistory(modals.adminEditUser.id, oldName, newName);
                        setModals({...modals, adminEditUser: null, adminPanel: true});
                    } catch(err) {
@@ -1363,6 +1457,16 @@
                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă</label>
                      <input required name="password" defaultValue={modals.adminEditUser.password} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
                   </div>
+                  <div className="text-left">
+                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Grupă</label>
+                     <select name="group" defaultValue={modals.adminEditUser.group || 'Grupa 5'} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1 cursor-pointer">
+                        {(settings.groups || DEFAULT_GROUPS).map(g => <option key={g} value={g}>{g}</option>)}
+                     </select>
+                  </div>
+                  <label className="flex items-center gap-2 px-2 cursor-pointer mt-2">
+                    <input type="checkbox" name="isAdminGroup" defaultChecked={modals.adminEditUser.isAdminGroup} className="w-5 h-5 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500" />
+                    <span className="text-xs font-black uppercase text-slate-600 dark:text-slate-300">Este Administrator de Grupă</span>
+                  </label>
                   <div className="flex gap-2 pt-2">
                     <button type="button" onClick={() => setModals({...modals, adminEditUser: null, adminPanel: true})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition">Anulează</button>
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition">Salvează</button>
@@ -1385,16 +1489,16 @@
                     <input required name="name" defaultValue={modals.territoryEdit ? selectedTerritory.name : ''} placeholder="Ex: Cartierul 1" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    {isAdmin && (
+                    {(isAdmin || isGroupAdmin) && (
                       <div>
                         <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Locație</label>
                         <select name="category" defaultValue={modals.territoryEdit ? selectedTerritory.category : activeTab} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl font-black text-xs uppercase border border-slate-200 dark:border-slate-700 outline-none text-slate-800 dark:text-slate-100">
                           <option value="personal">Personal</option>
-                          <option value="grupa 5">Grupa 5</option>
+                          <option value={activeGroupView}>{activeGroupView}</option>
                         </select>
                       </div>
                     )}
-                    <div className={!isAdmin ? "col-span-2" : ""}>
+                    <div className={!(isAdmin || isGroupAdmin) ? "col-span-2" : ""}>
                       <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Tip</label>
                       <select name="type" defaultValue={modals.territoryEdit ? selectedTerritory.type : 'Obisnuit'} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl font-black text-xs uppercase border border-slate-200 dark:border-slate-700 outline-none text-slate-800 dark:text-slate-100">
                         <option value="Obisnuit">Obișnuit</option>
@@ -1586,7 +1690,7 @@
                          <span className="material-icons text-slate-400 text-sm">history</span>
                          <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Istoric Editări</span>
                       </div>
-                      <div className="overflow-y-auto max-h-[160px] md:max-h-[230px] p-3 space-y-2 relative">
+                      <div className="overflow-y-auto max-h-[130px] md:max-h-[195px] p-3 space-y-2 relative">
                         {modals.locationEdit.loc.history.map((h, i) => {
                           let displayAction = h.actiune || 'A editat';
                           if (h.labelId) {
@@ -1629,11 +1733,36 @@
             <div className="fixed inset-0 bg-white dark:bg-slate-900 z-[200] flex flex-col p-6 overflow-y-auto transition-colors">
               <div className="flex items-center justify-between mb-8 shrink-0">
                 <h2 className="font-black text-2xl text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
-                  <span className="material-icons text-blue-500 text-3xl">palette</span> Culori și Etichete
+                  <span className="material-icons text-blue-500 text-3xl">palette</span> Setări
                 </h2>
                 <button onClick={() => setModals({...modals, settings: false})} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
               </div>
-              <SettingsLabelList settings={settings} updateSettingsLabels={(newLabels) => db.collection('users').doc(userDocId).collection('config').doc('settings').set({ labels: newLabels })} />
+              
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
+                 <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><span className="material-icons">groups</span> Gestionare Grupe</h3>
+                 <div className="space-y-3 mb-5">
+                     {(settings.groups || DEFAULT_GROUPS).map(g => (
+                         <div key={g} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 pl-5 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm">
+                             <span className="font-black text-sm uppercase text-slate-700 dark:text-slate-200">{g}</span>
+                             <div className="flex gap-2">
+                                 <button onClick={() => {
+                                     const newName = prompt("Redenumește grupa (va actualiza automat și utilizatorii):", g);
+                                     if(newName) handleRenameGroup(g, newName);
+                                 }} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-500 material-icons bg-slate-50 dark:bg-slate-900 rounded-xl transition-colors shadow-sm">edit</button>
+                                 <button onClick={() => handleDeleteGroup(g)} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 material-icons bg-slate-50 dark:bg-slate-900 rounded-xl transition-colors shadow-sm">delete</button>
+                             </div>
+                         </div>
+                     ))}
+                 </div>
+                 <button onClick={() => {
+                     const newName = prompt("Introdu numele noii grupe:");
+                     if(newName) handleAddGroup(newName);
+                 }} className="w-full p-4 border-2 border-dashed border-blue-300 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 shadow-sm transition-colors">
+                     <span className="material-icons">add</span> Adaugă Grupă
+                 </button>
+              </div>
+
+              <SettingsLabelList settings={settings} updateSettingsLabels={(newLabels) => db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, labels: newLabels })} />
             </div>
           )}
 
