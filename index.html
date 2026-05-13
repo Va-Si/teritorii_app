@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <!-- Favicon Colorat (Harta/Locatie) pt Browser -->
+  <!-- Favicon Colorat -->
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
 
@@ -23,6 +23,7 @@
   </script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   
+  <!-- Firebase & Libraries -->
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -60,7 +61,7 @@
     ::-webkit-scrollbar-track { margin: 4px; }
     body { 
         -webkit-tap-highlight-color: transparent; 
-        scrollbar-gutter: stable; /* Previne sacadarea paginii la aparitia scroll-ului */
+        scrollbar-gutter: stable;
     }
     
     .sortable-ghost { opacity: 0.4; }
@@ -166,7 +167,7 @@
       return (
         <div className={`flex flex-col w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-blue-400 transition-shadow overflow-hidden ${disabled ? 'opacity-80' : ''}`}>
           <textarea 
-            className="w-full text-xs font-bold text-slate-600 dark:text-slate-300 bg-transparent p-4 pb-2 outline-none border-none resize-none" 
+            className="w-full text-xs font-bold text-slate-600 dark:text-slate-300 bg-transparent p-4 pb-2 outline-none border-none resize-none overflow-y-auto" 
             style={{ height: `${height}px` }}
             defaultValue={defaultValue}
             onBlur={onBlur}
@@ -177,10 +178,9 @@
             <div 
               onMouseDown={handleStart}
               onTouchStart={handleStart}
-              className="w-full h-6 flex items-center justify-center cursor-ns-resize group bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 border-t border-slate-100 dark:border-slate-700 transition-colors"
+              className="w-full h-4 flex items-center justify-center cursor-ns-resize group bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 border-t border-slate-100 dark:border-slate-700 transition-colors"
             >
-              {/* Linia simpla si lunga pentru tragere */}
-              <div className="w-1/3 max-w-[120px] h-1 bg-slate-300 dark:bg-slate-500 rounded-full group-hover:bg-slate-400 dark:group-hover:bg-slate-400 transition-colors"></div>
+              <div className="w-1/3 max-w-[80px] h-1 bg-slate-300 dark:bg-slate-500 rounded-full group-hover:bg-slate-400 dark:group-hover:bg-slate-400 transition-colors"></div>
             </div>
           )}
         </div>
@@ -192,7 +192,7 @@
       useEffect(() => {
         if (!listRef.current) return;
         const sortable = Sortable.create(listRef.current, {
-          animation: 150, handle: '.drag-handle',
+          animation: 150, handle: '.drag-handle', forceFallback: true,
           onEnd: (evt) => {
              if (evt.oldIndex !== evt.newIndex) {
                  const newLabels = [...settings.labels];
@@ -221,26 +221,31 @@
         <div className="space-y-4 pb-12 flex flex-col items-center">
           <div ref={listRef} className="space-y-4 w-full">
             {settings.labels.map(l => (
-              <div key={l.id} className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm max-w-[700px] w-full mx-auto">
-                <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0">
+              <div key={l.id} className="flex flex-row items-center gap-3 sm:gap-4 bg-slate-50 dark:bg-slate-800 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-700 relative shadow-sm max-w-[700px] w-full mx-auto">
+                <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0 h-[44px]">
                    <span className="material-icons text-2xl">drag_indicator</span>
                 </div>
-                <div className="flex-1 w-full sm:w-auto">
-                   <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block">Nume Etichetă</label>
-                   <textarea rows="2" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden leading-tight h-[44px]" />
-                </div>
-                <div className="flex gap-3 w-full sm:w-auto items-end justify-between sm:justify-end shrink-0">
-                  <div className="flex flex-col items-start gap-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400">Fundal</label>
-                    <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-12 h-[44px] rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
-                  </div>
-                  <div className="flex flex-col items-start gap-1">
-                    <label className="text-[10px] font-black uppercase text-slate-400">Text</label>
-                    <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-12 h-[44px] rounded-xl cursor-pointer border-0 p-0 shadow-sm" />
-                  </div>
-                  {settings.labels.length > 1 && (
-                    <button onClick={() => deleteLabel(l.id)} className="w-12 h-[44px] bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm shrink-0"><span className="material-icons text-[20px]">delete</span></button>
-                  )}
+                <div className="flex-1 flex flex-row gap-2 sm:gap-3 w-full">
+                    <div className="flex-1 flex flex-col min-w-0">
+                       <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block truncate">Nume Etichetă</label>
+                       <textarea rows="1" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-3 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden leading-tight h-[44px] whitespace-nowrap block" />
+                    </div>
+                    <div className="flex flex-col items-center shrink-0">
+                      <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block text-center w-full truncate">Fundal</label>
+                      <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-10 sm:w-12 h-[44px] rounded-xl cursor-pointer border-0 p-0 shadow-sm block" />
+                    </div>
+                    <div className="flex flex-col items-center shrink-0">
+                      <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block text-center w-full truncate">Text</label>
+                      <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-10 sm:w-12 h-[44px] rounded-xl cursor-pointer border-0 p-0 shadow-sm block" />
+                    </div>
+                    <div className="flex flex-col items-center shrink-0">
+                      <label className="text-[10px] font-black uppercase text-transparent mb-1 block select-none text-center w-full">X</label>
+                      {settings.labels.length > 1 ? (
+                        <button onClick={() => deleteLabel(l.id)} className="w-10 sm:w-12 h-[44px] bg-red-100 text-red-500 rounded-xl flex items-center justify-center hover:bg-red-200 shadow-sm shrink-0 block"><span className="material-icons text-[20px]">delete</span></button>
+                      ) : (
+                        <div className="w-10 sm:w-12 h-[44px] shrink-0 block"></div>
+                      )}
+                    </div>
                 </div>
               </div>
             ))}
@@ -341,17 +346,15 @@
               <span className="material-icons text-slate-500 text-2xl transition-transform duration-200 shrink-0" style={{ transform: isBlockCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
               <span className="material-icons text-slate-400 text-xl shrink-0">{isBlockStrada ? 'signpost' : 'domain'}</span>
               
-              {/* Titlul cu creionul mutat imediat langa el */}
               <h2 className="font-black text-sm md:text-base text-slate-800 dark:text-slate-200 uppercase tracking-widest truncate flex items-center gap-2">
                 {isBlockStrada ? 'STRADĂ:' : 'BLOC:'} {block.name}
                 {canEditStructure && (
-                  <button onClick={(e) => { e.stopPropagation(); openRenameModal('block', block.id, null, block.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[18px] bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg transition-colors shadow-sm ml-1 shrink-0">edit</button>
+                  <button onClick={(e) => { e.stopPropagation(); openRenameModal('block', block.id, null, block.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[18px] bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg transition-colors shadow-sm shrink-0 no-drag">edit</button>
                 )}
               </h2>
-
             </div>
             {canEditStructure && (
-              <div className="flex items-center shrink-0" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center shrink-0 no-drag" onClick={e => e.stopPropagation()}>
                 <button onClick={() => { 
                    if(confirm(`Ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'}?`)) {
                        updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
@@ -378,14 +381,12 @@
                     <div className="flex items-center gap-2 overflow-hidden">
                       <span className="material-icons text-slate-400 text-xl transition-transform duration-200 shrink-0" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
                       
-                      {/* Titlul cu creionul mutat imediat langa el */}
                       <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 truncate">
                         {sec.name}
-                        {canEditStructure && <button onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1.5 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600 shrink-0">edit</button>}
+                        {canEditStructure && <button onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1.5 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600 shrink-0 no-drag">edit</button>}
                       </h3>
-
                     </div>
-                    <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
                       {!isReadOnly && (
                         <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
                           <span className="material-icons text-[20px] block">add</span>
@@ -433,7 +434,7 @@
       const [territories, setTerritories] = useState([]);
       const [settings, setSettings] = useState({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
       const [activeTab, setActiveTab] = useState('personal');
-      const [activeGroupView, setActiveGroupView] = useState('Grupa 5'); // Implicit
+      const [activeGroupView, setActiveGroupView] = useState('Grupa 5'); 
       
       const [selectedTerritoryId, setSelectedTerritoryId] = useState(null);
       const [loading, setLoading] = useState(true);
@@ -448,7 +449,8 @@
       const [authForm, setAuthForm] = useState({ name: '', password: '' });
       const [adminUsersList, setAdminUsersList] = useState([]);
 
-      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false });
+      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false });
+      const [exportConfig, setExportConfig] = useState({ category: 'personal', mode: 'full' });
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
       const [collapsedSections, setCollapsedSections] = useState({});
@@ -487,6 +489,7 @@
               setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'Admin', email: firebaseUser.email });
               setUserDocId(firebaseUser.uid);
               setActiveGroupView('Grupa 5');
+              setActiveTab('Grupa 5');
           } else {
               const customUserStr = localStorage.getItem('custom_user');
               if (customUserStr) {
@@ -495,6 +498,7 @@
                       setUser(cu);
                       setUserDocId(cu.id);
                       setActiveGroupView(cu.group || 'Grupa 5');
+                      setActiveTab(cu.group || 'Grupa 5');
                   } catch(e) {}
               } else {
                  setUser(null);
@@ -523,12 +527,15 @@
                     const updatedUser = { ...user, name: data.name, password: data.password, group: data.group, isAdminGroup: data.isAdminGroup };
                     setUser(updatedUser);
                     localStorage.setItem('custom_user', JSON.stringify(updatedUser));
-                    if(data.group && activeGroupView !== data.group) setActiveGroupView(data.group);
+                    if(data.group && user.group !== data.group) {
+                        setActiveGroupView(data.group);
+                        setActiveTab(data.group);
+                    }
                 }
             }
         });
         return () => unsubscribe();
-      }, [user, isAdmin, activeGroupView]);
+      }, [user, isAdmin]);
 
       useEffect(() => {
         if (authLoading || !user) { setLoading(false); return; }
@@ -546,8 +553,7 @@
           const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
           
           unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
-             // Toate teritoriile "shared" folosesc parametrul group, daca nu exista sunt by default Grupa 5
-             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().group || 'Grupa 5' }));
+             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
              setTerritories([...persT, ...sharedT]);
              setLoading(false);
           }));
@@ -578,18 +584,29 @@
             const updatedGroups = (settings.groups || DEFAULT_GROUPS).map(g => g === oldName ? finalName : g);
             await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
 
-            // Actualizare Automata
             const usersSnap = await db.collection('app_users').where('group', '==', oldName).get();
             const batch1 = db.batch();
             usersSnap.docs.forEach(d => batch1.update(d.ref, { group: finalName }));
             if(!usersSnap.empty) await batch1.commit();
 
-            const terrSnap = await db.collection('shared_territories').where('group', '==', oldName).get();
-            const batch2 = db.batch();
-            terrSnap.docs.forEach(d => batch2.update(d.ref, { group: finalName }));
-            if(!terrSnap.empty) await batch2.commit();
+            const updateTerritoriesBatch = async () => {
+                const snap = await db.collection('shared_territories').get();
+                const batch2 = db.batch();
+                let count = 0;
+                snap.docs.forEach(d => {
+                   const data = d.data();
+                   if (data.group === oldName || data.category === oldName || (!data.group && !data.category && oldName === 'Grupa 5')) {
+                       batch2.update(d.ref, { group: finalName, category: finalName });
+                       count++;
+                   }
+                });
+                if(count > 0) await batch2.commit();
+            };
+            await updateTerritoriesBatch();
 
             if(activeGroupView === oldName) setActiveGroupView(finalName);
+            setActiveTab(prev => prev === oldName ? finalName : prev);
+            
             if(user?.group === oldName) {
                 const updatedUser = {...user, group: finalName};
                 setUser(updatedUser);
@@ -619,7 +636,7 @@
       }, [territories, selectedTerritoryId, loading]);
 
       const filteredTerritories = useMemo(() => {
-        let list = territories.filter(t => t.category === activeTab).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+        let list = territories.filter(t => t.category === activeTab || (!t.category && activeTab === 'Grupa 5')).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
         if (activeTab !== 'personal' && !isAdmin && !isGroupAdmin) list = list.filter(t => !t.isDone);
         return list;
       }, [territories, activeTab, isAdmin, isGroupAdmin]);
@@ -645,6 +662,33 @@
         });
         return () => sortable.destroy();
       }, [filteredTerritories, selectedTerritoryId, activeTab]);
+
+      const isReadOnly = !isOnline && selectedTerritory?.category !== 'personal';
+      const canEditStructure = (isAdmin || (isGroupAdmin && activeTab !== 'personal') || activeTab === 'personal') && !isReadOnly;
+
+      useEffect(() => {
+          if (!blocksContainerRef.current || !selectedTerritoryId || !canEditStructure) return;
+          const sortable = Sortable.create(blocksContainerRef.current, {
+            animation: 150, delay: 200, delayOnTouchOnly: true, forceFallback: true, fallbackTolerance: 5,
+            handle: '.block-header', filter: '.no-drag',
+            onEnd: (evt) => {
+              if (evt.oldIndex !== evt.newIndex) {
+                const newBlocks = [...(selectedTerritory.blocks || [])];
+                const [movedItem] = newBlocks.splice(evt.oldIndex, 1);
+                newBlocks.splice(evt.newIndex, 0, movedItem);
+
+                const item = evt.item;
+                const from = evt.from;
+                const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
+                if (originalNextSibling) from.insertBefore(item, originalNextSibling);
+                else from.appendChild(item);
+
+                updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: newBlocks });
+              }
+            }
+          });
+          return () => sortable.destroy();
+      }, [selectedTerritoryId, selectedTerritory?.blocks, canEditStructure]);
 
       const handleTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
       const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
@@ -738,6 +782,25 @@
           } catch(err) {}
       };
 
+      const handleToggleDone = (t) => {
+        const isNowDone = !t.isDone;
+        const updateData = { isDone: isNowDone };
+
+        if (isNowDone) {
+            updateData.originalEndDate = t.endDate;
+            updateData.endDate = todayStr;
+        } else {
+            if (t.originalEndDate) {
+                updateData.endDate = t.originalEndDate;
+            } else {
+                const start = new Date(t.startDate);
+                start.setMonth(start.getMonth() + 4);
+                updateData.endDate = start.toISOString().split('T')[0];
+            }
+        }
+        updateTerritory(t.id, t.category, updateData);
+      };
+
       const handleCreateTerritory = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
@@ -754,7 +817,7 @@
         setModals({...modals, territoryAdd: false});
         if (category !== 'personal') {
            newTerritory.createdBy = userDocId;
-           newTerritory.group = category; // Asociere ferma a grupei
+           newTerritory.group = category; 
            await db.collection('shared_territories').add(newTerritory);
         } else {
            await db.collection('users').doc(userDocId).collection('territories').add(newTerritory);
@@ -768,7 +831,8 @@
         
         const updateData = {
           name: fd.get('name'), type: fd.get('type'),
-          startDate: fd.get('startDate'), endDate: fd.get('endDate')
+          startDate: fd.get('startDate'), endDate: fd.get('endDate'),
+          originalEndDate: fd.get('endDate')
         };
         setModals({...modals, territoryEdit: false});
 
@@ -944,37 +1008,99 @@
         setModals({...modals, locationEdit: { blockId, sectionId, loc, locIdx }});
       };
 
-      const handleExport = () => {
-        const dataToExport = { territories: isAdmin ? territories : territories.filter(t => t.category === 'personal'), settings: settings };
+      const handleExportAction = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const catSelection = (isAdmin || isGroupAdmin) ? fd.get('exportCategory') : 'personal';
+        const mode = fd.get('exportMode');
+
+        let toExport = [];
+        if (mode === 'full') {
+            toExport = territories.filter(t => t.category === catSelection);
+        } else {
+            const checkedIds = fd.getAll('selectedTerritories');
+            if(checkedIds.length === 0) return alert("Selectează cel puțin un teritoriu pentru export!");
+            toExport = territories.filter(t => checkedIds.includes(t.id));
+        }
+
+        const dataToExport = {
+            exportMode: mode,
+            exportCategoryType: catSelection === 'personal' ? 'personal' : 'group',
+            territories: toExport,
+            settings: settings
+        };
+
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", `teritorii_backup_${todayStr}.json`);
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+        const dl = document.createElement('a');
+        dl.setAttribute("href", dataStr);
+        dl.setAttribute("download", `backup_${catSelection}_${mode}_${todayStr}.json`);
+        document.body.appendChild(dl);
+        dl.click();
+        dl.remove();
+        setModals({...modals, export: false});
       };
 
-      const handleImport = (e) => {
+      const handleImport = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = async (event) => {
             try {
                 const data = JSON.parse(event.target.result);
-                if (data.settings && isAdmin) await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
-                if (data.territories && Array.isArray(data.territories)) {
-                    for (const t of data.territories) {
-                        const targetCategory = (isAdmin || isGroupAdmin) ? t.category : 'personal'; 
-                        const tFixed = { ...t, category: targetCategory };
-                        if (targetCategory !== 'personal') await db.collection('shared_territories').doc(t.id).set(tFixed);
-                        else await db.collection('users').doc(userDocId).collection('territories').doc(t.id).set(tFixed);
-                    }
+                const mode = data.exportMode || 'partial';
+                const catType = data.exportCategoryType || 'personal';
+
+                if (catType === 'group' && !isAdmin && !isGroupAdmin) {
+                    alert("Eroare: Doar administratorii pot importa teritorii de grupă!");
+                    return;
                 }
-            } catch (error) { alert("Eroare la import!"); }
+
+                const targetCategory = catType === 'personal' ? 'personal' : activeGroupView;
+
+                if (data.settings && isAdmin) {
+                    await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
+                }
+
+                if (data.territories && Array.isArray(data.territories)) {
+                    if (mode === 'full') {
+                        if (!confirm(`Atenție! Vei ȘTERGE DEFINITIV toate teritoriile actuale din secțiunea "${targetCategory}" și le vei înlocui cu cele din fișierul de backup. Continui?`)) {
+                            document.getElementById('importData').value = null;
+                            return;
+                        }
+                        if (targetCategory === 'personal') {
+                            const snap = await db.collection('users').doc(userDocId).collection('territories').get();
+                            const batch = db.batch();
+                            snap.docs.forEach(d => batch.delete(d.ref));
+                            await batch.commit();
+                        } else {
+                            const snap = await db.collection('shared_territories').where('category', '==', targetCategory).get();
+                            const batch = db.batch();
+                            snap.docs.forEach(d => batch.delete(d.ref));
+                            await batch.commit();
+                        }
+                    }
+
+                    const batch1 = db.batch();
+                    let count = 0;
+                    for (const t of data.territories) {
+                        const tFixed = { ...t, category: targetCategory };
+                        if (targetCategory !== 'personal') tFixed.group = targetCategory;
+
+                        const ref = targetCategory !== 'personal' ?
+                            db.collection('shared_territories').doc(t.id) :
+                            db.collection('users').doc(userDocId).collection('territories').doc(t.id);
+
+                        batch1.set(ref, tFixed);
+                        count++;
+                        if (count === 400) { await batch1.commit(); count = 0; }
+                    }
+                    if (count > 0) await batch1.commit();
+                    alert(`Import finalizat cu succes!`);
+                }
+            } catch (error) { alert("Eroare la import! " + error.message); }
         };
         reader.readAsText(file);
-        e.target.value = null; 
+        e.target.value = null;
       };
 
       if (loading || authLoading) return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
@@ -1001,18 +1127,19 @@
                           setUser(customUser);
                           setUserDocId(customUser.id);
                           setActiveGroupView(customUser.group || 'Grupa 5');
+                          setActiveTab(customUser.group || 'Grupa 5');
                           localStorage.setItem('custom_user', JSON.stringify(customUser));
                       } else setAuthError('Nume sau parolă incorectă!');
                   }
                 } catch(err) { setAuthError('Eroare: ' + err.message); }
               }} className="space-y-4">
                 <div className="text-left">
-                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume</label>
-                  <input required type="text" placeholder="Nume" value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 mt-1" />
+                  <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume Prenume</label>
+                  <input required type="text" placeholder="Ex: Ion Popescu" value={authForm.name} onChange={e => setAuthForm({...authForm, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 mt-1" />
                 </div>
-                <div className="text-left">
+                <div className="text-left mt-3">
                   <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă</label>
-                  <input required type="password" placeholder="Parola" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 mt-1" />
+                  <input required type="password" placeholder="Parolă" value={authForm.password} onChange={e => setAuthForm({...authForm, password: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 mt-1" />
                 </div>
                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase shadow-sm transition-colors mt-4">Conectare</button>
               </form>
@@ -1022,13 +1149,10 @@
       }
 
       const isSelectedOverdue = selectedTerritory && !selectedTerritory.isDone && selectedTerritory.endDate < todayStr;
-      const isReadOnly = !isOnline && selectedTerritory?.category !== 'personal';
-      const canEditStructure = (isAdmin || (isGroupAdmin && activeTab !== 'personal') || activeTab === 'personal') && !isReadOnly;
 
       return (
         <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
           
-          {/* Antet Principal */}
           {!selectedTerritoryId ? (
             <header className="sticky top-0 z-20 p-4">
               <div className="bg-blue-600 text-white shadow-xl p-3 sm:p-4 md:p-5 rounded-[2rem] flex flex-col gap-4">
@@ -1049,7 +1173,10 @@
                     <button onClick={() => document.getElementById('importData').click()} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Importă Date">
                         <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">upload</span>
                     </button>
-                    <button onClick={handleExport} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Exportă Date">
+                    <button onClick={() => {
+                        setExportConfig({ category: activeTab === 'personal' ? 'personal' : activeGroupView, mode: 'full' });
+                        setModals({...modals, export: true});
+                    }} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Exportă Date">
                         <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">download</span>
                     </button>
                     <button onClick={() => setModals({...modals, theme: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Schimbă Tema">
@@ -1072,8 +1199,8 @@
               </div>
             </header>
           ) : (
-            <header className="sticky top-0 z-30 p-4 pb-0 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-md">
-              <div className={`${selectedTerritory.category !== 'personal' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3 relative`}>
+            <header className="sticky top-0 z-30 p-4 pb-0">
+              <div className={`${selectedTerritory.category !== 'personal' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3`}>
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                   <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
                   <h1 className="font-black text-white uppercase text-base md:text-xl truncate">{selectedTerritory.name}</h1>
@@ -1083,7 +1210,7 @@
                 </div>
                 {((isAdmin || isGroupAdmin || selectedTerritory.category === 'personal') && !isReadOnly) && (
                   <div className="shrink-0 flex items-center">
-                    <button onClick={() => updateTerritory(selectedTerritory.id, selectedTerritory.category, { isDone: !selectedTerritory.isDone })} className={`material-icons p-3 rounded-full transition shadow-sm ${selectedTerritory.isDone ? 'bg-white text-green-600 shadow-xl' : 'bg-black/10 hover:bg-black/20 text-white/80'}`}>
+                    <button onClick={() => handleToggleDone(selectedTerritory)} className={`material-icons p-3 rounded-full transition shadow-sm ${selectedTerritory.isDone ? 'bg-white text-green-600 shadow-xl' : 'bg-black/10 hover:bg-black/20 text-white/80'}`}>
                       {selectedTerritory.isDone ? 'check' : 'radio_button_unchecked'}
                     </button>
                   </div>
@@ -1099,7 +1226,6 @@
             </div>
           )}
 
-          {}
           {!selectedTerritoryId ? (
             <main onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="p-4 pt-2 space-y-4 flex-1 transition-colors">
               {filteredTerritories.length === 0 ? (
@@ -1136,7 +1262,7 @@
                         )}
                         <div className="no-drag absolute right-3 top-4 flex items-center gap-2">
                           {(isAdmin || isGroupAdmin || t.category === 'personal') && (
-                            <button onClick={(e) => { e.stopPropagation(); updateTerritory(t.id, t.category, { isDone: !t.isDone }); }} className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all active:scale-90 z-10 ${t.isDone ? 'bg-green-600 border-green-600 text-white shadow-lg' : isOverdue ? 'bg-white dark:bg-slate-700 border-red-400 text-red-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-400 hover:text-blue-500 hover:border-blue-300'}`}>
+                            <button onClick={(e) => { e.stopPropagation(); handleToggleDone(t); }} className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all active:scale-90 z-10 ${t.isDone ? 'bg-green-600 border-green-600 text-white shadow-lg' : isOverdue ? 'bg-white dark:bg-slate-700 border-red-400 text-red-400' : 'bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-400 hover:text-blue-500 hover:border-blue-300'}`}>
                               <span className="material-icons text-3xl">{t.isDone ? 'check' : 'radio_button_unchecked'}</span>
                             </button>
                           )}
@@ -1167,7 +1293,6 @@
             <main className="flex-1 flex flex-col pt-4 transition-colors relative z-10">
               <div className="px-4 space-y-6">
                 
-                {}
                 <div className={`p-4 rounded-[2rem] shadow-sm border-2 ${selectedTerritory.category !== 'personal' ? 'bg-orange-50 border-orange-200 dark:bg-orange-900/10 dark:border-orange-900/30' : 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/30'} flex flex-col gap-3`}>
                   <div className="flex flex-row flex-wrap md:flex-nowrap w-full items-stretch justify-start gap-2 h-full">
                     <div className="flex-[1] flex flex-col md:flex-row gap-2 items-stretch md:items-center">
@@ -1252,7 +1377,6 @@
             </main>
           )}
 
-          {}
           {modals.auth && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center border-4 border-slate-100 dark:border-slate-700 relative">
@@ -1269,13 +1393,16 @@
                       {isGroupAdmin && !isAdmin && <div className="text-[10px] font-bold text-white bg-blue-500 px-2 py-1 rounded-lg mt-1 uppercase tracking-widest">Admin {user?.group}</div>}
                     </div>
 
-                    {/* SELECTOR ASCUNS PT ADMIN */}
                     {isAdmin && (
                        <div className="mt-4 w-full text-left border-t border-slate-200 dark:border-slate-700 pt-4">
                           <label className="text-[10px] font-black uppercase text-slate-400 ml-2 block mb-2">Vizualizare Grupă</label>
                           <select 
                             value={activeGroupView}
-                            onChange={(e) => { setActiveGroupView(e.target.value); setActiveTab(e.target.value); setModals({...modals, auth: false}); }}
+                            onChange={(e) => { 
+                                setActiveGroupView(e.target.value); 
+                                setActiveTab(e.target.value); 
+                                setModals({...modals, auth: false}); 
+                            }}
                             className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl font-black text-sm uppercase outline-none focus:ring-2 focus:ring-blue-500 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 cursor-pointer shadow-sm"
                           >
                             {(settings.groups || DEFAULT_GROUPS).map(g => <option key={g} value={g}>{g}</option>)}
@@ -1330,10 +1457,10 @@
                    }
                 }} className="space-y-4">
                   <div className="text-left">
-                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume Nou</label>
+                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume Prenume</label>
                      <input name="name" defaultValue={currentUserName} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
                   </div>
-                  <div className="text-left">
+                  <div className="text-left mt-3">
                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă Nouă (Opțional)</label>
                      <input name="password" type="password" placeholder="Minim 6 caractere" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
                   </div>
@@ -1379,11 +1506,17 @@
                         e.target.reset();
                       } catch(err) { alert('Eroare: ' + err.message); }
                     }} className="space-y-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        <input required type="text" name="nume" placeholder="Nume" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm" />
-                        <input required type="text" name="parola" placeholder="Parolă" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm" />
+                      <div className="space-y-2">
+                        <div className="text-left">
+                           <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume Prenume</label>
+                           <input required type="text" name="nume" placeholder="Nume Prenume" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm mt-1" />
+                        </div>
+                        <div className="text-left mt-3">
+                           <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă</label>
+                           <input required type="text" name="parola" placeholder="Parolă" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm mt-1" />
+                        </div>
                       </div>
-                      <select name="group" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm cursor-pointer">
+                      <select name="group" className="w-full p-3 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 font-bold outline-none text-slate-800 dark:text-slate-100 text-sm cursor-pointer mt-2">
                         {(settings.groups || DEFAULT_GROUPS).map(g => <option key={g} value={g}>{g}</option>)}
                       </select>
                       <label className="flex items-center gap-2 px-1 pb-1 cursor-pointer">
@@ -1450,14 +1583,14 @@
                    }
                 }} className="space-y-4">
                   <div className="text-left">
-                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume</label>
+                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume Prenume</label>
                      <input required name="name" defaultValue={modals.adminEditUser.name} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
                   </div>
-                  <div className="text-left">
+                  <div className="text-left mt-3">
                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă</label>
                      <input required name="password" defaultValue={modals.adminEditUser.password} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
                   </div>
-                  <div className="text-left">
+                  <div className="text-left mt-3">
                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Grupă</label>
                      <select name="group" defaultValue={modals.adminEditUser.group || 'Grupa 5'} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1 cursor-pointer">
                         {(settings.groups || DEFAULT_GROUPS).map(g => <option key={g} value={g}>{g}</option>)}
@@ -1606,6 +1739,62 @@
             </div>
           )}
 
+          {modals.export && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700 max-h-[90vh] flex flex-col">
+                <h3 className="font-black text-xl mb-4 text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2 shrink-0">
+                  <span className="material-icons text-blue-500">download</span> Export Teritorii
+                </h3>
+                <form onSubmit={handleExportAction} className="space-y-4 flex-1 overflow-y-auto pr-2">
+                   
+                   {(isAdmin || isGroupAdmin) && (
+                      <div className="mb-4">
+                        <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Sursă de exportat</label>
+                        <select name="exportCategory" value={exportConfig.category} onChange={e => setExportConfig({...exportConfig, category: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black text-sm uppercase text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 mt-1 cursor-pointer shadow-sm">
+                            <option value="personal">Personal</option>
+                            <option value={activeGroupView}>{activeGroupView}</option>
+                        </select>
+                      </div>
+                   )}
+
+                   <div className="mb-4">
+                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Mod Export</label>
+                      <div className="flex gap-2 mt-1">
+                          <label className={`flex-1 p-3 rounded-xl border-2 cursor-pointer flex flex-col items-center text-center transition-colors ${exportConfig.mode === 'full' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-inner' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                             <input type="radio" name="exportMode" value="full" checked={exportConfig.mode === 'full'} onChange={() => setExportConfig({...exportConfig, mode: 'full'})} className="hidden" />
+                             <span className="material-icons mb-1 text-2xl">done_all</span>
+                             <span className="text-[10px] font-black uppercase tracking-wide">Toate <br/>(Backup Complet)</span>
+                          </label>
+                          <label className={`flex-1 p-3 rounded-xl border-2 cursor-pointer flex flex-col items-center text-center transition-colors ${exportConfig.mode === 'partial' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shadow-inner' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                             <input type="radio" name="exportMode" value="partial" checked={exportConfig.mode === 'partial'} onChange={() => setExportConfig({...exportConfig, mode: 'partial'})} className="hidden" />
+                             <span className="material-icons mb-1 text-2xl">checklist</span>
+                             <span className="text-[10px] font-black uppercase tracking-wide">Selectare <br/>Manuală</span>
+                          </label>
+                      </div>
+                   </div>
+
+                   {exportConfig.mode === 'partial' && (
+                       <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 max-h-[180px] overflow-y-auto shadow-inner">
+                          {territories.filter(t => t.category === exportConfig.category).length === 0 ? (
+                              <p className="text-xs text-slate-400 font-bold text-center py-4">Niciun teritoriu disponibil.</p>
+                          ) : territories.filter(t => t.category === exportConfig.category).map(t => (
+                              <label key={t.id} className="flex items-center gap-3 p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
+                                  <input type="checkbox" name="selectedTerritories" value={t.id} className="w-5 h-5 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer" />
+                                  <span className="text-xs font-black text-slate-700 dark:text-slate-200 truncate uppercase">{t.name}</span>
+                              </label>
+                          ))}
+                       </div>
+                   )}
+
+                   <div className="flex gap-2 pt-4 shrink-0">
+                    <button type="button" onClick={() => setModals({...modals, export: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Anulează</button>
+                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-sm hover:bg-blue-700 transition">EXPORTĂ ACUM</button>
+                   </div>
+                </form>
+              </div>
+            </div>
+          )}
+
           {modals.locationEdit && (
             <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-[110]">
               <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden border-4 border-slate-100 dark:border-slate-700 flex flex-col max-h-[90vh]">
@@ -1644,7 +1833,7 @@
                   </div>
                 </div>
 
-                <div className="p-5 flex-1 overflow-y-auto space-y-6">
+                <div className="p-5 flex-1 overflow-y-scroll space-y-6">
                   <div className="grid grid-cols-3 gap-2">
                     {settings.labels.map(l => (
                       <button key={l.id} 
@@ -1720,7 +1909,7 @@
 
                   {canEditStructure && (
                      <p className="text-[10px] font-bold text-center text-slate-400 bg-slate-100 dark:bg-slate-900 p-2 rounded-xl flex items-center justify-center gap-1 shrink-0">
-                       <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pe pătrățel pentru a muta
+                       <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pentru a muta
                      </p>
                   )}
 
@@ -1733,7 +1922,7 @@
             <div className="fixed inset-0 bg-white dark:bg-slate-900 z-[200] flex flex-col p-6 overflow-y-auto transition-colors">
               <div className="flex items-center justify-between mb-8 shrink-0">
                 <h2 className="font-black text-2xl text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
-                  <span className="material-icons text-blue-500 text-3xl">palette</span> Setări
+                  <span className="material-icons text-blue-500 text-3xl">settings</span> Setări
                 </h2>
                 <button onClick={() => setModals({...modals, settings: false})} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
               </div>
@@ -1762,7 +1951,10 @@
                  </button>
               </div>
 
-              <SettingsLabelList settings={settings} updateSettingsLabels={(newLabels) => db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, labels: newLabels })} />
+              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm mb-8">
+                 <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><span className="material-icons">palette</span> Etichete și culori</h3>
+                 <SettingsLabelList settings={settings} updateSettingsLabels={(newLabels) => db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, labels: newLabels })} />
+              </div>
             </div>
           )}
 
