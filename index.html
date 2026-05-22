@@ -1585,13 +1585,13 @@
                       {adminUsersList.length === 0 ? (
                         <p className="text-xs font-bold text-slate-400 text-center py-4">Niciun utilizator.</p>
                       ) : (
-                        adminUsersList.map(u => (
+                        adminUsersList.map(u => (//Lista utilizatorilor din meniu administrare 
                           <div key={u.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm">
                             <div>
                               <div className="font-black text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1">
                                 {u.name} {u.isAdminGroup && <span className="material-icons text-blue-500 text-[14px]" title="Admin Grupă">verified</span>}
                               </div>
-                              <div className="text-[10px] text-slate-400 font-bold uppercase">{u.group || 'Grupa 5'} • Parolă: {u.password}</div>
+                              <div className="text-[10px] text-slate-400 font-bold">{u.group || 'Grupa 5'} • Parolă: {u.password}</div>
                             </div>
                             <div className="flex gap-2">
                               <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
