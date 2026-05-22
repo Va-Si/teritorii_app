@@ -1527,7 +1527,6 @@
                           .replace(/\s+/g, '.');
                         
                         const emailFictiv = numeCurat + '@ter.com'; // Va rezulta: ion.popescu@ter.com
-                        const emailFictiv = numeCurat + '@ter.com';
                         // 1. Înregistrăm utilizatorul oficial în sistemul de securitate Google
                         await secondaryApp.auth().createUserWithEmailAndPassword(emailFictiv, parola.trim());
                         // Închidem imediat conexiunea temporară
