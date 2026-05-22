@@ -1589,7 +1589,14 @@
                           <div key={u.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm">
                             <div>
                               <div className="font-black text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1">
-                                {u.name} {u.isAdminGroup && <span className="material-icons text-blue-500 text-[14px]" title="Admin Grupă">verified</span>}
+                                {u.name} 
+                                {/* AICI AM MODIFICAT: Dacă e admin, îi punem o insignă frumoasă cu iconiță și text */}
+                                {u.isAdminGroup && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-black uppercase tracking-wider text-blue-500 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded-md ml-1">
+                                  <span className="material-icons text-[13px]">verified</span>
+                                  Admin
+                                </span>
+                               )}
                               </div>
                               <div className="text-[10px] text-slate-400 font-bold">{u.group || 'Grupa 5'} • Parolă: {u.password}</div>
                             </div>
