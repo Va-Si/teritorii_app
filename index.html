@@ -1150,7 +1150,15 @@
                       setAuthError('Eroare: Datele din Firestore lipsesc.');
                     }
                   }
-                } catch(err) { setAuthError('Eroare la conectare: ' + err.message); }
+                } catch(err) { 
+                  // Verificăm dacă eroarea este din cauza numelui sau parolei greșite
+                  if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+                    setAuthError('Nume sau parolă incorectă!');
+                  } else {
+                    // Dacă apare vreo altă eroare neașteptată (ex: lipsă internet), o lăsăm pe cea originală
+                    setAuthError('Eroare la conectare: ' + err.message);
+                  }
+                }
               }} className="space-y-4">
                 <div className="text-left">
                   <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume Prenume</label>
