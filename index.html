@@ -1132,22 +1132,24 @@
                       .replace(/\s+/g, '.');
                     const emailFictiv = numeCurat + '@ter.com';
                     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-                    // 1. Îi logăm oficial în sistemul de securitate Google Firebase
-                    await auth.signInWithEmailAndPassword(emailFictiv, authForm.password.trim());
-                    // 2. Îi căutăm grupa și datele în Firestore pentru a le încărca pe ecran
-                    const snapshot = await db.collection('app_users').where('name', '==', authForm.name.trim()).get();
-                    if (!snapshot.empty) {
-                      const customUser = snapshot.docs[0].data();
+                    
+                    // 1. Îl logăm oficial la Google și îi aflăm ID-ul unic (UID)
+                    const userCredential = await auth.signInWithEmailAndPassword(emailFictiv, authForm.password.trim());
+                    const userId = userCredential.user.uid;
+                    // 2. Deschidem direct sertarul lui prin ID. Regulile Firebase vor permite asta!
+                    const doc = await db.collection('app_users').doc(userId).get();
+                    if (doc.exists) {
+                      const customUser = doc.data();
                       setUser(customUser);
                       setUserDocId(customUser.id);
                       setActiveGroupView(customUser.group || 'Grupa 5');
                       setActiveTab(customUser.group || 'Grupa 5');
                       localStorage.setItem('custom_user', JSON.stringify(customUser));
                     } else {
-                      setAuthError('Eroare: Contul este securizat, dar datele din Firestore lipsesc.');
+                      setAuthError('Eroare: Datele din Firestore lipsesc sau contul a fost creat în formatul vechi.');
                     }
                   }
-                } catch(err) { setAuthError('Eroare: ' + err.message); }
+                } catch(err) { setAuthError('Eroare la conectare: ' + err.message); }
               }} className="space-y-4">
                 <div className="text-left">
                   <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Nume Prenume</label>
@@ -1527,13 +1529,14 @@
                           .replace(/\s+/g, '.');
                         
                         const emailFictiv = numeCurat + '@ter.com'; // Va rezulta: ion.popescu@ter.com
-                        // 1. Înregistrăm utilizatorul oficial în sistemul de securitate Google
-                        await secondaryApp.auth().createUserWithEmailAndPassword(emailFictiv, parola.trim());
-                        // Închidem imediat conexiunea temporară
+                        
+                        // Creăm contul la Google și îi extragem ID-ul unic (UID)
+                        const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(emailFictiv, parola.trim());
+                        const userId = userCredential.user.uid;
+                        
                         await secondaryApp.delete();
-                        // 2. Salvăm datele și în Firestore (ca să vezi în continuare parola și grupa în tabel)
-                        const userId = db.collection('app_users').doc().id;
-                        await db.collection('app_users').doc(userId).set({ 
+                        // Salvăm în Firestore folosind ID-ul unic primit de la Google ca nume de document
+                        await db.collection('app_users').doc(userId).set({
                           id: userId, 
                           name: nume, 
                           password: parola,
@@ -1542,7 +1545,8 @@
                         });
 
                         e.target.reset();
-                      } catch(err) { alert('Eroare: ' + err.message); }
+                        alert('Utilizator creat cu succes și securizat!');
+                      } catch(err) { alert('Eroare la creare: ' + err.message); }
                     }} className="space-y-3">
                       <div className="space-y-2">
                         <div className="text-left">
