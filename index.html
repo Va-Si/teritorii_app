@@ -1117,19 +1117,18 @@
                 e.preventDefault();
                 setAuthError(null);
                 try {
-                  if (authForm.name.includes('@')) {
-                      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-                      await auth.signInWithEmailAndPassword(authForm.name.trim(), authForm.password.trim());
+                  if (authForm.name.includes('@')) { 
+                    // Logarea ta ca Admin (rămâne exact așa cum este acum)
+                    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                    await auth.signInWithEmailAndPassword(authForm.name.trim(), authForm.password.trim());
                   } else {
-                      const snapshot = await db.collection('app_users').where('name', '==', authForm.name.trim()).where('password', '==', authForm.password.trim()).get();
-                      if (!snapshot.empty) {
-                          const customUser = snapshot.docs[0].data();
-                          setUser(customUser);
-                          setUserDocId(customUser.id);
-                          setActiveGroupView(customUser.group || 'Grupa 5');
-                          setActiveTab(customUser.group || 'Grupa 5');
-                          localStorage.setItem('custom_user', JSON.stringify(customUser));
-                      } else setAuthError('Nume sau parolă incorectă!');
+                    // PENTRU UTILIZATORII SIMPLI:
+                    // Codul le adaugă automat @ter.com în spate în mod invizibil Transformăm "Ion Popescu" în "ion.popescu" și îi lipim @ter.com în spate
+                    const numeCurat = authForm.name.trim().toLowerCase().replace(/\s+/g, '.');
+                    const emailFictiv = numeCurat + '@ter.com';
+                    // Îi logăm oficial în sistemul Google, fără ca ei să știe de email Îi logăm oficial, oferindu-le „buletinul de securitate” de la Google
+                    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                    await auth.signInWithEmailAndPassword(emailFictiv, authForm.password.trim());
                   }
                 } catch(err) { setAuthError('Eroare: ' + err.message); }
               }} className="space-y-4">
@@ -1497,12 +1496,28 @@
                       if(nume.length < 3) return alert('Numele e prea scurt!');
                       if(parola.length < 4) return alert('Parola trebuie să aibă minim 4 caractere!');
 
-                      try {
+                      try { 
                         const check = await db.collection('app_users').where('name', '==', nume).get();
                         if(!check.empty) return alert('Acest nume există deja!');
-
+                        // TRUC TEHNIC: Deschidem o conexiune secundară ca să NU te deconecteze pe tine (Adminul)
+                        const secondaryApp = firebase.initializeApp(firebase.app().options, "SecondaryApp");
+                        // Transformăm "Ion Popescu" în "ion.popescu@ter.com"
+                        const numeCurat = nume.trim().toLowerCase().replace(/\s+/g, '.');
+                        const emailFictiv = numeCurat + '@ter.com';
+                        // 1. Înregistrăm utilizatorul oficial în sistemul de securitate Google
+                        await secondaryApp.auth().createUserWithEmailAndPassword(emailFictiv, parola.trim());
+                        // Închidem imediat conexiunea temporară
+                        await secondaryApp.delete();
+                        // 2. Salvăm datele și în Firestore (ca să vezi în continuare parola și grupa în tabel)
                         const userId = db.collection('app_users').doc().id;
-                        await db.collection('app_users').doc(userId).set({ id: userId, name: nume, password: parola, group: grupa, isAdminGroup: isAdminGroup });
+                        await db.collection('app_users').doc(userId).set({ 
+                          id: userId, 
+                          name: nume, 
+                          password: parola,
+                          group: grupa,
+                          isAdminGroup: isAdminGroup 
+                        });
+
                         e.target.reset();
                       } catch(err) { alert('Eroare: ' + err.message); }
                     }} className="space-y-3">
