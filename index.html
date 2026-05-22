@@ -1117,18 +1117,19 @@
                 e.preventDefault();
                 setAuthError(null);
                 try {
+                  //Logare useri
                   if (authForm.name.includes('@')) { 
                     // Logarea ta ca Admin (rămâne exact așa cum este acum)
                     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                     await auth.signInWithEmailAndPassword(authForm.name.trim(), authForm.password.trim());
                   } else {
                     // PENTRU UTILIZATORII SIMPLI:
-                    // Eliminăm diacriticele exact ca la creare pentru a se potrivi perfect
+                    // Folosim coduri Unicode (\u...) ca să fim siguri că ștergem diacriticele corect
                     const numeCurat = authForm.name.trim().toLowerCase()
-                      .replace(/[ăâ]/g, 'a')
-                      .replace(/[î]/g, 'i')
-                      .replace(/[șş]/g, 's')
-                      .replace(/[țţ]/g, 't')
+                      .replace(/[\u0103\u00e2]/g, 'a') // înlocuiește ă, â
+                      .replace(/[\u00ee]/g, 'i')       // înlocuiește î
+                      .replace(/[\u0219\u015f]/g, 's') // înlocuiește ș, ş (ambele variante de ș)
+                      .replace(/[\u021b\u0163]/g, 't') // înlocuiește ț, ţ (ambele variante de ț)
                       .replace(/\s+/g, '.');
                     const emailFictiv = numeCurat + '@ter.com';
                     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
@@ -1146,7 +1147,7 @@
                       setActiveTab(customUser.group || 'Grupa 5');
                       localStorage.setItem('custom_user', JSON.stringify(customUser));
                     } else {
-                      setAuthError('Eroare: Datele din Firestore lipsesc sau contul a fost creat în formatul vechi.');
+                      setAuthError('Eroare: Datele din Firestore lipsesc.');
                     }
                   }
                 } catch(err) { setAuthError('Eroare la conectare: ' + err.message); }
@@ -1516,16 +1517,17 @@
                       if(parola.length < 4) return alert('Parola trebuie să aibă minim 4 caractere!');
 
                       try { 
+                        //Creare usere
                         const check = await db.collection('app_users').where('name', '==', nume).get();
                         if(!check.empty) return alert('Acest nume există deja!');
                         // TRUC TEHNIC: Deschidem o conexiune secundară ca să NU te deconecteze pe tine (Adminul)
                         const secondaryApp = firebase.initializeApp(firebase.app().options, "SecondaryApp");
-                        // ELIMINĂM DIACRITICELE (ș->s, ț->t, î->i, ă/â->a) și spațiile
+                        // Folosim aceleași coduri Unicode universale și la creare
                         const numeCurat = nume.trim().toLowerCase()
-                          .replace(/[ăâ]/g, 'a')
-                          .replace(/[î]/g, 'i')
-                          .replace(/[șş]/g, 's')
-                          .replace(/[țţ]/g, 't')
+                          .replace(/[\u0103\u00e2]/g, 'a') // ă, â
+                          .replace(/[\u00ee]/g, 'i')       // î
+                          .replace(/[\u0219\u015f]/g, 's') // ș, ş
+                          .replace(/[\u021b\u0163]/g, 't') // ț, ţ
                           .replace(/\s+/g, '.');
                         
                         const emailFictiv = numeCurat + '@ter.com'; // Va rezulta: ion.popescu@ter.com
