@@ -1592,9 +1592,11 @@
                                 {u.name} 
                                 {/* AICI AM MODIFICAT: Dacă e admin, îi punem o insignă frumoasă cu iconiță și text */}
                                 {u.isAdminGroup && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-black uppercase tracking-wider text-blue-500 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded-md ml-1">
-                                  <span className="material-icons text-[13px]">verified</span>
-                                  Admin
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-black uppercase tracking-wider text-blue-500 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded-md ml-1 leading-none">
+                                  {/* AM ADĂUGAT: translate-y-[1px] ca să coborâm iconița la nivelul textului */}
+                                  <span className="material-icons text-[13px] transform translate-y-[1px]">verified</span>
+                                  {/* AM ADĂUGAT: am pus textul în span ca flexbox-ul să-l alinieze corect */}
+                                  <span>Admin</span>
                                 </span>
                                )}
                               </div>
