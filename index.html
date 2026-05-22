@@ -1123,12 +1123,29 @@
                     await auth.signInWithEmailAndPassword(authForm.name.trim(), authForm.password.trim());
                   } else {
                     // PENTRU UTILIZATORII SIMPLI:
-                    // Codul le adaugă automat @ter.com în spate în mod invizibil Transformăm "Ion Popescu" în "ion.popescu" și îi lipim @ter.com în spate
-                    const numeCurat = authForm.name.trim().toLowerCase().replace(/\s+/g, '.');
+                    // Eliminăm diacriticele exact ca la creare pentru a se potrivi perfect
+                    const numeCurat = authForm.name.trim().toLowerCase()
+                      .replace(/[ăâ]/g, 'a')
+                      .replace(/[î]/g, 'i')
+                      .replace(/[șş]/g, 's')
+                      .replace(/[țţ]/g, 't')
+                      .replace(/\s+/g, '.');
                     const emailFictiv = numeCurat + '@ter.com';
-                    // Îi logăm oficial în sistemul Google, fără ca ei să știe de email Îi logăm oficial, oferindu-le „buletinul de securitate” de la Google
                     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+                    // 1. Îi logăm oficial în sistemul de securitate Google Firebase
                     await auth.signInWithEmailAndPassword(emailFictiv, authForm.password.trim());
+                    // 2. Îi căutăm grupa și datele în Firestore pentru a le încărca pe ecran
+                    const snapshot = await db.collection('app_users').where('name', '==', authForm.name.trim()).get();
+                    if (!snapshot.empty) {
+                      const customUser = snapshot.docs[0].data();
+                      setUser(customUser);
+                      setUserDocId(customUser.id);
+                      setActiveGroupView(customUser.group || 'Grupa 5');
+                      setActiveTab(customUser.group || 'Grupa 5');
+                      localStorage.setItem('custom_user', JSON.stringify(customUser));
+                    } else {
+                      setAuthError('Eroare: Contul este securizat, dar datele din Firestore lipsesc.');
+                    }
                   }
                 } catch(err) { setAuthError('Eroare: ' + err.message); }
               }} className="space-y-4">
@@ -1501,8 +1518,15 @@
                         if(!check.empty) return alert('Acest nume există deja!');
                         // TRUC TEHNIC: Deschidem o conexiune secundară ca să NU te deconecteze pe tine (Adminul)
                         const secondaryApp = firebase.initializeApp(firebase.app().options, "SecondaryApp");
-                        // Transformăm "Ion Popescu" în "ion.popescu@ter.com"
-                        const numeCurat = nume.trim().toLowerCase().replace(/\s+/g, '.');
+                        // ELIMINĂM DIACRITICELE (ș->s, ț->t, î->i, ă/â->a) și spațiile
+                        const numeCurat = nume.trim().toLowerCase()
+                          .replace(/[ăâ]/g, 'a')
+                          .replace(/[î]/g, 'i')
+                          .replace(/[șş]/g, 's')
+                          .replace(/[țţ]/g, 't')
+                          .replace(/\s+/g, '.');
+                        
+                        const emailFictiv = numeCurat + '@ter.com'; // Va rezulta: ion.popescu@ter.com
                         const emailFictiv = numeCurat + '@ter.com';
                         // 1. Înregistrăm utilizatorul oficial în sistemul de securitate Google
                         await secondaryApp.auth().createUserWithEmailAndPassword(emailFictiv, parola.trim());
