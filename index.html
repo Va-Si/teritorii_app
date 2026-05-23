@@ -2266,15 +2266,25 @@ const handleRenameGroup = (oldName, newName) => {
           {alertBox.isOpen && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
               <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700 text-center scale-up-animation">
-                {/* ... (iconița și textul rămân la fel) ... */}
+                {/* Iconița */}
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md ${alertBox.isDanger ? 'bg-red-50 text-red-500 border border-red-200' : 'bg-blue-50 text-blue-500 border border-blue-200'}`}>
+                  <span className="material-icons text-3xl">{alertBox.isDanger ? 'warning' : 'info'}</span>
+                 </div> 
+                {/* Titlul */}
+                <h3 className="font-black text-base text-slate-800 dark:text-slate-100 uppercase tracking-widest mb-2">{alertBox.title}</h3>
+                {/* AICI ESTE REZOLVAREA - ne asigurăm că mesajul se afișează */}
+                <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6 px-2 leading-relaxed">
+                  {alertBox.message}
+                </p>
                 <div className="flex gap-2">
-                  {/* DOAR DACĂ showCancel nu este explicit setat pe false, afișăm butonul de Anulare */}
+                  {/* Butonul de Anulare (apare doar dacă showCancel nu este false) */}
                   {alertBox.showCancel !== false && (
+      
                     <button onClick={() => setAlertBox({ ...alertBox, isOpen: false })} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors">Anulează</button>
                   )}
-                  {/* Butonul de Confirmare devine butonul principal "OK" */}
+                  {/* Butonul de Confirmare (acum scrie "Confirm" când este notificare simplă) */}
                   <button onClick={() => { alertBox.onConfirm(); setAlertBox({ ...alertBox, isOpen: false }); }} className={`flex-1 p-4 text-white rounded-2xl font-black uppercase text-xs shadow-sm transition-all active:scale-95 ${alertBox.isDanger ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}>
-                     {alertBox.showCancel === false ? 'Înțeles' : 'Confirmă'}
+                     {alertBox.showCancel === false ? 'Confirm' : 'Confirmă'}
                   </button>
                 </div>
                </div>
