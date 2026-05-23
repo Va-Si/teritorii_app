@@ -607,48 +607,62 @@
         await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
       };
 
-      const handleRenameGroup = async (oldName, newName) => {
-        const finalName = newName.trim();
-        if(!finalName || oldName === finalName || (settings.groups || DEFAULT_GROUPS).includes(finalName)) return;
+const handleRenameGroup = (oldName, newName) => {
+  const finalName = newName.trim();
+  if(!finalName || oldName === finalName || (settings.groups || DEFAULT_GROUPS).includes(finalName)) return;
+  
+  // Dezactivăm confirm-ul din browser și activăm alertBox-ul tău modern
+  setAlertBox({
+    isOpen: true,
+    title: 'Confirmare Modificare',
+    message: `Schimbi denumirea din "${oldName}" în "${finalName}"? Aceasta va actualiza automat toți utilizatorii și teritoriile asociate.`,
+    isDanger: false, // Albastru, fiindcă e o modificare de structură, nu o ștergere definitivă
+    onConfirm: async () => {
+      try {
+        const updatedGroups = (settings.groups || DEFAULT_GROUPS).map(g => g === oldName ? finalName : g);
+        await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+
+        const usersSnap = await db.collection('app_users').where('group', '==', oldName).get();
+        const batch1 = db.batch();
+        usersSnap.docs.forEach(d => batch1.update(d.ref, { group: finalName }));
+        if(!usersSnap.empty) await batch1.commit();
+
+        const updateTerritoriesBatch = async () => {
+            const snap = await db.collection('shared_territories').get();
+            const batch2 = db.batch();
+            let count = 0;
+            snap.docs.forEach(d => {
+               const data = d.data();
+               if (data.group === oldName || data.category === oldName || (!data.group && !data.category && oldName === 'Grupa 5')) {
+                   batch2.update(d.ref, { group: finalName, category: finalName });
+                   count++;
+               }
+            });
+            if(count > 0) await batch2.commit();
+        };
+        await updateTerritoriesBatch();
+
+        if(activeGroupView === oldName) setActiveGroupView(finalName);
+        setActiveTab(prev => prev === oldName ? finalName : prev);
         
-        if(!confirm(`Schimbi denumirea din "${oldName}" în "${finalName}"? Aceasta va actualiza automat toți utilizatorii și teritoriile asociate.`)) return;
-
-        try {
-            const updatedGroups = (settings.groups || DEFAULT_GROUPS).map(g => g === oldName ? finalName : g);
-            await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
-
-            const usersSnap = await db.collection('app_users').where('group', '==', oldName).get();
-            const batch1 = db.batch();
-            usersSnap.docs.forEach(d => batch1.update(d.ref, { group: finalName }));
-            if(!usersSnap.empty) await batch1.commit();
-
-            const updateTerritoriesBatch = async () => {
-                const snap = await db.collection('shared_territories').get();
-                const batch2 = db.batch();
-                let count = 0;
-                snap.docs.forEach(d => {
-                   const data = d.data();
-                   if (data.group === oldName || data.category === oldName || (!data.group && !data.category && oldName === 'Grupa 5')) {
-                       batch2.update(d.ref, { group: finalName, category: finalName });
-                       count++;
-                   }
-                });
-                if(count > 0) await batch2.commit();
-            };
-            await updateTerritoriesBatch();
-
-            if(activeGroupView === oldName) setActiveGroupView(finalName);
-            setActiveTab(prev => prev === oldName ? finalName : prev);
-            
-            if(user?.group === oldName) {
-                const updatedUser = {...user, group: finalName};
-                setUser(updatedUser);
-                localStorage.setItem('custom_user', JSON.stringify(updatedUser));
-            }
-        } catch(err) {
-            alert("Eroare la redenumirea grupei: " + err.message);
+        if(user?.group === oldName) {
+            const updatedUser = {...user, group: finalName};
+            setUser(updatedUser);
+            localStorage.setItem('custom_user', JSON.stringify(updatedUser));
         }
-      };
+      } catch(err) {
+          // Am înlocuit și alerta de eroare cu alertBox roșu de siguranță
+          setAlertBox({
+            isOpen: true,
+            title: 'Eroare server',
+            message: "Eroare la redenumirea grupei: " + err.message,
+            isDanger: true,
+            onConfirm: () => {}
+          });
+      }
+    }
+  });
+};
 
       const handleDeleteGroup = (groupName) => { // Am scos async de aici
         setAlertBox({
