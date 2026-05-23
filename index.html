@@ -528,11 +528,58 @@
       const [authForm, setAuthForm] = useState({ name: '', password: '' });
       const [adminUsersList, setAdminUsersList] = useState([]);
 
-      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false });
+      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false report: null });
       const [exportConfig, setExportConfig] = useState({ category: 'personal', mode: 'full' });
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
       const [collapsedSections, setCollapsedSections] = useState({});
+
+     //genereaza raport de trimitere notite
+      const generateTerritoryReport = (territory) => {
+        let report = `Salutare! Îți întorc teritoriul "${territory.name}".\n\n`;
+    
+          (territory.blocks || []).forEach(block => {
+              (block.sections || []).forEach(sec => {
+                  const rus = sec.locations.filter(l => l.status === 'rusa').map(l => l.number).join(', ');
+                  const refuz = sec.locations.filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
+            
+                  if (rus || refuz) {
+                     report += `📍 ${block.name}, ${sec.name || 'Scară'}:\n`;
+                    if (rus) report += `🇷🇺 Rusă: ${rus}\n`;
+                    if (refuz) report += `🚫 Refuz categoric: ${refuz}\n`;
+                    report += `\n`;
+                  }
+               });
+          });
+    return report;
+};
+     //Modalul de Raport
+    {modals.report && (
+       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
+         <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500">
+           <h3 className="font-black text-lg mb-4 text-slate-800 dark:text-slate-100 uppercase">Raport Teritoriu</h3>
+           <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 max-h-60 overflow-y-auto mb-4 border border-slate-200 dark:border-slate-700">
+             {modals.report}
+           </div>
+           <div className="flex gap-2">
+              <button onClick={() => {
+                  navigator.clipboard.writeText(modals.report);
+                  // Notificare scurtă (poți folosi un mic mesaj temporar dacă ai toast, sau doar asta):
+                  alert("Copiat în clipboard!");
+               }} className="flex-1 p-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs">Copiază</button>
+        
+               <button onClick={() => {
+                   if (navigator.share) {
+                       navigator.share({ title: 'Raport Teritoriu', text: modals.report });
+                   } else {
+                         alert("Partajarea nu este suportată pe acest browser.");
+                   }
+                }} className="flex-1 p-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs">Trimite (Social)</button>
+               </div>
+               <button onClick={() => setModals({...modals, report: null})} className="w-full mt-2 p-3 text-slate-400 font-black uppercase text-[10px]">Închide</button>
+            </div>
+         </div>
+       )}
 
       // Adaugă asta sub celelalte state-uri din App:
       const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
@@ -915,7 +962,15 @@ const handleRenameGroup = (oldName, newName) => {
 
       const handleToggleDone = (t) => {
         const isNowDone = !t.isDone;
-        const updateData = { isDone: isNowDone };
+        // Dacă tocmai l-ai marcat ca "Gata" (isNowDone este true), deschidem raportul
+        if (isNowDone) {
+            const reportText = generateTerritoryReport(t);
+            setModals(prev => ({ ...prev, report: reportText }));
+          }
+          const updateData = { isDone: isNowDone };
+          // ... restul logicii tale de update (endDate etc.) ...
+          updateTerritory(t.id, t.category, updateData);
+      };
 
         if (isNowDone) {
             updateData.originalEndDate = t.endDate;
