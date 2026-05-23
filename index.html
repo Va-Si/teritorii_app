@@ -2327,23 +2327,32 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       </div>
                    </div>
 
-                   {exportConfig.mode === 'partial' && (
+                                       {/* --- INLOCUIESTE DOAR ACEST BLOC PENTRU FILTRAREA SECURIZATA --- */}
+                    {exportConfig.mode === 'partial' && (
                        <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 max-h-[180px] overflow-y-auto shadow-inner">
-                          {territories.filter(t => t.category === exportConfig.category).length === 0 ? (
+                          {territories.filter(t => {
+                              // Utilizatorii simpli pot vedea doar categoria personal, chiar dacă state-ul cere altceva
+                              const allowedCategory = (isAdmin || isGroupAdmin) ? exportConfig.category : 'personal';
+                              return t.category === allowedCategory;
+                          }).length === 0 ? (
                               <p className="text-xs text-slate-400 font-bold text-center py-4">Niciun teritoriu disponibil.</p>
-                          ) : territories.filter(t => t.category === exportConfig.category).map(t => (
+                          ) : territories.filter(t => {
+                              const allowedCategory = (isAdmin || isGroupAdmin) ? exportConfig.category : 'personal';
+                              return t.category === allowedCategory;
+                          }).map(t => (
                               <label key={t.id} className="flex items-center gap-3 p-2 hover:bg-white dark:hover:bg-slate-800 rounded-xl cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600">
                                   <input type="checkbox" name="selectedTerritories" value={t.id} className="w-5 h-5 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500 cursor-pointer" />
                                   <span className="text-xs font-black text-slate-700 dark:text-slate-200 truncate uppercase">{t.name}</span>
                               </label>
                           ))}
                        </div>
-                   )}
+                    )}
 
-                   <div className="flex gap-2 pt-4 shrink-0">
-                    <button type="button" onClick={() => setModals({...modals, export: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Anulează</button>
-                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-sm hover:bg-blue-700 transition">EXPORTĂ ACUM</button>
-                   </div>
+                               {/* --- INLOCUIESTE DOAR ACEST DIV PENTRU ANIMAȚIILE BUTOANELOR --- */}
+            <div className="flex gap-2 pt-4 shrink-0">
+             <button type="button" onClick={() => setModals({...modals, export: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+             <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase shadow-sm active:scale-95 transition-all">EXPORTĂ ACUM</button>
+            </div>
                 </form>
               </div>
             </div>
