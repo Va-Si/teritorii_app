@@ -923,22 +923,18 @@ const handleRenameGroup = (oldName, newName) => {
 
      const updateTerritory = async (id, category, data) => {
     try {
-        console.log("Încerc update pentru:", { id, category, data, userDocId });
+        
         
         if (category !== 'personal') {
-            console.log("Trimit către: shared_territories");
+            
             return await db.collection('shared_territories').doc(id).update(data);
         } else {
-            console.log("Trimit către: users -> territories");
-            // Verificăm dacă userDocId există
-            if (!userDocId) {
-                console.error("EROARE: userDocId lipsește! Nu pot salva în 'personal'.");
-                return;
-            }
+            
+           
             return await db.collection('users').doc(userDocId).collection('territories').doc(id).update(data);
         }
     } catch (e) {
-        console.error("EROARE Firebase în updateTerritory:", e);
+        console.error("Eroare la salvare:", e); // Poți lăsa doar eroarea, asta e utilă dacă pică netul
         throw e; // Aruncăm eroarea mai departe ca să o vadă handleToggleDone
     }
 };
@@ -1004,7 +1000,7 @@ const handleRenameGroup = (oldName, newName) => {
 
 const handleToggleDone = async (t) => { // Am adăugat 'async'
     const isNowDone = !t.isDone;
-    console.log("Se încearcă actualizarea teritoriului. ID:", t.id, "Stare nouă (isDone):", isNowDone);
+    
 
     // 1. Logica pentru date
     const updateData = { isDone: isNowDone };
@@ -1017,9 +1013,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
     try {
         // 2. Așteptăm salvarea în Firebase
-        console.log("Se trimit datele către Firebase:", updateData);
+        
         await updateTerritory(t.id, t.category, updateData);
-        console.log("Succes: Datele au fost salvate în Firebase!");
+        
 
         // 3. Dacă totul e OK, actualizăm și interfața
         setTerritories(prev => prev.map(item => 
