@@ -1402,8 +1402,8 @@ const handleRenameGroup = (oldName, newName) => {
            {/* Buton X personalizat: mai mare, dreptunghiular */}
            <button 
              onClick={() => setModals({...modals, report: null})} 
-             className="absolute top-4 right-4 w-12 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-xl hover:bg-slate-200 transition-all active:scale-90">
-             <span className="material-icons text-xl text-slate-500 font-bold">close</span>
+             className="absolute top-4 right-4 w-12 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 transition-all active:scale-90">
+             <span className="material-icons text-xl text-slate-500">close</span>
              </button>
 
              
@@ -1414,9 +1414,9 @@ const handleRenameGroup = (oldName, newName) => {
            <div className="flex gap-2 mb-2">
               <button onClick={() => {
                   navigator.clipboard.writeText(modals.report.text);
-                  setToast("📋 Copiat în clipboard!");
-               }} className="flex-1 p-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-blue-700 active:scale-95 shadow-lg flex items-center justify-center gap-1"
-                📋 Copiază
+                  setToast("Copiat în clipboard!"); // Fără emoji aici
+               }} className="flex-1 p-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-blue-700 active:scale-95 shadow-lg"
+                Copiază
                 </button>
         
                <button onClick={() => {
@@ -1425,17 +1425,17 @@ const handleRenameGroup = (oldName, newName) => {
                    } else {
                          alert("Partajarea nu este suportată.");
                    }
-                }} className="flex-1 p-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-emerald-700 active:scale-95 shadow-lg flex items-center justify-center gap-1"
-                 📨 Trimite
+                }} className="flex-1 p-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-emerald-700 active:scale-95 shadow-lg"
+                 Trimite
                  </button>
                </div>
                {/* Buton Anulează (debifează) */}
                  <button onClick={() => {
                    handleToggleDone(modals.report.territory); // Asta va debifa teritoriul
                    setModals({...modals, report: null});    // Închide modalul
-                    setToast("❌ Teritoriu debifat!");
+                    setToast("Teritoriu debifat!");
                    }} className="w-full p-3 bg-red-500 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-red-600 active:scale-95 shadow-lg"
-                   ❌ Anulează Finalizarea
+                   Anulează Finalizarea
                    </button>
             </div>
          </div>
