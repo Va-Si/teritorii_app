@@ -487,6 +487,31 @@
       const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
       //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
       const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
+      // tab la useri
+      const [adminUserTab, setAdminUserTab] = useState('All');
+      const getFilteredAndSortedUsers = () => {
+        // 1. Filtrăm utilizatorii în funcție de tab-ul ales
+        let filtered = [...(adminUsersList || [])]; // Dacă variabila ta are alt nume (ex: usersList), schimbă appUsers cu numele ei
+        // 1. Filtrare după tab-ul selectat
+        if (adminUserTab !== 'All') {
+          filtered = filtered.filter(u => u.group === adminUserTab || (!u.group && adminUserTab === 'Grupa 5'));
+        }
+
+        // 2. Sortăm: Super Adminii și Adminii de Grupă primii, apoi ordonăm alfabetic numele
+        return filtered.sort((a, b) => {
+          const aIsAdmin = a.isAdminGroup === true;
+          const bIsAdmin = b.isAdminGroup === true;
+
+          // Dacă 'a' este admin și 'b' nu este, 'a' urcă mai sus (-1)
+          if (aIsAdmin && !bIsAdmin) return -1;
+          // Dacă 'b' este admin și 'a' nu este, 'b' urcă mai sus (1)
+          if (!aIsAdmin && bIsAdmin) return 1;
+
+          // Dacă ambii au același rang (ambii admini sau ambii utilizatori de rând), îi sortăm alfabetic
+          return (a.name || '').localeCompare(b.name || '');
+        });
+      };
+      
       
       const blocksContainerRef = useRef(null);
       const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -1650,27 +1675,49 @@ const handleRenameGroup = (oldName, newName) => {
 
                   <div>
                     <h4 className="text-xs font-black uppercase text-slate-500 mb-3">Utilizatori Existenți</h4>
+                    {/* ================= BARĂ TAB-URI DINAMICE (ADĂUGATĂ ACUM) ================= */}
+                    <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none border-b border-slate-100 dark:border-slate-700/50">
+                      <button 
+                        onClick={() => setAdminUserTab('All')}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${adminUserTab === 'All' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                      >
+                        Toți
+                      </button>
+                      {(settings.groups || DEFAULT_GROUPS).map(g => (
+                        <button
+                          key={g}
+                          onClick={() => setAdminUserTab(g)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${adminUserTab === g ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-50 dark:bg-slate-900 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Lista ta redesenată cu noul motor de filtrare și sortare */}
                     <div className="space-y-2">
-                      {adminUsersList.length === 0 ? (
-                        <p className="text-xs font-bold text-slate-400 text-center py-4">Niciun utilizator.</p>
+                      {/* MODIFICAT: Verificăm lungimea listei filtrate, nu a celei generale */}
+                      {getFilteredAndSortedUsers().length === 0 ? (
+                        <p className="text-xs font-bold text-slate-400 text-center py-4">Niciun utilizator în această secțiune.</p>
                       ) : (
-                        adminUsersList.map(u => (//Lista utilizatorilor din meniu administrare 
+                        // MODIFICAT: Folosim funcția getFilteredAndSortedUsers() în loc de adminUsersList
+                        getFilteredAndSortedUsers().map(u => (
                           <div key={u.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm">
                             <div>
                               <div className="font-black text-sm text-slate-800 dark:text-slate-100 flex items-center gap-1">
                                 {u.name} 
-                                {/* AICI AM MODIFICAT: Dacă e admin, îi punem o insignă frumoasă cu iconiță și text */}
+                                
                                 {u.isAdminGroup && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-black uppercase tracking-wider text-blue-500 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded-md ml-1 leading-none">
-                                  {/* AM ADĂUGAT: translate-y-[1px] ca să coborâm iconița la nivelul textului */}
-                                  <span className="material-icons text-[13px] transform translate-y-[1px]">verified</span>
-                                  {/* AM ADĂUGAT: am pus textul în span ca flexbox-ul să-l alinieze corect */}
-                                  <span>Admin</span>
-                                </span>
-                               )}
+                                  <span className="inline-flex items-center gap-0.5 text-[10px] font-black uppercase tracking-wider text-blue-500 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded-md ml-1 leading-none">
+                                    <span className="material-icons text-[13px] transform translate-y-[1px]">verified</span>
+                                    <span>Admin</span>
+                                  </span>
+                                )}
                               </div>
                               <div className="text-[10px] text-slate-400 font-bold">{u.group || 'Grupa 5'} • Parolă: {u.password}</div>
                             </div>
+                            
+                            {/* Butoanele tale originale de editare și ștergere (Rămase Neschimbate) */}
                             <div className="flex gap-2">
                               <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
                               <button onClick={() => {
@@ -1683,13 +1730,13 @@ const handleRenameGroup = (oldName, newName) => {
                                         db.collection('app_users').doc(u.id).delete();
                                       }
                                     });
-                            
                               }} className="material-icons text-slate-400 hover:text-red-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">delete</button>
                             </div>
                           </div>
                         ))
                       )}
                     </div>
+
                   </div>
                 </div>
               </div>
