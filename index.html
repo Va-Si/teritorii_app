@@ -2203,6 +2203,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             </div>
           )}
 
+{/* 1. MODAL: Bloc / Stradă Nouă */}
           {modals.blockAdd && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
@@ -2220,20 +2221,22 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     <input name="stradaName" placeholder="Nume Stradă (ex: Str. Lalelelor)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
                   </div>
                   <div className="flex gap-2 pt-4">
-                    <button type="button" onClick={() => setModals({...modals, blockAdd: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs">Anulează</button>
-                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black shadow-sm">SALVEAZĂ</button>
+                    {/* ADĂUGAT HOVER: hover:bg-slate-100 / hover:text-slate-600 */}
+                    <button type="button" onClick={() => setModals({...modals, blockAdd: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl transition-colors uppercase text-xs">Anulează</button>
+                    {/* ADĂUGAT HOVER: hover:bg-blue-700 */}
+                    <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm transition-colors">SALVEAZĂ</button>
                   </div>
                 </form>
               </div>
             </div>
           )}
 
+          {/* 2. MODAL: Adăugare Scară / Case */}
           {(modals.sectionAdd || modals.locationAppend || modals.stradaAddHouse) && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
                 <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100">
                   {modals.stradaAddHouse ? 'Adaugă Case' : (modals.isStradaGroup ? 'Adaugă Grupă de Case' : (modals.locationAppend ? 'Adaugă Apartamente' : 'Adăugare Scară'))}
-                  
                 </h3>
                 <form onSubmit={modals.stradaAddHouse ? handleAddStradaHouses : (modals.locationAppend ? handleAppendLocations : handleAddSection)} className="space-y-4">
                   {(!modals.locationAppend && !modals.stradaAddHouse) && (
@@ -2258,14 +2261,17 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </div>
 
                   <div className="flex gap-2 pt-2">
-                    <button type="button" onClick={() => setModals({...modals, sectionAdd: null, locationAppend: null, stradaAddHouse: null, isStradaGroup: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs">Anulează</button>
-                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black shadow-sm">SALVEAZĂ</button>
+                    {/* ADĂUGAT HOVER: hover:bg-slate-100 / hover:text-slate-600 */}
+                    <button type="button" onClick={() => setModals({...modals, sectionAdd: null, locationAppend: null, stradaAddHouse: null, isStradaGroup: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl transition-colors uppercase text-xs">Anulează</button>
+                    {/* ADĂUGAT HOVER: hover:bg-blue-700 */}
+                    <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm transition-colors">SALVEAZĂ</button>
                   </div>
                 </form>
               </div>
             </div>
           )}
 
+          {/* 3. MODAL: Redenumește */}
           {modals.renameItem && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
@@ -2275,8 +2281,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <form onSubmit={handleRename} className="space-y-4">
                   <input required name="newName" defaultValue={modals.renameItem.currentName} className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
                   <div className="flex gap-2 pt-2">
-                    <button type="button" onClick={() => setModals({...modals, renameItem: null})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs">Anulează</button>
-                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black shadow-sm">SALVEAZĂ</button>
+                    {/* ADĂUGAT HOVER: hover:bg-slate-100 / hover:text-slate-600 */}
+                    <button type="button" onClick={() => setModals({...modals, renameItem: null})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl transition-colors uppercase text-xs">Anulează</button>
+                    {/* ADĂUGAT HOVER: hover:bg-blue-700 */}
+                    <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm transition-colors">SALVEAZĂ</button>
                   </div>
                 </form>
               </div>
