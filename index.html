@@ -898,10 +898,27 @@ const handleRenameGroup = (oldName, newName) => {
         return total === 0 ? 0 : Math.round((targets / total) * 100);
       };
 
-      const updateTerritory = (id, category, data) => {
-        if (category !== 'personal') return db.collection('shared_territories').doc(id).update(data);
-        else return db.collection('users').doc(userDocId).collection('territories').doc(id).update(data);
-      };
+     const updateTerritory = async (id, category, data) => {
+    try {
+        console.log("Încerc update pentru:", { id, category, data, userDocId });
+        
+        if (category !== 'personal') {
+            console.log("Trimit către: shared_territories");
+            return await db.collection('shared_territories').doc(id).update(data);
+        } else {
+            console.log("Trimit către: users -> territories");
+            // Verificăm dacă userDocId există
+            if (!userDocId) {
+                console.error("EROARE: userDocId lipsește! Nu pot salva în 'personal'.");
+                return;
+            }
+            return await db.collection('users').doc(userDocId).collection('territories').doc(id).update(data);
+        }
+    } catch (e) {
+        console.error("EROARE Firebase în updateTerritory:", e);
+        throw e; // Aruncăm eroarea mai departe ca să o vadă handleToggleDone
+    }
+};
 
       const parseNumbers = (input, forceEven = false, forceOdd = false) => {
         const locs = [];
@@ -962,21 +979,11 @@ const handleRenameGroup = (oldName, newName) => {
           } catch(err) {}
       };
 
-const handleToggleDone = (t) => {
+const handleToggleDone = async (t) => { // Am adăugat 'async'
     const isNowDone = !t.isDone;
+    console.log("Se încearcă actualizarea teritoriului. ID:", t.id, "Stare nouă (isDone):", isNowDone);
 
-    // 1. Actualizăm starea generală (pentru toată lista)
-    setTerritories(prev => prev.map(item => 
-        item.id === t.id ? { ...item, isDone: isNowDone } : item
-    ));
-
-    // 2. ACTUALIZARE FORȚATĂ: 
-    // Dacă ai o stare numită 'selectedTerritory' (folosești useState), actualizează-o acum:
-    if (typeof setSelectedTerritory !== 'undefined') {
-        setSelectedTerritory(prev => ({ ...prev, isDone: isNowDone }));
-    }
-
-    // 3. Logica pentru date (data)
+    // 1. Logica pentru date
     const updateData = { isDone: isNowDone };
     if (isNowDone) {
         updateData.originalEndDate = t.endDate;
@@ -985,15 +992,32 @@ const handleToggleDone = (t) => {
         updateData.endDate = t.originalEndDate || t.endDate;
     }
 
-    // 4. Salvare în Firebase
-    updateTerritory(t.id, t.category, updateData);
+    try {
+        // 2. Așteptăm salvarea în Firebase
+        console.log("Se trimit datele către Firebase:", updateData);
+        await updateTerritory(t.id, t.category, updateData);
+        console.log("Succes: Datele au fost salvate în Firebase!");
 
-    // 5. Notificări
-    if (isNowDone) {
-        const reportText = generateTerritoryReport(t);
-        setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
-    } else {
-        setToast("❌ Teritoriu debifat!");
+        // 3. Dacă totul e OK, actualizăm și interfața
+        setTerritories(prev => prev.map(item => 
+            item.id === t.id ? { ...item, ...updateData } : item
+        ));
+
+        if (typeof setSelectedTerritory !== 'undefined') {
+            setSelectedTerritory(prev => ({ ...prev, ...updateData }));
+        }
+
+        // 4. Notificări
+        if (isNowDone) {
+            const reportText = generateTerritoryReport(t);
+            setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
+        } else {
+            setToast("❌ Teritoriu debifat!");
+        }
+
+    } catch (error) {
+        console.error("EROARE CRITICĂ la salvarea în Firebase:", error);
+        setToast("Eroare la salvare!");
     }
 };
 
