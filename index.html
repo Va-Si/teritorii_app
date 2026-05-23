@@ -541,6 +541,29 @@
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
       const [collapsedSections, setCollapsedSections] = useState({});
+      const handleCancelCompletion = (t) => {
+    // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
+    const updateData = { 
+        isDone: false,
+        endDate: t.originalEndDate || t.endDate 
+    };
+
+    // 2. Actualizăm starea locală pentru UI
+    setTerritories(prev => prev.map(item => 
+        item.id === t.id ? { ...item, isDone: false, endDate: updateData.endDate } : item
+    ));
+
+    if (typeof setSelectedTerritory !== 'undefined') {
+        setSelectedTerritory(prev => ({ ...prev, isDone: false, endDate: updateData.endDate }));
+    }
+
+    // 3. Salvăm în Firebase
+    updateTerritory(t.id, t.category, updateData);
+
+    // 4. Închidem modalul și afișăm toast
+    setModals(prev => ({ ...prev, report: null }));
+    setToast("❌ Teritoriu debifat!");
+};
 
      //genereaza raport de trimitere notite
       const generateTerritoryReport = (territory) => {
@@ -1460,14 +1483,15 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                  Trimite
                  </button>
                </div>
-               {/* Buton Anulează (debifează) */}
-                 <button onClick={() => {
-                   handleToggleDone(modals.report.territory); // Asta va debifa teritoriul
-                   setModals({...modals, report: null});    // Închide modalul
-                    setToast("Teritoriu debifat!");
-                   }} className="w-full p-3 bg-red-500 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-red-600 active:scale-95 shadow-lg">
-                   Anulează Finalizarea
-                   </button>
+              {/* Buton Anulează (modificat) */}
+<button 
+  onClick={() => {
+      handleCancelCompletion(modals.report.territory); 
+  }} 
+  className="w-full p-3 bg-red-500 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-red-600 active:scale-95 shadow-lg"
+>
+  Anulează Finalizarea
+</button>
             </div>
          </div>
        )}
