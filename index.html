@@ -582,7 +582,7 @@ const generateTerritoryReport = (territory) => {
                 // Dacă e bloc, punem "Scara X", dacă e stradă, putem pune "Grupare X" sau doar "Case"
                 const sectionName = sec.name ? sec.name : 'Case';
                 
-                blockContent += `  🚪 ${sectionName}:\n`;
+                blockContent += `  🔸 ${sectionName}:\n`;
                 if (rus) blockContent += `    🗣️ Vorbitori de l.Rusă: ${rus}\n`;
                 if (refuz) blockContent += `    🚫 Refuzuri Categorice: ${refuz}\n`;
             }
