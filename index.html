@@ -1649,8 +1649,26 @@ const handleRenameGroup = (oldName, newName) => {
                         });
 
                         e.target.reset();
-                        alert('Utilizator creat cu succes și securizat!');
-                      } catch(err) { alert('Eroare la creare: ' + err.message); }
+                        // REPARAT: Alerta albastră pentru succes, integrată în design
+                        setAlertBox({
+                          isOpen: true,
+                          title: 'Succes',
+                          message: 'Utilizator creat cu succes și securizat!',
+                          isDanger: false,
+                          onConfirm: () => {}
+                        });
+                        
+                      } catch(err) {
+                       // REPARAT: Alerta roșie în caz că Firebase dă vreo eroare
+                       setAlertBox({
+                         isOpen: true,
+                         title: 'Eroare',
+                         message: 'Eroare la creare: ' + err.message,
+                         isDanger: true,
+                         onConfirm: () => {}
+                       });
+                      }
+                         
                     }} className="space-y-3">
                       <div className="space-y-2">
                         <div className="text-left">
