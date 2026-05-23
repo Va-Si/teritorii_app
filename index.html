@@ -2409,35 +2409,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           )}
 
           {modals.settings && (
-          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
-  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-    <span className="material-icons">query_stats</span> Etichete Progres
-  </h3>
-  <p className="text-xs text-slate-500 mb-4">Bifează etichetele care vrei să fie luate în calcul la progresul campaniei:</p>
-  
-  <div className="grid grid-cols-1 gap-2">
-    {(settings.labels || []).map(label => (
-      <label key={label.id} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer">
-        <span className="font-bold text-sm">{label.name}</span>
-        <input 
-          type="checkbox" 
-          checked={label.isCampaignTarget || false}
-          onChange={(e) => {
-            // Actualizăm eticheta în setări
-            const updatedLabels = settings.labels.map(l => 
-              l.id === label.id ? { ...l, isCampaignTarget: e.target.checked } : l
-            );
-            updateSettings({ ...settings, labels: updatedLabels });
-          }}
-          className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
-        />
-      </label>
-    ))}
-  </div>
-</div>
-
-
-
           
             <div className="fixed inset-0 bg-white dark:bg-slate-900 z-[200] flex flex-col p-6 overflow-y-auto transition-colors">
               <div className="flex items-center justify-between mb-8 shrink-0">
@@ -2446,7 +2417,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </h2>
                 <button onClick={() => setModals({...modals, settings: false})} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
               </div>
-              
+              {/* 2. SECȚIUNE GRUPE (Codul vechi) */}
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
                  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><span className="material-icons">groups</span> Gestionare Grupe</h3>
                  <div className="space-y-3 mb-5">
@@ -2482,6 +2453,33 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                      <span className="material-icons">add</span> Adaugă Grupă
                  </button>
               </div>
+{/* 3. SECȚIUNE CALCUI PROGRES (Codul nou pe care l-ai adăugat despre calcul progres si bifare la progres care eticheta ) */}
+                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
+  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+    <span className="material-icons">query_stats</span> Etichete Progres
+  </h3>
+  <p className="text-xs text-slate-500 mb-4">Bifează etichetele care vrei să fie luate în calcul la progresul campaniei:</p>
+  
+  <div className="grid grid-cols-1 gap-2">
+    {(settings.labels || []).map(label => (
+      <label key={label.id} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer">
+        <span className="font-bold text-sm">{label.name}</span>
+        <input 
+          type="checkbox" 
+          checked={label.isCampaignTarget || false}
+          onChange={(e) => {
+            // Actualizăm eticheta în setări
+            const updatedLabels = settings.labels.map(l => 
+              l.id === label.id ? { ...l, isCampaignTarget: e.target.checked } : l
+            );
+            updateSettings({ ...settings, labels: updatedLabels });
+          }}
+          className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
+        />
+      </label>
+    ))}
+  </div>
+</div>
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm mb-8">
                  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><span className="material-icons">palette</span> Etichete și culori</h3>
