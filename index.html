@@ -566,36 +566,43 @@
 };
 
      //genereaza raport de trimitere notite
-      const generateTerritoryReport = (territory) => {
-        let report = `Salutare! Îți întorc teritoriul "${territory.name}".\n\n`;
+const generateTerritoryReport = (territory) => {
+    let report = `Salutare! Îți întorc teritoriul "${territory.name}".\n\n`;
     
-          (territory.blocks || []).forEach(block => {
-              (block.sections || []).forEach(sec => {
-                  const rus = sec.locations.filter(l => l.status === 'rusa').map(l => l.number).join(', ');
-                  const refuz = sec.locations.filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
-            
-                  if (rus || refuz) {
-                    const grup = block.group ? ` (${block.group})` : '';
-                    // Aici se întâmplă magia: verificăm 'type'-ul salvat de tine în handleAddBlock
-                // Dacă block.type nu există (date vechi), verificăm dacă numele conține 'str'
-                    const isStrada = block.type
-                    ? (block.type === 'strada')
-                      : (block.name.toLowerCase().includes('str'));
-                    const header = isStrada
-                    ? `🏠 Strada ${block.name}${grup}`
-                      : `🏢 Blocul ${block.name}, Scara ${sec.name || '?'}`;
-                    report += `${header}:\n`;
-                    if (rus) report += `🗣️ Rusă: ${rus}\n`;
-                    if (refuz) report += `🚫 Refuz categoric: ${refuz}\n`;
-                    report += `\n`;
+    (territory.blocks || []).forEach(block => {
+        // 1. Inițializăm un string gol pentru tot ce se întâmplă în interiorul acestui bloc
+        let blockContent = "";
 
-                    
+        (block.sections || []).forEach(sec => {
+            const rus = sec.locations.filter(l => l.status === 'rusa').map(l => l.number).join(', ');
+            const refuz = sec.locations.filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
+            
+            // Dacă există date, adăugăm la conținutul blocului (fără header încă)
+            if (rus || refuz) {
+                // Dacă e bloc, punem "Scara X", dacă e stradă, putem pune "Grupare X" sau doar "Case"
+                const sectionName = sec.name ? sec.name : 'Case';
                 
-                     } 
-                   });
-                });
-            return report;
-        };
+                blockContent += `  📍 ${sectionName}:\n`;
+                if (rus) blockContent += `    🗣️ Rusă: ${rus}\n`;
+                if (refuz) blockContent += `    🚫 Refuz: ${refuz}\n`;
+            }
+        });
+
+        // 2. Doar dacă am găsit ceva date în interiorul blocului, afișăm Header-ul O SINGURĂ DATĂ
+        if (blockContent !== "") {
+            const isStrada = block.type === 'strada';
+            const grup = block.group ? ` (${block.group})` : '';
+            
+            const header = isStrada 
+                ? `🏠 Strada ${block.name}${grup}` 
+                : `🏢 Blocul ${block.name}`;
+
+            report += `${header}:\n${blockContent}\n`;
+        }
+    });
+    
+    return report;
+};
      
 
       // Adaugă asta sub celelalte state-uri din App:
