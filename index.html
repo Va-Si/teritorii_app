@@ -246,6 +246,26 @@
                        <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block truncate">Nume Etichetă</label>
                        <textarea rows="1" value={l.label} onChange={(e) => handleLabelNameChange(l.id, e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-3 font-black text-sm uppercase text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden leading-tight h-[44px] whitespace-nowrap block" />
                     </div>
+
+                  {/* --- AICI AM ADĂUGAT BLOCUL PENTRU PROGRES --- */}
+        <div className="flex flex-col items-center shrink-0">
+          <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block text-center w-full truncate">Progres</label>
+          <input 
+            type="checkbox" 
+            checked={!!l.isCampaignTarget}
+            onChange={(e) => {
+                const newLabels = settings.labels.map(item => 
+                    item.id === l.id ? { ...item, isCampaignTarget: e.target.checked } : item
+                );
+                updateSettingsLabels(newLabels);
+            }}
+            className="w-10 sm:w-12 h-[44px] accent-blue-500 cursor-pointer block"
+          />
+        </div>
+        {/* ------------------------------------------- */}
+
+
+                  
                     <div className="flex flex-col items-center shrink-0">
                       <label className="text-[10px] font-black uppercase text-slate-400 mb-1 block text-center w-full truncate">Fundal</label>
                       <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-10 sm:w-12 h-[44px] rounded-xl cursor-pointer border-0 p-0 shadow-sm block" />
@@ -2453,33 +2473,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                      <span className="material-icons">add</span> Adaugă Grupă
                  </button>
               </div>
-{/* 3. SECȚIUNE CALCUI PROGRES (Codul nou pe care l-ai adăugat despre calcul progres si bifare la progres care eticheta ) */}
-                        <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
-  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-    <span className="material-icons">query_stats</span> Etichete Progres
-  </h3>
-  <p className="text-xs text-slate-500 mb-4">Bifează etichetele care vrei să fie luate în calcul la progresul campaniei:</p>
-  
-  <div className="grid grid-cols-1 gap-2">
-    {(settings.labels || []).map(label => (
-      <label key={label.id} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer">
-        <span className="font-bold text-sm">{label.name}</span>
-        <input 
-          type="checkbox" 
-          checked={label.isCampaignTarget || false}
-          onChange={(e) => {
-            // Actualizăm eticheta în setări
-            const updatedLabels = settings.labels.map(l => 
-              l.id === label.id ? { ...l, isCampaignTarget: e.target.checked } : l
-            );
-            updateSettings({ ...settings, labels: updatedLabels });
-          }}
-          className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
-        />
-      </label>
-    ))}
-  </div>
-</div>
+
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm mb-8">
                  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><span className="material-icons">palette</span> Etichete și culori</h3>
