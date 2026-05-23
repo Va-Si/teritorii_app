@@ -529,6 +529,14 @@
       const [adminUsersList, setAdminUsersList] = useState([]);
 
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
+      const [toast, setToast] = useState(null);
+      // Acest efect închide toast-ul automat după 2 secunde
+      useEffect(() => {
+        if (toast) {
+          const timer = setTimeout(() => setToast(null), 2000);
+          return () => clearTimeout(timer);
+          }
+        }, [toast]);
       const [exportConfig, setExportConfig] = useState({ category: 'personal', mode: 'full' });
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
@@ -544,14 +552,23 @@
                   const refuz = sec.locations.filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
             
                   if (rus || refuz) {
-                    // Verificăm dacă e stradă/casă pe pământ sau bloc
-                    const isStrada = block.name.toLowerCase().includes('strada') || block.name.toLowerCase().includes('str.');
-                    const locationHeader = isStrada
-                    ? `🏢 ${block.name} ${sec.name || ''}`
-                    : `🏢 ${block.name}, ${sec.name || 'Scară'}`;
-                    report += `${locationHeader}:\n`;
-                    if (rus) report += `🗣️ Rusă: ${rus}\n`;
-                    if (refuz) report += `🚫 Refuz categoric: ${refuz}\n`;
+                    // Logica pentru emoji și etichete
+                    const isStrada = block.name.toLowerCase().includes('str') || block.name.toLowerCase().includes('strada');
+                    const grup = block.group ? ` (${block.group})` : '';
+                    const header = isStrada
+                      ? `🏠 Strada ${block.name}${grup}`
+                      : `🏢 Blocul ${block.name}, Scara ${sec.name || '?'}`;
+                    report += `${header}:\n`;
+                    if (rus) report += `🗣️ L. Rusă: ${rus}\n`;
+                      if (refuz) report += `🚫 Refuzuri categorice: ${refuz}\n`;
+
+
+                    
+                  //  ? `🏢 ${block.name} ${sec.name || ''}`
+                  //  : `🏢 ${block.name}, ${sec.name || 'Scară'}`;
+                 //   report += `${locationHeader}:\n`;
+                  //  if (rus) report += `🗣️ Rusă: ${rus}\n`;
+                 //   if (refuz) report += `🚫 Refuz categoric: ${refuz}\n`;
                     report += `\n`;
 
                     
@@ -1287,7 +1304,8 @@ const handleRenameGroup = (oldName, newName) => {
         }
 
       if (!user) {
-        return (
+        return ( 
+          //Return Princioal
           <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 p-4 transition-colors">
             <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl border-4 border-blue-500/20 text-center">
               <div className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl"><span className="material-icons text-4xl">map</span></div>
@@ -1353,6 +1371,59 @@ const handleRenameGroup = (oldName, newName) => {
               </form>
             </div>
           </div>
+                  {/* Toast-ul de notificare (îl pui undeva în interiorul return-ului principal) */}
+            {toast && (
+                <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[999] bg-slate-800 text-white px-6 py-3 rounded-full shadow-lg font-black text-sm animate-bounce">
+                  {toast}
+                </div>
+          )}
+
+            {modals.report && (
+              <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
+                  <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500 relative animate-in zoom-in-95">
+      
+                  {/* Buton X personalizat */}
+                    <button onClick={() => setModals({...modals, report: null})} 
+                          className="absolute top-4 right-4 w-10 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 transition-all active:scale-90">
+                              <span className="material-icons text-lg text-slate-500 font-bold">close</span>
+                    </button>
+
+                <h3 className="font-black text-lg mb-4 text-slate-800 dark:text-slate-100 uppercase">Raport Finalizare</h3>
+      
+                <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 max-h-60 overflow-y-auto mb-4 border border-slate-200 dark:border-slate-700">
+                    <pre className="whitespace-pre-wrap font-sans">{modals.report.text}</pre>
+              </div>
+
+              <div className="flex gap-2 mb-2">
+                  <button onClick={() => {
+                    navigator.clipboard.writeText(modals.report.text);
+                    setToast("📋 Copiat în clipboard!");
+                    }} className="flex-1 p-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-blue-700 active:scale-95 shadow-lg flex items-center justify-center gap-1">
+                     Copiază
+              </button>
+        
+            <button onClick={() => {
+                if (navigator.share) {
+                    navigator.share({ title: 'Raport', text: modals.report.text });
+                } else {
+                    setToast("Eroare partajare");
+                }
+              }} className="flex-1 p-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-emerald-700 active:scale-95 shadow-lg flex items-center justify-center gap-1">
+                Trimite
+              </button>
+            </div>
+      
+          {/* Buton Anulează (care debifează) */}
+            <button onClick={() => {
+                handleToggleDone(modals.report.territory);
+                setModals({...modals, report: null});
+                 setToast("❌ Teritoriu debifat!");
+            }} className="w-full p-3 bg-red-500 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-red-600 active:scale-95 shadow-lg">
+                Anulează Finalizarea
+                </button>
+              </div>
+            </div>
+          )}
         );
       }
 
