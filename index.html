@@ -544,10 +544,21 @@
                   const refuz = sec.locations.filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
             
                   if (rus || refuz) {
-                     report += `📍 ${block.name}, ${sec.name || 'Scară'}:\n`;
-                    if (rus) report += `🇷🇺 Rusă: ${rus}\n`;
+                    // Verificăm dacă e stradă/casă pe pământ sau bloc
+                    const isStrada = block.name.toLowerCase().includes('strada') || block.name.toLowerCase().includes('str.');
+                    const locationHeader = isStrada
+                    ? `🏢 ${block.name} ${sec.name || ''}`
+                    : `🏢 ${block.name}, ${sec.name || 'Scară'}`;
+                    report += `${locationHeader}:\n`;
+                    if (rus) report += `🗣️ Rusă: ${rus}\n`;
                     if (refuz) report += `🚫 Refuz categoric: ${refuz}\n`;
                     report += `\n`;
+
+                    
+                     //report += `🏢 ${block.name}, ${sec.name || 'Scară'}:\n`;
+                    //if (rus) report += `🗣️ L. Rusă: ${rus}\n`;
+                    //if (refuz) report += `🚫 Refuzuzi categorice: ${refuz}\n`;
+                    //report += `\n`;
                      } 
                    });
                 });
@@ -939,7 +950,8 @@ const handleRenameGroup = (oldName, newName) => {
         // 1. Logica pentru Raport (doar dacă tocmai am finalizat teritoriul)
         if (isNowDone) {
             const reportText = generateTerritoryReport(t);
-            setModals(prev => ({ ...prev, report: reportText }));
+          // Salvăm și textul și obiectul teritoriului
+            setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
           }
           // 2. Pregătire date pentru update
           const updateData = { isDone: isNowDone };
@@ -1348,30 +1360,47 @@ const handleRenameGroup = (oldName, newName) => {
 
       return (
         <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
-          //Modalul de Raport
+          
     {modals.report && (
+          //Modalul de Raport
        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
-         <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500">
+         <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500 relative">
+           {/* Butonul X (colț dreapta sus) */}
+           <button onClick={() => setModals({...modals, report: null})} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-full hover:bg-slate-200">
+             <span className="material-icons text-lg text-slate-500">close</span>
+             </button>
+
+             
            <h3 className="font-black text-lg mb-4 text-slate-800 dark:text-slate-100 uppercase">Raport Teritoriu</h3>
            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 max-h-60 overflow-y-auto mb-4 border border-slate-200 dark:border-slate-700">
-             {modals.report}
+             <pre className="whitespace-pre-wrap">{modals.report.text}</pre>
            </div>
-           <div className="flex gap-2">
+           <div className="flex gap-2 mb-2">
               <button onClick={() => {
-                  navigator.clipboard.writeText(modals.report);
-                  // Notificare scurtă (poți folosi un mic mesaj temporar dacă ai toast, sau doar asta):
-                  alert("Copiat în clipboard!");
-               }} className="flex-1 p-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs">Copiază</button>
+                  navigator.clipboard.writeText(modals.report.text);
+                  // Poți adăuga un Toast aici dacă ai, dacă nu, am scos alerta enervantă- alert("Copiat în clipboard!");
+               }} className="flex-1 p-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-1">
+                📋 Copiază
+                </button>
         
                <button onClick={() => {
                    if (navigator.share) {
-                       navigator.share({ title: 'Raport Teritoriu', text: modals.report });
+                       navigator.share({ title: 'Raport Teritoriu', text: modals.report.text });
                    } else {
-                         alert("Partajarea nu este suportată pe acest browser.");
+                         alert("Partajarea nu este suportată.");
                    }
-                }} className="flex-1 p-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs">Trimite (Social)</button>
+                }} className="flex-1 p-3 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-1">
+                 📧 Trimite
+                 </button>
                </div>
-               <button onClick={() => setModals({...modals, report: null})} className="w-full mt-2 p-3 text-slate-400 font-black uppercase text-[10px]">Închide</button>
+               {/* Buton Anulează (debifează) */}
+                 <button onClick={() => {
+                   handleToggleDone(modals.report.territory); // Debifează
+                   setModals({...modals, report: null});    // Închide fereastra
+                   }} className="w-full p-3 bg-red-500 text-white rounded-2xl font-black uppercase text-xs">
+                   Anulează Finalizarea
+                   </button>
+               {/* <button onClick={() => setModals({...modals, report: null})} className="w-full mt-2 p-3 text-slate-400 font-black uppercase text-[10px]">Închide</button>*/}
             </div>
          </div>
        )}
