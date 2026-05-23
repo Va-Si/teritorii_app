@@ -1404,12 +1404,34 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
                 }
 
-                if (data.territories && Array.isArray(data.territories)) {
-                    if (mode === 'full') {
-                        if (!confirm(`Atenție! Vei ȘTERGE DEFINITIV toate teritoriile actuale din secțiunea "${targetCategory}" și le vei înlocui cu cele din fișierul de backup. Continui?`)) {
-                            document.getElementById('importData').value = null;
-                            return;
-                        }
+                                  if (data.territories && Array.isArray(data.territories)) {
+                      if (mode === 'full') {
+                          // REPARAT: Înlocuit confirm() din browser cu AlertBox-ul tău personalizat
+                          setAlertBox({
+                              isOpen: true,
+                              title: 'Atenție! Înlocuire Date',
+                              message: `Vei ȘTERGE DEFINITIV toate teritoriile actuale din secțiunea "${targetCategory}" și le vei înlocui cu cele din fișierul de backup. Continui?`,
+                              isDanger: true, // Afișează avertismentul cu roșu (fiind o acțiune distructivă)
+                              onConfirm: async () => {
+                                  // Închidem doar caseta de alertă, lăsând procesul să execute importul
+                                  setAlertBox(prev => ({ ...prev, isOpen: false }));
+                                  
+                                  // --- INTRODUCE AICI RESTUL CODULUI TĂU DE IMPORT ---
+                                  // Pune aici tot blocul de cod care urmează imediat după confirm-ul vechi 
+                                  // (cel cu batch, Firebase, ștergerea veche și salvarea noilor teritorii)
+                                  
+                              },
+                              onCancel: () => {
+                                  // Dacă utilizatorul se răzgândește și apasă Anulează:
+                                  document.getElementById('importData').value = null;
+                              }
+                          });
+                          
+                          // Oprim execuția imediată a funcției de import, deoarece codul 
+                          // se va rula de acum doar dacă se apasă "Confirm" în interiorul alertului de mai sus.
+                          return; 
+                      }
+                  }
                         if (targetCategory === 'personal') {
                             const snap = await db.collection('users').doc(userDocId).collection('territories').get();
                             const batch = db.batch();
