@@ -273,7 +273,7 @@
       );
     }
 
-    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly }) {
+    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly, territory }) {
       const gridRef = useRef(null);
       const isUngroupedSection = !sec.name || sec.name === 'Case';
       
@@ -316,7 +316,7 @@
               style={getLabelStyle(loc.status)}
               onClick={() => {
                 // 1. Verificăm dacă suntem Offline și pe o Grupă
-                if (!navigator.onLine && selectedTerritory?.category !== 'personal') {
+                if (!navigator.onLine && territory?.category !== 'personal') {
                     setAlertBox({ 
                       isOpen: true, 
                       title: 'Fără conexiune',
@@ -340,7 +340,9 @@
                 // 3. Dacă totul e ok, deschidem
                 openEditModal(blockId, sec.id, loc, lIdx);
               }} 
-              >
+              style={getLabelStyle(loc.status)}
+              className={`square-btn rounded-lg shadow-sm ${isReadOnly ? 'opacity-80 cursor-not-allowed' : ''}`}
+          >
               <span className="btn-text-truncate">{loc.number}</span>
               {loc.notes && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white"></div>}
             </button>
@@ -417,7 +419,12 @@
               
               {unGroupedLocationsSections.map((sec) => (
                   <div key={sec.id} className="w-full section-item no-drag">
-                    <SectionLocations blockId={block.id} sec={sec} getLabelStyle={getLabelStyle} openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} isGroupedStrada={false} canEditStructure={canEditStructure} isReadOnly={isReadOnly} />
+                    <SectionLocations 
+                      blockId={block.id} 
+                      sec={sec} 
+                      territory={territory} // ADĂUGAT
+                      getLabelStyle={getLabelStyle} 
+                      openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} isGroupedStrada={false} canEditStructure={canEditStructure} isReadOnly={isReadOnly} />
                   </div>
               ))}
 
@@ -459,7 +466,12 @@
                     </div>
                   </div>
                   {!isSecCollapsed && (
-                    <SectionLocations blockId={block.id} sec={sec} getLabelStyle={getLabelStyle} openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} isGroupedStrada={true} canEditStructure={canEditStructure} isReadOnly={isReadOnly} />
+                    <SectionLocations 
+                      blockId={block.id} 
+                      territory={territory}
+                      sec={sec} 
+                      getLabelStyle={getLabelStyle} 
+                      openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} isGroupedStrada={true} canEditStructure={canEditStructure} isReadOnly={isReadOnly} />
                   )}
                 </div>
               )})}
