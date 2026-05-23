@@ -311,12 +311,14 @@
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
           {sec.locations.map((loc, lIdx) => (
             <button key={loc.id} onClick={() => {
+              // Debug: Să vedem în consolă dacă măcar se înregistrează click-ul
+              console.log("Click detectat! Online:", navigator.onLine, "Tab:", activeTab);
               // 1. Verificăm Offline: Dacă ești Offline ȘI NU ești pe "personal", blocăm
                 if (!navigator.onLine && activeTab !== 'personal') {
                     setAlertBox({ 
                       isOpen: true, 
                       title: 'Fără conexiune',
-                      message: 'Ești offline! Modificările la grupe necesită conexiune la internet, doar teritoriile din "Personal" pot fi modificate fără internet.',
+                      message: 'Ești offline! Doar teritoriile din "Personal" pot fi modificate fără internet.',
                       isDanger: true, 
                       onConfirm: () => {} 
                     });
@@ -336,7 +338,8 @@
               // 3. Dacă am trecut de ambele, deschidem modalul
                 openEditModal(blockId, sec.id, loc, lIdx);
               }} 
-              style={getLabelStyle(loc.status)} className={`square-btn rounded-lg shadow-sm ${isReadOnly ? 'opacity-80 cursor-not-allowed' : ''}`}>
+              style={getLabelStyle(loc.status)} 
+              className="square-btn rounded-lg shadow-sm"> {/* Am scos cursor-not-allowed ca să ne asigurăm că permite click-ul */}
               <span className="btn-text-truncate">{loc.number}</span>
               {loc.notes && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white"></div>}
             </button>
