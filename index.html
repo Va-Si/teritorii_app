@@ -962,13 +962,21 @@ const handleRenameGroup = (oldName, newName) => {
           } catch(err) {}
       };
 
-      const handleToggleDone = (t) => {
+const handleToggleDone = (t) => {
     const isNowDone = !t.isDone;
 
-    // 1. Actualizează starea locală INSTANT (ca să dispară bifa imediat)
-    setTerritories(prev => prev.map(item => item.id === t.id ? { ...item, isDone: isNowDone } : item));
+    // 1. Actualizăm starea generală (pentru toată lista)
+    setTerritories(prev => prev.map(item => 
+        item.id === t.id ? { ...item, isDone: isNowDone } : item
+    ));
 
-    // 2. Logica pentru date (data de finalizare)
+    // 2. ACTUALIZARE FORȚATĂ: 
+    // Dacă ai o stare numită 'selectedTerritory' (folosești useState), actualizează-o acum:
+    if (typeof setSelectedTerritory !== 'undefined') {
+        setSelectedTerritory(prev => ({ ...prev, isDone: isNowDone }));
+    }
+
+    // 3. Logica pentru date (data)
     const updateData = { isDone: isNowDone };
     if (isNowDone) {
         updateData.originalEndDate = t.endDate;
@@ -977,13 +985,15 @@ const handleRenameGroup = (oldName, newName) => {
         updateData.endDate = t.originalEndDate || t.endDate;
     }
 
-    // 3. Salvează în Firebase
+    // 4. Salvare în Firebase
     updateTerritory(t.id, t.category, updateData);
 
-    // 4. Dacă e bifat, deschide raportul
+    // 5. Notificări
     if (isNowDone) {
         const reportText = generateTerritoryReport(t);
         setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
+    } else {
+        setToast("❌ Teritoriu debifat!");
     }
 };
 
