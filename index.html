@@ -2143,10 +2143,11 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     <input type="checkbox" name="isAdminGroup" defaultChecked={modals.adminEditUser.isAdminGroup} className="w-5 h-5 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500" />
                     <span className="text-xs font-black uppercase text-slate-600 dark:text-slate-300">Este Administrator de Grupă</span>
                   </label>
-                  <div className="flex gap-2 pt-2">
-                    <button type="button" onClick={() => setModals({...modals, adminEditUser: null, adminPanel: true})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition">Anulează</button>
-                    <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition">Salvează</button>
-                  </div>
+                  {/* --- ÎNLOCUIEȘTE DOAR ACEST BLOC DIN MODALUL ADMIN --- */}
+              <div className="flex gap-2 pt-2">
+                <button type="button" onClick={() => setModals({...modals, adminEditUser: null, adminPanel: true})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+                <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm active:scale-95 transition-all">Salvează</button>
+              </div>
                 </form>
               </div>
             </div>
@@ -2194,10 +2195,11 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2 pt-4">
-                    <button type="button" onClick={() => setModals({...modals, territoryAdd: false, territoryEdit: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs rounded-2xl transition-colors">Anulează</button>
-                    <button type="submit" className="flex-[2] bg-blue-600 text-white p-4 rounded-2xl font-black uppercase shadow-sm hover:bg-blue-700 transition">SALVEAZĂ</button>
-                  </div>
+                 {/* --- ÎNLOCUIEȘTE DOAR ACEST BLOC DIN MODALUL TERITORIU --- */}
+          <div className="flex gap-2 pt-4">
+            <button type="button" onClick={() => setModals({...modals, territoryAdd: false, territoryEdit: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+            <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
+          </div>
                 </form>
               </div>
             </div>
@@ -2467,7 +2469,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
                   {canEditStructure && (
                      <p className="text-[10px] font-bold text-center text-slate-400 bg-slate-100 dark:bg-slate-900 p-2 rounded-xl flex items-center justify-center gap-1 shrink-0">
-                       <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pentru a muta
+                       <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pătrățelul cu nr. app/case pentru a muta
                      </p>
                   )}
 
