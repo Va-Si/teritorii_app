@@ -431,36 +431,50 @@
           return () => sortable.destroy();
       }, [block.sections, canEditStructure]);
 
-      return (
-        <div className="bg-slate-200/50 dark:bg-slate-800/50 p-3 md:p-5 rounded-[2rem] border-2 border-slate-200/60 dark:border-slate-700/60 relative block-item" data-block-id={block.id}>
-          <div className="block-header flex justify-between items-center mb-4 px-2 cursor-pointer select-none" onClick={() => toggleBlock(block.id)}>
-            <div className="flex items-center gap-2 overflow-hidden">
-              <span className="material-icons text-slate-500 text-2xl transition-transform duration-200 shrink-0" style={{ transform: isBlockCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
-              <span className="material-icons text-slate-400 text-xl shrink-0">{isBlockStrada ? 'signpost' : 'domain'}</span>
-              
-              <h2 className="font-black text-sm md:text-base text-slate-800 dark:text-slate-200 uppercase tracking-widest truncate flex items-center gap-2">
-                {isBlockStrada ? 'STRADĂ:' : 'BLOC:'} {block.name}
-                {canEditStructure && (
-                  <button onClick={(e) => { e.stopPropagation(); openRenameModal('block', block.id, null, block.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[18px] bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg transition-colors shadow-sm shrink-0 no-drag">edit</button>
-                )}
-              </h2>
-            </div>
-            {canEditStructure && (
-              <div className="flex items-center shrink-0 no-drag" onClick={e => e.stopPropagation()}>
-                <button onClick={() => { 
-                   setAlertBox({
-                       isOpen: true,
-                       title: isBlockStrada ? 'Ștergere Stradă' : 'Ștergere Bloc',
-                       message: `Ești sigur că vrei să ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'} "${block.name}"? Toate datele din interior se vor pierde.`,
-                       isDanger: true,
-                       onConfirm: () => {
-                         updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
-                       }
-                     });
-                }} className="material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
-              </div>
-            )}
-          </div>
+return (
+  <div className="bg-slate-200/50 dark:bg-slate-800/50 p-3 md:p-5 rounded-[2rem] border-2 border-slate-200/60 dark:border-slate-700/60 relative block-item" data-block-id={block.id}>
+    {/* block-header: Am schimbat items-center în items-start pentru cazul în care numele trece pe rândul 2 */}
+    <div className="block-header flex justify-between items-start mb-4 px-2 cursor-pointer select-none gap-3" onClick={() => toggleBlock(block.id)}>
+      
+      {/* Zona din stânga: Săgeată + Iconiță + Nume + Buton Editare */}
+      <div className="flex items-start gap-2 flex-1 min-w-0">
+        <span className="material-icons text-slate-500 text-2xl transition-transform duration-200 shrink-0 mt-0.5" style={{ transform: isBlockCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
+        <span className="material-icons text-slate-400 text-xl shrink-0 mt-1">{isBlockStrada ? 'signpost' : 'domain'}</span>
+        
+        {/* REPARAT: Am eliminat 'truncate' și 'flex', permițând textului să se extindă flexibil pe mobil */}
+        <h2 className="font-black text-sm md:text-base text-slate-800 dark:text-slate-200 uppercase tracking-widest whitespace-normal break-words flex-1 min-w-0 pr-1">
+          {isBlockStrada ? 'STRADĂ:' : 'BLOC:'} {block.name}
+          
+          {/* Micul buton de editare integrat sigur ca să nu mai fie împins sub chenar */}
+          {canEditStructure && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); openRenameModal('block', block.id, null, block.name); }} 
+              className="material-icons text-slate-400 hover:text-blue-500 text-[18px] bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg transition-colors shadow-sm shrink-0 no-drag inline-flex items-center ml-2 align-middle"
+            >
+              edit
+            </button>
+          )}
+        </h2>
+      </div>
+
+      {/* Zona din dreapta: Butonul mare de Ștergere */}
+      {/* REPARAT: shrink-0 garantează că acest buton rămâne fix pe poziție indiferent de lungimea textului din stânga */}
+      {canEditStructure && (
+        <div className="flex items-center shrink-0 no-drag" onClick={e => e.stopPropagation()}>
+          <button onClick={() => { 
+             setAlertBox({
+                 isOpen: true,
+                 title: isBlockStrada ? 'Ștergere Stradă' : 'Ștergere Bloc',
+                 message: `Ești sigur că vrei să ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'} "${block.name}"? Toate datele din interior se vor perde.`,
+                 isDanger: true,
+                 onConfirm: () => {
+                   updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
+                 }
+               });
+          }} className="material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
+        </div>
+      )}
+    </div>
 
           {!isBlockCollapsed && (
             <div ref={sectionsGridRef} data-block-id={block.id} className={(isBlockStrada) ? "flex flex-col gap-2 items-start w-full" : "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"}>
