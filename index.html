@@ -963,32 +963,29 @@ const handleRenameGroup = (oldName, newName) => {
       };
 
       const handleToggleDone = (t) => {
-        const isNowDone = !t.isDone;
-        // 1. Logica pentru Raport (doar dacă tocmai am finalizat teritoriul)
-        if (isNowDone) {
-            const reportText = generateTerritoryReport(t);
-          // Salvăm și textul și obiectul teritoriului
-            setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
-          }
-          // 2. Pregătire date pentru update
-          const updateData = { isDone: isNowDone };
-          // 3. Logica pentru date (endDate)
-          if (isNowDone) {
-              updateData.originalEndDate = t.endDate;
-              updateData.endDate = todayStr;
-        } else {
-            if (t.originalEndDate) {
-              updateData.endDate = t.originalEndDate;
-            } else {
-              const start = new Date(t.startDate);
-              start.setMonth(start.getMonth() + 4);
-              updateData.endDate = start.toISOString().split('T')[0];
-            }
-        }
-    
-        // 4. Salvarea finală în Firebase
-        updateTerritory(t.id, t.category, updateData);
-      };
+    const isNowDone = !t.isDone;
+
+    // 1. Actualizează starea locală INSTANT (ca să dispară bifa imediat)
+    setTerritories(prev => prev.map(item => item.id === t.id ? { ...item, isDone: isNowDone } : item));
+
+    // 2. Logica pentru date (data de finalizare)
+    const updateData = { isDone: isNowDone };
+    if (isNowDone) {
+        updateData.originalEndDate = t.endDate;
+        updateData.endDate = todayStr;
+    } else {
+        updateData.endDate = t.originalEndDate || t.endDate;
+    }
+
+    // 3. Salvează în Firebase
+    updateTerritory(t.id, t.category, updateData);
+
+    // 4. Dacă e bifat, deschide raportul
+    if (isNowDone) {
+        const reportText = generateTerritoryReport(t);
+        setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
+    }
+};
 
       const handleCreateTerritory = async (e) => {
         e.preventDefault();
