@@ -1441,17 +1441,19 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                            count = 0;
                         }
                     }
-                    // REPARAT: Înlocuit alert-ul browserului cu caseta ta personalizată
-                      setAlertBox({
-                        isOpen: true,
-                        title: 'Import Reușit',
-                        message: 'Datele au fost importate cu succes!',
-                        isDanger: false, // Este o alertă albastră/pozitivă, nu roșie de ștergere
-                        onConfirm: () => {
-                          // Închide modalul de import după ce utilizatorul apasă pe butonul de confirmare
-                          setModals(prev => ({ ...prev, import: false }));
-                        }
-                  });
+                    if (count > 0) await batch1.commit();
+
+              // REPARAT: Folosim exact structura ta clasică pentru setModals
+              setAlertBox({
+                isOpen: true,
+                title: 'Import Reușit',
+                message: 'Datele au fost importate cu succes!',
+                isDanger: false,
+                onConfirm: () => {
+                  // Închide modalul folosind exact sintaxa ta verificată în restul aplicației
+                  setModals({ ...modals, import: false });
+                }
+            });
                 }
             } catch (error) { alert("Eroare la import! " + error.message); }
         };
