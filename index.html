@@ -237,10 +237,10 @@
         <div className="space-y-4 pb-12 flex flex-col items-center">
           <div ref={listRef} className="space-y-4 w-full">
 
-            {settings.labels.map(l => (
+           {settings.labels.map(l => (
   <div key={l.id} className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-[700px] w-full mx-auto flex flex-col md:flex-row gap-3">
     
-    {/* RÂNDUL 1 (pe mobil) / ZONA 1 (pe desktop): Drag + Nume */}
+    {/* RÂNDUL 1: Drag + Nume Etichetă (Totul pe un singur rând) */}
     <div className="flex flex-row items-center gap-3 w-full">
         <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0 h-[44px]">
              <span className="material-icons">drag_indicator</span>
@@ -256,51 +256,46 @@
         </div>
     </div>
 
-    {/* RÂNDUL 2 (pe mobil) / ZONA 2 (pe desktop): Controale */}
-    {/* md:border-none md:pt-0 adaugă linia doar pe mobil */}
-    <div className="flex flex-row items-center justify-between gap-2 w-full border-t border-slate-200 dark:border-slate-700 pt-3 md:border-none md:pt-0 md:w-auto md:justify-end">
+    {/* RÂNDUL 2: Progres, Culori, Ștergere (Aici am făcut alinierea dorită) */}
+    <div className="flex flex-row items-center justify-between gap-3 w-full border-t border-slate-200 dark:border-slate-700 pt-3 md:border-none md:pt-0 md:w-auto md:justify-end">
         
-        {/* Progres - AICI AM SCHIMBAT LOGICA PENTRU A FI SIGURĂ */}
-        <div className="flex flex-col items-center">
-          <span className="text-[9px] font-black uppercase text-slate-400 mb-1 hidden md:block">Prog.</span>
-          <div className="flex items-center justify-center h-[44px]">
-              <input 
-                type="checkbox" 
-                checked={!!l.isCampaignTarget}
-                onClick={(e) => e.stopPropagation()} 
-                onChange={() => {
-                    // Logică sigură de toggle
-                    const newLabels = settings.labels.map(item => 
-                        item.id === l.id ? { ...item, isCampaignTarget: !item.isCampaignTarget } : item
-                    );
-                    updateSettingsLabels(newLabels);
-                }}
-                className="w-8 h-8 accent-blue-500 cursor-pointer block"
-              />
-          </div>
+        {/* Progres */}
+        <div className="flex flex-row items-center gap-1">
+          <input 
+            type="checkbox" 
+            checked={!!l.isCampaignTarget}
+            onClick={(e) => e.stopPropagation()} 
+            onChange={(e) => {
+                const newLabels = settings.labels.map(item => 
+                    item.id === l.id ? { ...item, isCampaignTarget: e.target.checked } : item
+                );
+                updateSettingsLabels(newLabels);
+            }}
+            className="w-8 h-8 accent-blue-500 cursor-pointer block"
+          />
+          <span className="[writing-mode:vertical-rl] rotate-180 text-[8px] font-black uppercase text-slate-400 whitespace-nowrap select-none">Prog.</span>
         </div>
 
-        {/* Fundal */}
-        <div className="flex flex-col items-center">
-          <span className="text-[9px] font-black uppercase text-slate-400 mb-1 hidden md:block">BG</span>
-          <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-12 h-10 rounded-lg cursor-pointer border-0 shadow-sm block" />
+        {/* Fundal (În loc de BG am pus Fund.) */}
+        <div className="flex flex-row items-center gap-1">
+          <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border-0 shadow-sm block" />
+          <span className="[writing-mode:vertical-rl] rotate-180 text-[8px] font-black uppercase text-slate-400 whitespace-nowrap select-none">Fund.</span>
         </div>
 
         {/* Text */}
-        <div className="flex flex-col items-center">
-          <span className="text-[9px] font-black uppercase text-slate-400 mb-1 hidden md:block">Text</span>
-          <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-12 h-10 rounded-lg cursor-pointer border-0 shadow-sm block" />
+        <div className="flex flex-row items-center gap-1">
+          <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border-0 shadow-sm block" />
+          <span className="[writing-mode:vertical-rl] rotate-180 text-[8px] font-black uppercase text-slate-400 whitespace-nowrap select-none">Text</span>
         </div>
         
         {/* Ștergere */}
-        <div className="flex flex-col items-center">
-          <span className="text-[9px] font-black uppercase text-transparent mb-1 hidden md:block">X</span>
+        <div className="flex items-center justify-center">
           {settings.labels.length > 1 ? (
-            <button onClick={() => deleteLabel(l.id)} className="w-12 h-10 bg-red-100 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-200 shadow-sm">
+            <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-200 shadow-sm">
                 <span className="material-icons text-[20px]">delete</span>
             </button>
           ) : (
-            <div className="w-12 h-10"></div>
+            <div className="w-10 h-10"></div>
           )}
         </div>
     </div>
