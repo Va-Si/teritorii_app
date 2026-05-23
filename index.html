@@ -273,7 +273,7 @@
       );
     }
 
-    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly, territory }) {
+    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly, territory, setAlertBox }) {
       const gridRef = useRef(null);
       const isUngroupedSection = !sec.name || sec.name === 'Case';
       
@@ -310,10 +310,7 @@
       return (
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
           {sec.locations.map((loc, lIdx) => (
-            <button 
-              key={loc.id} 
-              className="square-btn rounded-lg shadow-sm"
-              style={getLabelStyle(loc.status)}
+            <button key={loc.id} 
               onClick={() => {
                 // 1. Verificăm dacă suntem Offline și pe o Grupă
                 if (!navigator.onLine && territory?.category !== 'personal') {
@@ -341,7 +338,7 @@
                 openEditModal(blockId, sec.id, loc, lIdx);
               }} 
               style={getLabelStyle(loc.status)}
-              className={`square-btn rounded-lg shadow-sm ${isReadOnly ? 'opacity-80 cursor-not-allowed' : ''}`}
+              className="square-btn rounded-lg shadow-sm" // <--- AM ȘTERS cursor-not-allowed DE
           >
               <span className="btn-text-truncate">{loc.number}</span>
               {loc.notes && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white"></div>}
@@ -424,7 +421,14 @@
                       sec={sec} 
                       territory={territory} // ADĂUGAT
                       getLabelStyle={getLabelStyle} 
-                      openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} isGroupedStrada={false} canEditStructure={canEditStructure} isReadOnly={isReadOnly} />
+                      openEditModal={openEditModal} 
+                      handleReorderLocations={handleReorderLocations} 
+                      isBlockStrada={isBlockStrada} 
+                      isGroupedStrada={false/true}
+                      canEditStructure={canEditStructure} 
+                      isReadOnly={isReadOnly} 
+                      setAlertBox={setAlertBox}
+                      />
                   </div>
               ))}
 
@@ -471,7 +475,14 @@
                       territory={territory}
                       sec={sec} 
                       getLabelStyle={getLabelStyle} 
-                      openEditModal={openEditModal} handleReorderLocations={handleReorderLocations} isBlockStrada={isBlockStrada} isGroupedStrada={true} canEditStructure={canEditStructure} isReadOnly={isReadOnly} />
+                      openEditModal={openEditModal} 
+                      handleReorderLocations={handleReorderLocations} 
+                      isBlockStrada={isBlockStrada} 
+                      isGroupedStrada={false/true}
+                      canEditStructure={canEditStructure} 
+                      isReadOnly={isReadOnly}
+                      setAlertBox={setAlertBox}
+                      />
                   )}
                 </div>
               )})}
