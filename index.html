@@ -510,6 +510,11 @@
     }
 
     function App() {
+      // Încarcă setările din localStorage sau pune un default
+const [progressTags, setProgressTags] = useState(() => {
+    const saved = localStorage.getItem('progressTags');
+    return saved ? JSON.parse(saved) : ['rusa', 'refuz-categoric']; // Default-ul tău
+});
       const [territories, setTerritories] = useState([]);
       const [settings, setSettings] = useState({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
       const [activeTab, setActiveTab] = useState('personal');
@@ -754,10 +759,28 @@ const generateTerritoryReport = (territory) => {
         const updatedGroups = [...(settings.groups || DEFAULT_GROUPS), finalName];
         await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
       };
+      const handleToggleTag = (tag, isChecked) => {
+  const currentTags = settings.progressTags || ['rusa', 'refuz-categoric'];
+  const newTags = isChecked 
+    ? [...currentTags, tag] 
+    : currentTags.filter(t => t !== tag);
+  
+  // Actualizezi starea settings (presupunând că ai o funcție updateSettings/setSettings)
+  updateSettings({ ...settings, progressTags: newTags });
+};
 
 const handleRenameGroup = (oldName, newName) => {
   const finalName = newName.trim();
   if(!finalName || oldName === finalName || (settings.groups || DEFAULT_GROUPS).includes(finalName)) return;
+  const handleToggleTag = (tag, isChecked) => {
+  const currentTags = settings.progressTags || ['rusa', 'refuz-categoric'];
+  const newTags = isChecked 
+    ? [...currentTags, tag] 
+    : currentTags.filter(t => t !== tag);
+  
+  // Actualizezi starea settings (presupunând că ai o funcție updateSettings/setSettings)
+  updateSettings({ ...settings, progressTags: newTags });
+};
   
   // Dezactivăm confirm-ul din browser și activăm alertBox-ul tău modern
   setAlertBox({
@@ -2131,6 +2154,26 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
                 <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100">
                   {modals.stradaAddHouse ? 'Adaugă Case' : (modals.isStradaGroup ? 'Adaugă Grupă de Case' : (modals.locationAppend ? 'Adaugă Apartamente' : 'Adăugare Secțiune'))}
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
+  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+    <span className="material-icons">task_alt</span> Calcul Progres
+  </h3>
+  <div className="grid grid-cols-2 gap-3">
+    {['rusa', 'refuz-categoric', 'discutat', 'nu-i-acasa'].map(tag => (
+      <label key={tag} className="flex items-center gap-3 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm cursor-pointer hover:border-blue-400 transition-colors">
+        <input 
+          type="checkbox" 
+          checked={(settings.progressTags || ['rusa', 'refuz-categoric']).includes(tag)}
+          onChange={(e) => handleToggleTag(tag, e.target.checked)}
+          className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        />
+        <span className="font-bold text-xs uppercase text-slate-700 dark:text-slate-200">
+          {tag.replace('-', ' ')}
+        </span>
+      </label>
+    ))}
+  </div>
+</div>
                 </h3>
                 <form onSubmit={modals.stradaAddHouse ? handleAddStradaHouses : (modals.locationAppend ? handleAppendLocations : handleAddSection)} className="space-y-4">
                   {(!modals.locationAppend && !modals.stradaAddHouse) && (
