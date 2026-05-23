@@ -1383,55 +1383,36 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         setModals({...modals, export: false});
       };
 
+
+
+      
+
       const handleImport = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const data = JSON.parse(event.target.result);
-                const mode = data.exportMode || 'partial';
-                const catType = data.exportCategoryType || 'personal';
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+            const mode = data.exportMode || 'partial';
+            const catType = data.exportCategoryType || 'personal';
 
-                if (catType === 'group' && !isAdmin && !isGroupAdmin) {
-                    alert("Eroare: Doar administratorii pot importa teritorii de grupă!");
-                    return;
-                }
+            if (catType === 'group' && !isAdmin && !isGroupAdmin) {
+                alert("Eroare: Doar administratorii pot importa teritorii de grupă!");
+                return;
+            }
 
-                const targetCategory = catType === 'personal' ? 'personal' : activeGroupView;
+            const targetCategory = catType === 'personal' ? 'personal' : activeGroupView;
 
-                if (data.settings && isAdmin) {
-                    await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
-                }
+            if (data.settings && isAdmin) {
+                await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
+            }
 
-                                  if (data.territories && Array.isArray(data.territories)) {
-                      if (mode === 'full') {
-                          // REPARAT: Înlocuit confirm() din browser cu AlertBox-ul tău personalizat
-                          setAlertBox({
-                              isOpen: true,
-                              title: 'Atenție! Înlocuire Date',
-                              message: `Vei ȘTERGE DEFINITIV toate teritoriile actuale din secțiunea "${targetCategory}" și le vei înlocui cu cele din fișierul de backup. Continui?`,
-                              isDanger: true, // Afișează avertismentul cu roșu (fiind o acțiune distructivă)
-                              onConfirm: async () => {
-                                  // Închidem doar caseta de alertă, lăsând procesul să execute importul
-                                  setAlertBox(prev => ({ ...prev, isOpen: false }));
-                                  
-                                  // --- INTRODUCE AICI RESTUL CODULUI TĂU DE IMPORT ---
-                                  // Pune aici tot blocul de cod care urmează imediat după confirm-ul vechi 
-                                  // (cel cu batch, Firebase, ștergerea veche și salvarea noilor teritorii)
-                                  
-                              },
-                              onCancel: () => {
-                                  // Dacă utilizatorul se răzgândește și apasă Anulează:
-                                  document.getElementById('importData').value = null;
-                              }
-                          });
-                          
-                          // Oprim execuția imediată a funcției de import, deoarece codul 
-                          // se va rula de acum doar dacă se apasă "Confirm" în interiorul alertului de mai sus.
-                          return; 
-                      }
-                  }
+            // Creăm o funcție internă care conține toată logica de scriere în Firebase
+            const runFirebaseTransaction = async () => {
+                if (data.territories && Array.isArray(data.territories)) {
+                    // Dacă e mod complet, ștergem mai întâi datele vechi
+                    if (mode === 'full') {
                         if (targetCategory === 'personal') {
                             const snap = await db.collection('users').doc(userDocId).collection('territories').get();
                             const batch = db.batch();
@@ -1445,7 +1426,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         }
                     }
 
-                    let batch1 = db.batch(); // Import / Export 1. MODIFICAT: Schimbat din "const" în "let"
+                    // Adăugarea noilor teritorii din fișier
+                    let batch1 = db.batch();
                     let count = 0;
                     for (const t of data.territories) {
                         const tFixed = { ...t, category: targetCategory };
@@ -1458,31 +1440,66 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         batch1.set(ref, tFixed);
                         count++;
                         if (count === 400) {
-                           await batch1.commit();
-                           batch1 = db.batch(); // 2. ADĂUGAT: Deschide o cutie nouă dacă s-a umplut prima
-                           count = 0;
+                            await batch1.commit();
+                            batch1 = db.batch();
+                            count = 0;
                         }
                     }
                     if (count > 0) await batch1.commit();
 
-              // REPARAT: Folosim exact structura ta clasică pentru setModals
-              setAlertBox({
-                isOpen: true,
-                title: 'Import Reușit',
-                message: 'Datele au fost importate cu succes!',
-                isDanger: false,
-                onConfirm: () => {
-                  // Închide modalul folosind exact sintaxa ta verificată în restul aplicației
-                  setModals({ ...modals, import: false });
+                    // Afișăm notificarea de succes curată
+                    setAlertBox({
+                        isOpen: true,
+                        title: 'Import Reușit',
+                        message: 'Datele au fost importate cu succes!',
+                        isDanger: false,
+                        onConfirm: () => {
+                            setModals({ ...modals, import: false });
+                        }
+                    });
                 }
-            });
-                }
-            } catch (error) { alert("Eroare la import! " + error.message); }
-        };
-        reader.readAsText(file);
-        e.target.value = null;
-      };
+            };
 
+            // Verificăm modul de import ales
+            if (data.territories && Array.isArray(data.territories)) {
+                if (mode === 'full') {
+                    // Dacă e FULL, cerem confirmarea cu AlertBox-ul tău ÎNAINTE de import
+                    setAlertBox({
+                        isOpen: true,
+                        title: 'Atenție! Înlocuire Date',
+                        message: `Vei ȘTERGE DEFINITIV toate teritoriile actuale din secțiunea "${targetCategory}" și le vei înlocui cu cele din fișierul de backup. Continui?`,
+                        isDanger: true,
+                        onConfirm: async () => {
+                            setAlertBox(prev => ({ ...prev, isOpen: false }));
+                            await runFirebaseTransaction(); // Rulează tranzacția Firebase doar la Confirmare
+                        },
+                        onCancel: () => {
+                            document.getElementById('importData').value = null;
+                        }
+                    });
+                } else {
+                    // Dacă e PARTIAL, nu ștergem nimic și nu cerem confirmare, scriem direct datele
+                    await runFirebaseTransaction();
+                }
+            }
+
+        } catch (error) { 
+            alert("Eroare la import! " + error.message); 
+            document.getElementById('importData').value = null;
+        }
+    };
+    reader.readAsText(file);
+    e.target.value = null;
+};
+
+
+
+
+
+
+
+
+      
       if (loading || authLoading) {
         return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
         }
