@@ -1387,7 +1387,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
       
 
-      const handleImport = async (e) => {
+     const handleImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -1408,7 +1408,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
             }
 
-            // Creăm o funcție internă care conține toată logica de scriere în Firebase
+            // Funcția internă care execută scrierea în Firebase
             const runFirebaseTransaction = async () => {
                 if (data.territories && Array.isArray(data.territories)) {
                     // Dacă e mod complet, ștergem mai întâi datele vechi
@@ -1447,20 +1447,28 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     }
                     if (count > 0) await batch1.commit();
 
-                    // Afișăm notificarea de succes curată
-                    setAlertBox({
-                        isOpen: true,
-                        title: 'Import Reușit',
-                        message: 'Datele au fost importate cu succes!',
-                        isDanger: false,
-                        onConfirm: () => {
-                            setModals({ ...modals, import: false });
-                        }
-                    });
+                    if (mode === 'full') {
+                        // REPARAT 1: La importul COMPLET, închidem direct modalul și NU mai afișăm nicio altă alertă
+                        setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
+                        setModals({ ...modals, import: false });
+                    } else {
+                        // REPARAT 2: La importul PARȚIAL, afișăm o notificare simplă, CURĂȚÂND proprietatea onCancel pentru a ascunde butonul Anulează
+                        setAlertBox({
+                            isOpen: true,
+                            title: 'Import Reușit',
+                            message: 'Teritoriile au fost adăugate cu succes!',
+                            isDanger: false,
+                            onConfirm: () => {
+                                setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
+                                setModals({ ...modals, import: false });
+                            },
+                            onCancel: null // Forțează ascunderea butonului de Anulare în componenta ta AlertBox
+                        });
+                    }
                 }
             };
 
-            // Verificăm modul de import ales
+            // Verificăm modul de import ales pentru a ști cum pornim procesul
             if (data.territories && Array.isArray(data.territories)) {
                 if (mode === 'full') {
                     // Dacă e FULL, cerem confirmarea cu AlertBox-ul tău ÎNAINTE de import
@@ -1470,15 +1478,17 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         message: `Vei ȘTERGE DEFINITIV toate teritoriile actuale din secțiunea "${targetCategory}" și le vei înlocui cu cele din fișierul de backup. Continui?`,
                         isDanger: true,
                         onConfirm: async () => {
-                            setAlertBox(prev => ({ ...prev, isOpen: false }));
-                            await runFirebaseTransaction(); // Rulează tranzacția Firebase doar la Confirmare
+                            // Resetăm mai întâi starea alertei pentru a preveni păstrarea butoanelor vechi
+                            setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
+                            await runFirebaseTransaction(); 
                         },
                         onCancel: () => {
                             document.getElementById('importData').value = null;
+                            setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
                         }
                     });
                 } else {
-                    // Dacă e PARTIAL, nu ștergem nimic și nu cerem confirmare, scriem direct datele
+                    // Dacă e PARTIAL, nu ștergem nimic și nu cerem confirmare la început, ci scriem direct
                     await runFirebaseTransaction();
                 }
             }
@@ -1491,7 +1501,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     reader.readAsText(file);
     e.target.value = null;
 };
-
 
 
 
