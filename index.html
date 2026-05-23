@@ -639,7 +639,7 @@
                     localStorage.setItem('custom_user', JSON.stringify(updatedUser));
                     if(data.group && user.group !== data.group) {
                         setActiveGroupView(data.group);
-                        setActiveTab(data.group);
+                        //setActiveTab(data.group); ca sa nu apara la deshdiere compartimentu Grupa ci personal
                     }
                 }
             }
