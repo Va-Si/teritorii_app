@@ -575,30 +575,22 @@
                   const refuz = sec.locations.filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
             
                   if (rus || refuz) {
-                    // Logica pentru emoji și etichete
-                    const isStrada = block.name.toLowerCase().includes('str') || block.name.toLowerCase().includes('strada');
                     const grup = block.group ? ` (${block.group})` : '';
+                    // Aici se întâmplă magia: verificăm 'type'-ul salvat de tine în handleAddBlock
+                // Dacă block.type nu există (date vechi), verificăm dacă numele conține 'str'
+                    const isStrada = block.type
+                    ? (block.type === 'strada')
+                      : (block.name.toLowerCase().includes('str'));
                     const header = isStrada
-                      ? `🏠 Strada ${block.name}${grup}`
+                    ? `🏠 Strada ${block.name}${grup}`
                       : `🏢 Blocul ${block.name}, Scara ${sec.name || '?'}`;
                     report += `${header}:\n`;
-                    if (rus) report += `🗣️ L. Rusă: ${rus}\n`;
-                      if (refuz) report += `🚫 Refuzuri categorice: ${refuz}\n`;
-
-
-                    
-                  //  ? `🏢 ${block.name} ${sec.name || ''}`
-                  //  : `🏢 ${block.name}, ${sec.name || 'Scară'}`;
-                 //   report += `${locationHeader}:\n`;
-                  //  if (rus) report += `🗣️ Rusă: ${rus}\n`;
-                 //   if (refuz) report += `🚫 Refuz categoric: ${refuz}\n`;
+                    if (rus) report += `🗣️ Rusă: ${rus}\n`;
+                    if (refuz) report += `🚫 Refuz categoric: ${refuz}\n`;
                     report += `\n`;
 
                     
-                     //report += `🏢 ${block.name}, ${sec.name || 'Scară'}:\n`;
-                    //if (rus) report += `🗣️ L. Rusă: ${rus}\n`;
-                    //if (refuz) report += `🚫 Refuzuzi categorice: ${refuz}\n`;
-                    //report += `\n`;
+                
                      } 
                    });
                 });
