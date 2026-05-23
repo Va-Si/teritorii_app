@@ -311,7 +311,16 @@
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
           {sec.locations.map((loc, lIdx) => (
             <button key={loc.id} onClick={() => {
-                if (isReadOnly) return alert("Ești offline! Modificările la alte grupe necesită conexiune la internet.");
+                if (isReadOnly) {
+                    setAlertBox({ 
+                      isOpen: true, 
+                      title: 'Mod Offline', 
+                      message: 'Ești offline! Modificările la alte grupe necesită conexiune la internet.', 
+                      isDanger: true, 
+                      onConfirm: () => {} 
+                    });
+                    return;
+                }
                 openEditModal(blockId, sec.id, loc, lIdx);
               }} 
               style={getLabelStyle(loc.status)} className={`square-btn rounded-lg shadow-sm ${isReadOnly ? 'opacity-80 cursor-not-allowed' : ''}`}>
@@ -1098,7 +1107,10 @@ const handleRenameGroup = (oldName, newName) => {
             toExport = territories.filter(t => t.category === catSelection);
         } else {
             const checkedIds = fd.getAll('selectedTerritories');
-            if(checkedIds.length === 0) return alert("Selectează cel puțin un teritoriu pentru export!");
+            if(checkedIds.length === 0) {
+                setAlertBox({ isOpen: true, title: 'Selecție Goală', message: 'Selectează cel puțin un teritoriu pentru export!', isDanger: true, onConfirm: () => {} });
+                return;  
+            }
             toExport = territories.filter(t => checkedIds.includes(t.id));
         }
 
@@ -1615,13 +1627,22 @@ const handleRenameGroup = (oldName, newName) => {
                       const grupa = fd.get('group');
                       const isAdminGroup = fd.get('isAdminGroup') === 'on';
                       
-                      if(nume.length < 3) return alert('Numele e prea scurt!');
-                      if(parola.length < 4) return alert('Parola trebuie să aibă minim 4 caractere!');
+                      if(nume.length < 3) {
+                        setAlertBox({ isOpen: true, title: 'Nume invalid', message: 'Numele e prea scurt!', isDanger: true, onConfirm: () => {} });
+                        return;
+                      }
+                      if(parola.length < 4) {
+                        setAlertBox({ isOpen: true, title: 'Parolă slabă', message: 'Parola trebuie să aibă minim 4 caractere!', isDanger: true, onConfirm: () => {} });
+                        return;
+                      }
 
                       try { 
                         //Creare usere
                         const check = await db.collection('app_users').where('name', '==', nume).get();
-                        if(!check.empty) return alert('Acest nume există deja!');
+                        if(!check.empty) {
+                          setAlertBox({ isOpen: true, title: 'Atenție', message: 'Acest nume există deja!', isDanger: true, onConfirm: () => {} });
+                          return;
+                        }
                         // TRUC TEHNIC: Deschidem o conexiune secundară ca să NU te deconecteze pe tine (Adminul)
                         const secondaryApp = firebase.initializeApp(firebase.app().options, "SecondaryApp");
                         // Folosim aceleași coduri Unicode universale și la creare
