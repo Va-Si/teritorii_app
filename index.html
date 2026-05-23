@@ -1244,7 +1244,9 @@ const handleRenameGroup = (oldName, newName) => {
                 <div className="flex flex-row items-center justify-between gap-2 px-1 w-full">
                   <div className="flex items-center gap-2 sm:gap-3 font-black text-xl sm:text-2xl tracking-tighter shrink-0">
                     <button onClick={() => setModals({...modals, auth: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner overflow-hidden shrink-0" title="Profil">
-                        <span className="text-base sm:text-lg font-black uppercase">{currentUserName.charAt(0)}</span>
+                        <span className="text-base sm:text-lg font-black uppercase">
+                          {currentUserName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)} {/* Codul care il am pana acum arata 2 initiale la nume dar Acesta arata doar un initial //{currentUserName.charAt(0)} */}
+                        </span>
                     </button>
                     <span className="truncate">Teritorii</span>
                   </div>
