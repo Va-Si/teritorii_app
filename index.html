@@ -2409,6 +2409,36 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           )}
 
           {modals.settings && (
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
+  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
+    <span className="material-icons">query_stats</span> Etichete Progres
+  </h3>
+  <p className="text-xs text-slate-500 mb-4">Bifează etichetele care vrei să fie luate în calcul la progresul campaniei:</p>
+  
+  <div className="grid grid-cols-1 gap-2">
+    {(settings.labels || []).map(label => (
+      <label key={label.id} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-600 cursor-pointer">
+        <span className="font-bold text-sm">{label.name}</span>
+        <input 
+          type="checkbox" 
+          checked={label.isCampaignTarget || false}
+          onChange={(e) => {
+            // Actualizăm eticheta în setări
+            const updatedLabels = settings.labels.map(l => 
+              l.id === label.id ? { ...l, isCampaignTarget: e.target.checked } : l
+            );
+            updateSettings({ ...settings, labels: updatedLabels });
+          }}
+          className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500"
+        />
+      </label>
+    ))}
+  </div>
+</div>
+
+
+
+          
             <div className="fixed inset-0 bg-white dark:bg-slate-900 z-[200] flex flex-col p-6 overflow-y-auto transition-colors">
               <div className="flex items-center justify-between mb-8 shrink-0">
                 <h2 className="font-black text-2xl text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
