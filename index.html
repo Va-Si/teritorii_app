@@ -1657,7 +1657,7 @@
                                       isOpen: true,
                                       title: 'Ștergere Utilizator',
                                       message: `Ești sigur că vrei să ștergi utilizatorul "${u.name}"? Acesta va fi deconectat instantaneu din aplicație.`,
-                                      isDanger: true
+                                      isDanger: true,
                                       onConfirm: () => {
                                         db.collection('app_users').doc(u.id).delete();
                                       }
