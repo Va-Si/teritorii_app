@@ -1080,7 +1080,7 @@
                         }
                     }
 
-                    const batch1 = db.batch();
+                    let batch1 = db.batch(); // Import / Export 1. MODIFICAT: Schimbat din "const" în "let"
                     let count = 0;
                     for (const t of data.territories) {
                         const tFixed = { ...t, category: targetCategory };
@@ -1092,7 +1092,11 @@
 
                         batch1.set(ref, tFixed);
                         count++;
-                        if (count === 400) { await batch1.commit(); count = 0; }
+                        if (count === 400) {
+                           await batch1.commit();
+                           batch1 = db.batch(); // 2. ADĂUGAT: Deschide o cutie nouă dacă s-a umplut prima
+                           count = 0;
+                        }
                     }
                     if (count > 0) await batch1.commit();
                     alert(`Import finalizat cu succes!`);
