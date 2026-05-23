@@ -548,11 +548,11 @@
                     if (rus) report += `🇷🇺 Rusă: ${rus}\n`;
                     if (refuz) report += `🚫 Refuz categoric: ${refuz}\n`;
                     report += `\n`;
-                  }
-               });
-          });
-    return report;
-};
+                     } 
+                   });
+                });
+            return report;
+        };
      //Modalul de Raport
     {modals.report && (
        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
@@ -1296,7 +1296,9 @@ const handleRenameGroup = (oldName, newName) => {
         e.target.value = null;
       };
 
-      if (loading || authLoading) return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
+      if (loading || authLoading) {
+        return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
+        }
 
       if (!user) {
         return (
