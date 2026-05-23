@@ -485,41 +485,57 @@
 
               {groupedSections.map((sec, sIdx) => {
                 const isSecCollapsed = collapsedSections[sec.id];
-                return (
-                <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
-                  <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-center border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <span className="material-icons text-slate-400 text-xl transition-transform duration-200 shrink-0" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
-                      
-                      <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-2 truncate">
-                        {sec.name}
-                        {canEditStructure && <button onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1.5 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600 shrink-0 no-drag">edit</button>}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
-                      {!isReadOnly && (
-                        <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
-                          <span className="material-icons text-[20px] block">add</span>
-                        </button>
-                      )}
-                      {canEditStructure && (
-                        <button onClick={() => { 
-                           setAlertBox({
-                              isOpen: true,
-                              title: 'Ștergere Grupare',
-                              message: `Dorești să ștergi definitiv gruparea/scara "${sec.name}"?`,
-                              isDanger: true,
-                              onConfirm: () => {
-                                const upd = territory.blocks.map(b => b.id === block.id ? { ...b, sections: b.sections.filter(x => x.id !== sec.id) } : b);
-                                updateTerritory(territory.id, territory.category, { blocks: upd });
-                              }
-                            });
-                        }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 transition shadow-inner">
-                          <span className="material-icons text-[20px] block">delete</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
+return (
+  <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
+    <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-start gap-3 border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
+      
+      {/* Zona din stânga: Săgeată + Nume + Buton Editare */}
+      {/* Am schimbat items-center în items-start pentru cazul în care textul trece pe rândul 2 */}
+      <div className="flex items-start gap-2 flex-1 min-w-0">
+        <span className="material-icons text-slate-400 text-xl transition-transform duration-200 shrink-0 mt-0.5" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
+        
+        {/* Am eliminat 'truncate' și 'flex', transformând h3 într-un bloc flexibil care permite text pe mai multe rânduri */}
+        <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider whitespace-normal break-words flex-1 min-w-0 pr-1">
+          {sec.name}
+          
+          {/* Butonul de editare integrat cu shrink-0 ca să nu mai fie împins în afară sau ascuns */}
+          {canEditStructure && (
+            <button 
+              onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} 
+              className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1.5 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600 shrink-0 no-drag inline-flex items-center ml-2 align-middle"
+            >
+              edit
+            </button>
+          )}
+        </h3>
+      </div>
+
+      {/* Zona din dreapta: Butoanele mari (+ Adaugă și Șterge) */}
+      {/* Cu shrink-0, aceste butoane rămân sigure pe poziție indiferent de lungimea textului din stânga */}
+      <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
+        {!isReadOnly && (
+          <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
+            <span className="material-icons text-[20px] block">add</span>
+          </button>
+        )}
+        {canEditStructure && (
+          <button onClick={() => { 
+             setAlertBox({
+               isOpen: true,
+               title: 'Ștergere Grupare',
+               message: `Dorești să ștergi definitiv gruparea/scara "${sec.name}"?`,
+               isDanger: true,
+               onConfirm: () => {
+                  const upd = territory.blocks.map(b => b.id === block.id ? { ...b, sections: b.sections.filter(x => x.id !== sec.id) } : b);
+                  updateTerritory(territory.id, territory.category, { blocks: upd });
+               }
+             });
+          }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 transition shadow-inner">
+            <span className="material-icons text-[20px] block">delete</span>
+          </button>
+        )}
+      </div>
+    </div>
                   {!isSecCollapsed && (
                     <SectionLocations 
                       blockId={block.id} 
@@ -2202,27 +2218,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
                 <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100">
-                  {modals.stradaAddHouse ? 'Adaugă Case' : (modals.isStradaGroup ? 'Adaugă Grupă de Case' : (modals.locationAppend ? 'Adaugă Apartamente' : 'Adăugare Secțiune'))}
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
-  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-    <span className="material-icons">task_alt</span> Calcul Progres
-  </h3>
-  <div className="grid grid-cols-2 gap-3">
-    {['rusa', 'refuz-categoric', 'discutat', 'nu-i-acasa'].map(tag => (
-      <label key={tag} className="flex items-center gap-3 bg-white dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm cursor-pointer hover:border-blue-400 transition-colors">
-        <input 
-          type="checkbox" 
-          checked={(settings.progressTags || ['rusa', 'refuz-categoric']).includes(tag)}
-          onChange={(e) => handleToggleTag(tag, e.target.checked)}
-          className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-        />
-        <span className="font-bold text-xs uppercase text-slate-700 dark:text-slate-200">
-          {tag.replace('-', ' ')}
-        </span>
-      </label>
-    ))}
-  </div>
-</div>
+                  {modals.stradaAddHouse ? 'Adaugă Case' : (modals.isStradaGroup ? 'Adaugă Grupă de Case' : (modals.locationAppend ? 'Adaugă Apartamente' : 'Adăugare Scară'))}
+                  
                 </h3>
                 <form onSubmit={modals.stradaAddHouse ? handleAddStradaHouses : (modals.locationAppend ? handleAppendLocations : handleAddSection)} className="space-y-4">
                   {(!modals.locationAppend && !modals.stradaAddHouse) && (
