@@ -553,33 +553,7 @@
                 });
             return report;
         };
-     //Modalul de Raport
-    {modals.report && (
-       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
-         <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500">
-           <h3 className="font-black text-lg mb-4 text-slate-800 dark:text-slate-100 uppercase">Raport Teritoriu</h3>
-           <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 max-h-60 overflow-y-auto mb-4 border border-slate-200 dark:border-slate-700">
-             {modals.report}
-           </div>
-           <div className="flex gap-2">
-              <button onClick={() => {
-                  navigator.clipboard.writeText(modals.report);
-                  // Notificare scurtă (poți folosi un mic mesaj temporar dacă ai toast, sau doar asta):
-                  alert("Copiat în clipboard!");
-               }} className="flex-1 p-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs">Copiază</button>
-        
-               <button onClick={() => {
-                   if (navigator.share) {
-                       navigator.share({ title: 'Raport Teritoriu', text: modals.report });
-                   } else {
-                         alert("Partajarea nu este suportată pe acest browser.");
-                   }
-                }} className="flex-1 p-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs">Trimite (Social)</button>
-               </div>
-               <button onClick={() => setModals({...modals, report: null})} className="w-full mt-2 p-3 text-slate-400 font-black uppercase text-[10px]">Închide</button>
-            </div>
-         </div>
-       )}
+     
 
       // Adaugă asta sub celelalte state-uri din App:
       const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
@@ -1374,7 +1348,33 @@ const handleRenameGroup = (oldName, newName) => {
 
       return (
         <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
-          
+          //Modalul de Raport
+    {modals.report && (
+       <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
+         <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500">
+           <h3 className="font-black text-lg mb-4 text-slate-800 dark:text-slate-100 uppercase">Raport Teritoriu</h3>
+           <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 max-h-60 overflow-y-auto mb-4 border border-slate-200 dark:border-slate-700">
+             {modals.report}
+           </div>
+           <div className="flex gap-2">
+              <button onClick={() => {
+                  navigator.clipboard.writeText(modals.report);
+                  // Notificare scurtă (poți folosi un mic mesaj temporar dacă ai toast, sau doar asta):
+                  alert("Copiat în clipboard!");
+               }} className="flex-1 p-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs">Copiază</button>
+        
+               <button onClick={() => {
+                   if (navigator.share) {
+                       navigator.share({ title: 'Raport Teritoriu', text: modals.report });
+                   } else {
+                         alert("Partajarea nu este suportată pe acest browser.");
+                   }
+                }} className="flex-1 p-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-xs">Trimite (Social)</button>
+               </div>
+               <button onClick={() => setModals({...modals, report: null})} className="w-full mt-2 p-3 text-slate-400 font-black uppercase text-[10px]">Închide</button>
+            </div>
+         </div>
+       )}
           {!selectedTerritoryId ? (
             <header className="sticky top-0 z-20 p-4">
               <div className="bg-blue-600 text-white shadow-xl p-3 sm:p-4 md:p-5 rounded-[2rem] flex flex-col gap-4">
