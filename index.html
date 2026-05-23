@@ -962,30 +962,30 @@ const handleRenameGroup = (oldName, newName) => {
 
       const handleToggleDone = (t) => {
         const isNowDone = !t.isDone;
-        // Dacă tocmai l-ai marcat ca "Gata" (isNowDone este true), deschidem raportul
+        // 1. Logica pentru Raport (doar dacă tocmai am finalizat teritoriul)
         if (isNowDone) {
             const reportText = generateTerritoryReport(t);
             setModals(prev => ({ ...prev, report: reportText }));
           }
+          // 2. Pregătire date pentru update
           const updateData = { isDone: isNowDone };
-          // ... restul logicii tale de update (endDate etc.) ...
-          updateTerritory(t.id, t.category, updateData);
-      };
-
-        if (isNowDone) {
-            updateData.originalEndDate = t.endDate;
-            updateData.endDate = todayStr;
+          // 3. Logica pentru date (endDate)
+          if (isNowDone) {
+              updateData.originalEndDate = t.endDate;
+              updateData.endDate = todayStr;
         } else {
             if (t.originalEndDate) {
-                updateData.endDate = t.originalEndDate;
+              updateData.endDate = t.originalEndDate;
             } else {
-                const start = new Date(t.startDate);
-                start.setMonth(start.getMonth() + 4);
-                updateData.endDate = start.toISOString().split('T')[0];
+              const start = new Date(t.startDate);
+              start.setMonth(start.getMonth() + 4);
+              updateData.endDate = start.toISOString().split('T')[0];
             }
         }
+    
+        // 4. Salvarea finală în Firebase
         updateTerritory(t.id, t.category, updateData);
-      
+      };
 
       const handleCreateTerritory = async (e) => {
         e.preventDefault();
