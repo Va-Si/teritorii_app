@@ -323,7 +323,7 @@
       );
     }
 
-    function BlockComponent({ block, territory, getLabelStyle, openEditModal, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, isReadOnly }) {
+    function BlockComponent({ block, territory, getLabelStyle, openEditModal, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, isReadOnly, setAlertBox }) {
       const isBlockStrada = block.type === 'strada';
       const isBlockCollapsed = collapsedBlocks[block.id];
       const sectionsGridRef = useRef(null);
@@ -485,6 +485,8 @@
 
       // Adaugă asta sub celelalte state-uri din App:
       const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
+      //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
+      const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
       
       const blocksContainerRef = useRef(null);
       const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -1438,6 +1440,7 @@
                       openEditModal={openEditModal} openRenameModal={openRenameModal} handleReorderLocations={handleReorderLocations} handleReorderSections={handleReorderSections}
                       updateTerritory={updateTerritory} collapsedBlocks={collapsedBlocks} toggleBlock={toggleBlock}
                       collapsedSections={collapsedSections} toggleSection={toggleSection} setModals={setModals} modals={modals} canEditStructure={canEditStructure} isReadOnly={isReadOnly}
+                      setAlertBox={setAlertBox} {/* ➔ ADAUGĂ DOAR LINIA ACEASTA AICI */}
                     />
                   ))}
                 </div>
@@ -2056,9 +2059,15 @@
                          <div key={g} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 pl-5 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm">
                              <span className="font-black text-sm uppercase text-slate-700 dark:text-slate-200">{g}</span>
                              <div className="flex gap-2">
-                                 <button onClick={() => {
-                                     const newName = prompt("Redenumește grupa (va actualiza automat și utilizatorii):", g);
-                                     if(newName) handleRenameGroup(g, newName);
+                               {/* AJUSTAT: Am înlocuit vechiul prompt cu activarea promptBox-ului nostru */}
+                                <button onClick={() => {
+                                 setPromptBox({
+                                     isOpen: true,
+                                     title: 'Redenumește Grupa',
+                                     placeholder: 'Introdu numele nou al grupei...',
+                                     value: g, // Trimite numele actual al grupei ca valoare inițială în căsuță
+                                     onConfirm: (newName) => handleRenameGroup(g, newName)
+                                 });
                                  }} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-500 material-icons bg-slate-50 dark:bg-slate-900 rounded-xl transition-colors shadow-sm">edit</button>
                                  <button onClick={() => handleDeleteGroup(g)} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 material-icons bg-slate-50 dark:bg-slate-900 rounded-xl transition-colors shadow-sm">delete</button>
                              </div>
@@ -2066,8 +2075,15 @@
                      ))}
                  </div>
                  <button onClick={() => {
-                     const newName = prompt("Introdu numele noii grupe:");
-                     if(newName) handleAddGroup(newName);
+                     setPromptBox({
+                          isOpen: true,
+                          title: 'Grupă Nouă',
+                          placeholder: 'Ex: Grupa 6',
+                          value: '',
+                          onConfirm: (newName) => handleAddGroup(newName)
+                       }}
+                   }}
+                       
                  }} className="w-full p-4 border-2 border-dashed border-blue-300 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 shadow-sm transition-colors">
                      <span className="material-icons">add</span> Adaugă Grupă
                  </button>
@@ -2079,6 +2095,28 @@
               </div>
             </div>
           )}
+          {/* 1. ACESTA ESTE CODUL NOU PENTRU PROMPTBOX (ADĂUGAT ACUM)    */}
+          {promptBox.isOpen && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[250]">
+              <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
+                <h3 className="font-black text-base text-slate-800 dark:text-slate-100 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <span className="material-icons text-blue-500">edit_note</span> {promptBox.title}
+                </h3>
+                <input
+                  type="text"
+                  placeholder={promptBox.placeholder}
+                  value={promptBox.value}
+                  onChange={(e) => setPromptBox({ ...promptBox, value: e.target.value })}
+                  className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mb-6"
+                />
+                <div className="flex gap-2">
+                  <button onClick={() => setPromptBox({ ...promptBox, isOpen: false })} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors">Anulează</button>
+                  <button onClick={() => { if(promptBox.value.trim()) promptBox.onConfirm(promptBox.value.trim()); setPromptBox({ ...promptBox, isOpen: false }); }} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition-all active:scale-95">Salvează</button>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* 2. ACESTA ESTE CODUL TĂU PENTRU ALERTBOX (RĂMÂNE NESCHIMBAT) */}
           {alertBox.isOpen && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
               <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700 text-center scale-up-animation">
