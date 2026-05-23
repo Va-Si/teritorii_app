@@ -187,7 +187,7 @@
       );
     };
 
-    function SettingsLabelList({ settings, updateSettingsLabels }) {
+    function SettingsLabelList({ settings, updateSettingsLabels, setAlertBox }) {
       const listRef = useRef(null);
       useEffect(() => {
         if (!listRef.current) return;
@@ -215,7 +215,23 @@
       const handleColorChange = (id, field, value) => updateSettingsLabels(settings.labels.map(l => l.id === id ? { ...l, [field]: value } : l));
       const handleLabelNameChange = (id, newName) => updateSettingsLabels(settings.labels.map(l => l.id === id ? { ...l, label: newName } : l));
       const addLabel = () => updateSettingsLabels([...settings.labels, { id: Date.now().toString(), label: 'Nou', color: '#ffffff', textColor: '#000000', isCampaignTarget: false }]);
-      const deleteLabel = (id) => { if(settings.labels.length > 1) updateSettingsLabels(settings.labels.filter(l => l.id !== id)); };
+      const deleteLabel = (id) => {
+        if(settings.labels.length <= 1) return;
+
+        // Găsim numele etichetei pe care vrem să o ștergem pentru a-l afișa în mesaj
+        const targetLabel = settings.labels.find(l => l.id === id);
+        const labelName = targetLabel ? targetLabel.label : 'această etichetă';
+
+        setAlertBox({
+          isOpen: true,
+          title: 'Ștergere Etichetă',
+          message: `Ești sigur că dorești să ștergi eticheta "${labelName}"? Toate apartamentele cu acest status se vor reseta la starea implicită.`,
+          isDanger: true,
+          onConfirm: () => {
+            updateSettingsLabels(settings.labels.filter(l => l.id !== id));
+          }
+        });
+      };
 
       return (
         <div className="space-y-4 pb-12 flex flex-col items-center">
@@ -356,9 +372,15 @@
             {canEditStructure && (
               <div className="flex items-center shrink-0 no-drag" onClick={e => e.stopPropagation()}>
                 <button onClick={() => { 
-                   if(confirm(`Ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'}?`)) {
-                       updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
-                   }
+                   setAlertBox({
+                       isOpen: true,
+                       title: isBlockStrada ? 'Ștergere Stradă' : 'Ștergere Bloc',
+                       message: `Ești sigur că vrei să ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'} "${block.name}"? Toate datele din interior se vor pierde.`,
+                       isDanger: true,
+                       onConfirm: () => {
+                         updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
+                       }
+                     });
                 }} className="material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
               </div>
             )}
@@ -394,10 +416,16 @@
                       )}
                       {canEditStructure && (
                         <button onClick={() => { 
-                           if(confirm(`Ștergi această grupare?`)) {
-                              const upd = territory.blocks.map(b => b.id === block.id ? { ...b, sections: b.sections.filter(x => x.id !== sec.id) } : b);
-                              updateTerritory(territory.id, territory.category, { blocks: upd });
-                           }
+                           setAlertBox({
+                              isOpen: true,
+                              title: 'Ștergere Grupare',
+                              message: `Dorești să ștergi definitiv gruparea/scara "${sec.name}"?`,
+                              isDanger: true,
+                              onConfirm: () => {
+                                const upd = territory.blocks.map(b => b.id === block.id ? { ...b, sections: b.sections.filter(x => x.id !== sec.id) } : b);
+                                updateTerritory(territory.id, territory.category, { blocks: upd });
+                              }
+                            });
                         }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 transition shadow-inner">
                           <span className="material-icons text-[20px] block">delete</span>
                         </button>
@@ -454,6 +482,9 @@
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
       const [collapsedSections, setCollapsedSections] = useState({});
+
+      // Adaugă asta sub celelalte state-uri din App:
+      const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
       
       const blocksContainerRef = useRef(null);
       const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -617,10 +648,17 @@
         }
       };
 
-      const handleDeleteGroup = async (groupName) => {
-        if(!confirm(`Sigur ștergi definitv "${groupName}" din listă? (Notă: teritoriile și utilizatorii existenți nu vor fi șterși, doar ascunși)`)) return;
-        const updatedGroups = (settings.groups || DEFAULT_GROUPS).filter(g => g !== groupName);
-        await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+      const handleDeleteGroup = (groupName) => { // Am scos async de aici
+        setAlertBox({
+          isOpen: true,
+          title: 'Ștergere Grupă',
+          message: `Sigur ștergi definitiv "${groupName}" din listă? (Notă: teritoriile și utilizatorii existenți nu vor fi șterși, doar ascunși)`,
+          isDanger: true,
+          onConfirm: async () => { // Am mutat async-ul aici pentru Firebase
+            const updatedGroups = (settings.groups || DEFAULT_GROUPS).filter(g => g !== groupName);
+            await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+          }
+        });
       };
 
       const selectedTerritory = useMemo(() => {
@@ -1300,10 +1338,16 @@
                           {(isAdmin || isGroupAdmin || t.category === 'personal') && (
                             <button onClick={(e) => { 
                               e.stopPropagation(); 
-                              if(confirm(`Ești sigur că vrei să ștergi definitiv teritoriul "${t.name}"?`)) {
-                                if(t.category !== 'personal') db.collection('shared_territories').doc(t.id).delete();
-                                else db.collection('users').doc(userDocId).collection('territories').doc(t.id).delete();
-                              }
+                              setAlertBox({
+                                isOpen: true,
+                                title: 'Ștergere Teritoriu',
+                                message: `Ești sigur că vrei să ștergi definitiv teritoriul "${t.name}"? Această acțiune nu poate fi anulată.`,
+                                isDanger: true,
+                                onConfirm: () => {
+                                  if(t.category !== 'personal') db.collection('shared_territories').doc(t.id).delete();
+                                  else db.collection('users').doc(userDocId).collection('territories').doc(t.id).delete();
+                                }
+                              });
                             }} className="w-12 h-12 flex items-center justify-center bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-2xl text-red-400 hover:text-red-600 hover:bg-red-50 hover:border-red-300 transition-all shadow-sm active:scale-90 z-10">
                               <span className="material-icons text-2xl">delete</span>
                             </button>
@@ -1609,9 +1653,16 @@
                             <div className="flex gap-2">
                               <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
                               <button onClick={() => {
-                                  if(confirm(`Ești sigur că vrei să ștergi utilizatorul "${u.name}"? Acesta va fi deconectat instantaneu.`)) {
-                                      db.collection('app_users').doc(u.id).delete();
-                                  }
+                                  setAlertBox({
+                                      isOpen: true,
+                                      title: 'Ștergere Utilizator',
+                                      message: `Ești sigur că vrei să ștergi utilizatorul "${u.name}"? Acesta va fi deconectat instantaneu din aplicație.`,
+                                      isDanger: true
+                                      onConfirm: () => {
+                                        db.collection('app_users').doc(u.id).delete();
+                                      }
+                                    });
+                            
                               }} className="material-icons text-slate-400 hover:text-red-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">delete</button>
                             </div>
                           </div>
@@ -1886,12 +1937,18 @@
                   <div className="flex gap-3">
                    {canEditStructure && (
                      <button onClick={() => {
-                        if(confirm('Ștergi definitiv acest număr?')) {
-                          const { blockId, sectionId, loc } = modals.locationEdit;
-                          const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.filter(l => l.id !== loc.id) } : s) } : b);
-                          updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-                          setModals({...modals, locationEdit: null});
-                        }
+                        setAlertBox({
+                          isOpen: true,
+                          title: 'Ștergere Apartament',
+                          message: `Sigur dorești să ștergi definitiv numărul/apartamentul ${editLocNumber}?`,
+                          isDanger: true,
+                          onConfirm: () => {
+                            const { blockId, sectionId, loc } = modals.locationEdit;
+                            const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.filter(l => l.id !== loc.id) } : s) } : b);
+                            updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+                            setModals({...modals, locationEdit: null});
+                          }
+                        });
                       }} className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
                    )}
                     <button onClick={() => setModals({...modals, locationEdit: null})} className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600">close</button>
@@ -2018,10 +2075,25 @@
 
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm mb-8">
                  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><span className="material-icons">palette</span> Etichete și culori</h3>
-                 <SettingsLabelList settings={settings} updateSettingsLabels={(newLabels) => db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, labels: newLabels })} />
+                 <SettingsLabelList settings={settings} setAlertBox={setAlertBox} updateSettingsLabels={(newLabels) => db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, labels: newLabels })} />
               </div>
             </div>
           )}
+          {alertBox.isOpen && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
+              <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700 text-center scale-up-animation">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md ${alertBox.isDanger ? 'bg-red-50 text-red-500 border border-red-200' : 'bg-blue-50 text-blue-500 border border-blue-200'}`}>
+                  <span className="material-icons text-3xl">{alertBox.isDanger ? 'delete_forever' : 'info'}</span>
+                </div>
+                <h3 className="font-black text-base text-slate-800 dark:text-slate-100 uppercase tracking-widest mb-2">{alertBox.title}</h3>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-400 mb-6 px-2 leading-relaxed">{alertBox.message}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setAlertBox({ ...alertBox, isOpen: false })} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors">Anulează</button>
+                  <button onClick={() => { alertBox.onConfirm(); setAlertBox({ ...alertBox, isOpen: false }); }} className={`flex-1 p-4 text-white rounded-2xl font-black uppercase text-xs shadow-sm transition-all active:scale-95 ${alertBox.isDanger ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}>Confirmă</button>
+                </div>
+              </div>
+            </div>
+            )}
 
           {modals.theme && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
