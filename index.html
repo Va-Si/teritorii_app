@@ -582,9 +582,9 @@ const generateTerritoryReport = (territory) => {
                 // Dacă e bloc, punem "Scara X", dacă e stradă, putem pune "Grupare X" sau doar "Case"
                 const sectionName = sec.name ? sec.name : 'Case';
                 
-                blockContent += `  📍 ${sectionName}:\n`;
-                if (rus) blockContent += `    🗣️ Rusă: ${rus}\n`;
-                if (refuz) blockContent += `    🚫 Refuz: ${refuz}\n`;
+                blockContent += `  🚪 ${sectionName}:\n`;
+                if (rus) blockContent += `    🗣️ Vorbitori de l.Rusă: ${rus}\n`;
+                if (refuz) blockContent += `    🚫 Refuzuri Categorice: ${refuz}\n`;
             }
         });
 
@@ -1434,9 +1434,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
           {/* Toast-ul de notificare (îl pui undeva în interiorul return-ului principal) */}
             {toast && (
-                <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[999] bg-slate-800 text-white px-6 py-3 rounded-full shadow-lg font-black text-sm animate-bounce">
-                  {toast}
-                </div>
+                <div className="fixed top-5 inset-x-0 mx-auto w-max z-[9999] bg-slate-800 text-white px-6 py-3 rounded-full shadow-lg font-black text-sm animate-bounce text-center">
+    {toast}
+  </div>
           )}
 
 
@@ -1463,7 +1463,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
            <div className="flex gap-2 mb-2">
               <button onClick={() => {
                   navigator.clipboard.writeText(modals.report.text);
-                  setToast("Copiat în clipboard!"); // Fără emoji aici
+                  setToast("📋Copiat în clipboard!"); // Fără emoji aici
                }} className="flex-1 p-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-blue-700 active:scale-95 shadow-lg">
                 Copiază
                 </button>
