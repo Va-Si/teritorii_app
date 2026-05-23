@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teritorii-cache-v2'; // Schimbat la v2 pentru a forța reînnoirea
+const CACHE_NAME = 'teritorii-cache-v3'; // Am forțat v3
 
 const STATIC_ASSETS = [
   './',
@@ -22,7 +22,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            return caches.delete(cache); // Șterge memoria veche când apare o versiune nouă
+            return caches.delete(cache); // Șterge memoria veche
           }
         })
       );
@@ -32,7 +32,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignorăm baza de date pentru a lăsa Firebase să se ocupe singur de ea
+  // Ignorăm baza de date (Firebase) pentru a nu bloca funcția lui nativă de offline
   if (
     event.request.url.includes('firestore.googleapis.com') ||
     event.request.url.includes('identitytoolkit.googleapis.com') ||
@@ -41,33 +41,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // SOLUȚIA PROBLEMEI TALE (Network First pentru index.html):
-  // Cand cerem fisierul principal de cod, incercam PRIMA DATA sa il luam de pe GitHub (internet)
+  // 1. Network First pentru index.html
   if (event.request.mode === 'navigate' || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'))) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-            // Dacă am reușit să îl luăm de pe net, îl și salvăm în buzunar (cache) pentru când nu vom avea net
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
             return response;
         })
         .catch(() => {
-            // Dacă NU avem internet deloc, dăm varianta veche din buzunar (cache)
+            // Dacă nu avem net, dăm varianta salvată
             return caches.match(event.request);
         })
     );
     return;
   }
 
-  // Pentru restul (Tailwind, Iconițe, Poze) folosim în continuare "Cache First" ca să se miște foarte rapid
+  // 2. Cache First pentru "Unelte" (React, Tailwind, Iconițe)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        return cachedResponse;
+        return cachedResponse; 
       }
       return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || (networkResponse.type !== 'basic' && networkResponse.type !== 'cors')) {
+        // REPARAT: Am scos restricțiile dure. Acum permite salvarea resurselor externe (status 0 = Opaque)
+        if (!networkResponse || (networkResponse.status !== 200 && networkResponse.status !== 0)) {
           return networkResponse;
         }
         const responseToCache = networkResponse.clone();
