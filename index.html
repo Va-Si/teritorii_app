@@ -310,20 +310,37 @@
       return (
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
           {sec.locations.map((loc, lIdx) => (
-            <button key={loc.id} onClick={() => {
-                if (isReadOnly) {
+            <button 
+              key={loc.id} 
+              className="square-btn rounded-lg shadow-sm"
+              style={getLabelStyle(loc.status)}
+              onClick={() => {
+                // 1. Verificăm dacă suntem Offline și pe o Grupă
+                if (!navigator.onLine && selectedTerritory?.category !== 'personal') {
                     setAlertBox({ 
                       isOpen: true, 
-                      title: 'Mod Offline', 
-                      message: 'Ești offline! Modificările la alte grupe necesită conexiune la internet.', 
+                      title: 'Fără conexiune',
+                      message: 'Ești offline! Doar teritoriile din "Personal" pot fi modificate fără internet.',
                       isDanger: true, 
                       onConfirm: () => {} 
                     });
                     return;
                 }
+                // 2. Verificăm permisiunea (isReadOnly - care oricum se aplică online)
+                if (isReadOnly) {
+                  setAlertBox({
+                    isOpen: true,
+                    title: 'Doar Vizualizare',
+                    message: 'Nu ai permisiunea de a edita teritoriile altei grupe.',
+                    isDanger: true,
+                    onConfirm: () => {}
+                });
+                return;
+            }
+                // 3. Dacă totul e ok, deschidem
                 openEditModal(blockId, sec.id, loc, lIdx);
               }} 
-              style={getLabelStyle(loc.status)} className={`square-btn rounded-lg shadow-sm ${isReadOnly ? 'opacity-80 cursor-not-allowed' : ''}`}>
+              >
               <span className="btn-text-truncate">{loc.number}</span>
               {loc.notes && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white"></div>}
             </button>
@@ -1094,7 +1111,7 @@ const handleRenameGroup = (oldName, newName) => {
 
       const openEditModal = (blockId, sectionId, loc, locIdx) => {
         setEditLocNumber(loc.number);
-        setModals({...modals, locationEdit: { blockId, sectionId, loc, locIdx }});
+        setModals(prev => ({ ...prev, locationEdit: { blockId, sectionId, loc, locIdx } }));
       };
 
       const handleExportAction = (e) => {
