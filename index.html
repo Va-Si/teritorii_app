@@ -351,7 +351,7 @@
       }, [blockId, sec.id, sec.locations, canEditStructure]);
 
       // Am setat grid-cols-5 pentru mobil și md:grid-cols-12 pentru desktop (echivalentul a 6 coloane pe 2 rânduri)
-const gridClasses = `p-4 grid gap-2.5 min-h-[60px] grid-cols-5 md:grid-cols-12`;
+const gridClasses = `p-4 grid gap-2.5 min-h-[60px] grid-cols-5 md:grid-cols-6`;
 
       return (
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
@@ -480,101 +480,79 @@ return (
       )}
     </div>
 
-          {!isBlockCollapsed && (
-            <div ref={sectionsGridRef} data-block-id={block.id} className={(isBlockStrada) ? "flex flex-col gap-2 items-start w-full" : "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start"}>
-              
-              {unGroupedLocationsSections.map((sec) => (
-                  <div key={sec.id} className="w-full section-item no-drag">
-                    <SectionLocations 
-                      blockId={block.id} 
-                      sec={sec} 
-                      territory={territory} // ADĂUGAT
-                      getLabelStyle={getLabelStyle} 
-                      openEditModal={openEditModal} 
-                      handleReorderLocations={handleReorderLocations} 
-                      isBlockStrada={isBlockStrada} 
-              
-                      canEditStructure={canEditStructure} 
-                      isReadOnly={isReadOnly} 
-                      setAlertBox={setAlertBox}
-                      />
-                  </div>
-              ))}
-              {/* Adăugăm un grid aici pentru a forța 2 coloane */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">  
-
-              {groupedSections.map((sec, sIdx) => {
-                const isSecCollapsed = collapsedSections[sec.id];
-          return (
-              <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
-                <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-start gap-3 border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
+        {!isBlockCollapsed && (
+  <div ref={sectionsGridRef} data-block-id={block.id} className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
       
-      {/* Zona din stânga: Săgeată + Nume + Buton Editare */}
-      {/* Am schimbat items-center în items-start pentru cazul în care textul trece pe rândul 2 */}
-      <div className="flex items-start gap-2 flex-1 min-w-0">
-        <span className="material-icons text-slate-400 text-xl transition-transform duration-200 shrink-0 mt-0.5" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
-        
-        {/* Am eliminat 'truncate' și 'flex', transformând h3 într-un bloc flexibil care permite text pe mai multe rânduri */}
-        <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider whitespace-normal break-words flex-1 min-w-0 pr-1">
-          {sec.name}
-          
-          {/* Butonul de editare integrat cu shrink-0 ca să nu mai fie împins în afară sau ascuns */}
-          {canEditStructure && (
-            <button 
-              onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} 
-              className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1.5 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600 shrink-0 no-drag inline-flex items-center ml-2 align-middle"
-            >
-              edit
-            </button>
-          )}
-        </h3>
-      </div>
+      {/* 1. SCĂRILE SAU CASELE NEGRUPATE (Vor sta în grid de 2 coloane) */}
+      {unGroupedLocationsSections.map((sec) => (
+          <div key={sec.id} className="w-full section-item no-drag bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
+            <SectionLocations 
+              blockId={block.id} 
+              sec={sec} 
+              territory={territory}
+              getLabelStyle={getLabelStyle} 
+              openEditModal={openEditModal} 
+              handleReorderLocations={handleReorderLocations} 
+              isBlockStrada={isBlockStrada} 
+              canEditStructure={canEditStructure} 
+              isReadOnly={isReadOnly} 
+              setAlertBox={setAlertBox}
+            />
+          </div>
+      ))}
 
-      {/* Zona din dreapta: Butoanele mari (+ Adaugă și Șterge) */}
-      {/* Cu shrink-0, aceste butoane rămân sigure pe poziție indiferent de lungimea textului din stânga */}
-      <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
-        {!isReadOnly && (
-          <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
-            <span className="material-icons text-[20px] block">add</span>
-          </button>
-        )}
-        {canEditStructure && (
-          <button onClick={() => { 
-             setAlertBox({
-               isOpen: true,
-               title: 'Ștergere Grupare',
-               message: `Dorești să ștergi definitiv gruparea/scara "${sec.name}"?`,
-               isDanger: true,
-               onConfirm: () => {
-                  const upd = territory.blocks.map(b => b.id === block.id ? { ...b, sections: b.sections.filter(x => x.id !== sec.id) } : b);
-                  updateTerritory(territory.id, territory.category, { blocks: upd });
-               }
-             });
-          }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 transition shadow-inner">
-            <span className="material-icons text-[20px] block">delete</span>
-          </button>
-        )}
-      </div>
-    </div>
-                  {!isSecCollapsed && (
-                    <SectionLocations 
-                      blockId={block.id} 
-                      territory={territory}
-                      sec={sec} 
-                      getLabelStyle={getLabelStyle} 
-                      openEditModal={openEditModal} 
-                      handleReorderLocations={handleReorderLocations} 
-                      isBlockStrada={isBlockStrada} 
-                      
-                      canEditStructure={canEditStructure} 
-                      isReadOnly={isReadOnly}
-                      setAlertBox={setAlertBox}
-                      />
-                  )}
-                </div>
-            );
-  })}
-</div> {/* Aici se închide grid-ul */}
+      {/* 2. GRUPĂRILE (Vor sta și ele în același grid de 2 coloane) */}
+      {groupedSections.map((sec) => {
+        const isSecCollapsed = collapsedSections[sec.id];
+        return (
+          <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
+            {/* Header-ul grupării */}
+            <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-start gap-3 border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
+              <div className="flex items-start gap-2 flex-1 min-w-0">
+                 <span className="material-icons text-slate-400 text-xl transition-transform duration-200 shrink-0 mt-0.5" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
+                 <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider whitespace-normal break-words flex-1 min-w-0 pr-1">
+                    {sec.name}
+                    {canEditStructure && (
+                      <button onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} className="material-icons text-slate-400 hover:text-blue-500 text-[16px] bg-white dark:bg-slate-800 p-1.5 rounded-md transition-colors shadow-sm border border-slate-200 dark:border-slate-600 shrink-0 no-drag inline-flex items-center ml-2 align-middle">edit</button>
+                    )}
+                 </h3>
+              </div>
+              <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
+                {!isReadOnly && (
+                  <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
+                    <span className="material-icons text-[20px] block">add</span>
+                  </button>
+                )}
+                {canEditStructure && (
+                  <button onClick={() => { 
+                      setAlertBox({ isOpen: true, title: 'Ștergere Grupare', message: `Dorești să ștergi definitiv "${sec.name}"?`, isDanger: true, showCancel: true, onConfirm: () => { const upd = territory.blocks.map(b => b.id === block.id ? { ...b, sections: b.sections.filter(x => x.id !== sec.id) } : b); updateTerritory(territory.id, territory.category, { blocks: upd }); }});
+                  }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 transition shadow-inner">
+                    <span className="material-icons text-[20px] block">delete</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Conținutul grupării */}
+            {!isSecCollapsed && (
+              <SectionLocations 
+                blockId={block.id} 
+                territory={territory}
+                sec={sec} 
+                getLabelStyle={getLabelStyle} 
+                openEditModal={openEditModal} 
+                handleReorderLocations={handleReorderLocations} 
+                isBlockStrada={isBlockStrada} 
+                canEditStructure={canEditStructure} 
+                isReadOnly={isReadOnly}
+                setAlertBox={setAlertBox}
+              />
+            )}
+          </div>
+        );
+      })}
+  </div>
+)}
 
               <div className={`no-drag flex flex-col sm:flex-row gap-2 w-full mt-2`}>
                 {isBlockStrada && !isReadOnly && (
