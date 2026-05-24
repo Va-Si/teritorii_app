@@ -350,11 +350,8 @@
         return () => sortable.destroy();
       }, [blockId, sec.id, sec.locations, canEditStructure]);
 
-      const gridClasses = `p-4 grid gap-2.5 min-h-[60px] ${
-        isBlockStrada && isUngroupedSection
-          ? 'grid-cols-5 md:grid-cols-12' 
-          : 'grid-cols-5 md:grid-cols-6'
-      }`;
+      // Am setat grid-cols-5 pentru mobil și md:grid-cols-12 pentru desktop (echivalentul a 6 coloane pe 2 rânduri)
+const gridClasses = `p-4 grid gap-2.5 min-h-[60px] grid-cols-5 md:grid-cols-12`;
 
       return (
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
