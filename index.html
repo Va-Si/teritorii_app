@@ -407,27 +407,36 @@
       const unGroupedLocationsSections = (block.sections || []).filter(sec => !sec.name || sec.name === 'Case');
       const groupedSections = (block.sections || []).filter(sec => sec.name && sec.name !== 'Case');
 
-      useEffect(() => {
-          if (!sectionsGridRef.current || !canEditStructure) return;
-          const sortable = Sortable.create(sectionsGridRef.current, {
-              group: 'shared-sections', animation: 150, delay: 200, delayOnTouchOnly: true, forceFallback: true, fallbackTolerance: 5,
-              handle: '.section-header', filter: '.no-drag',
-              onEnd: (evt) => {
-                  const destBlockId = evt.to.dataset.blockId;
-                  if (evt.from !== evt.to || evt.oldIndex !== evt.newIndex) {
-                      const item = evt.item;
-                      const from = evt.from;
-                      const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
-                      if (originalNextSibling) from.insertBefore(item, originalNextSibling);
-                      else from.appendChild(item);
-                  }
-if (destBlockId && (block.id !== destBlockId || evt.oldIndex !== evt.newIndex)) {
-    handleReorderSections(block.id, destBlockId, evt.oldIndex, evt.newIndex);
-}
-              }
-          });
-          return () => sortable.destroy();
-      }, [block.sections, canEditStructure]);
+useEffect(() => {
+    if (!sectionsGridRef.current || !canEditStructure) return;
+    
+    const sortable = Sortable.create(sectionsGridRef.current, {
+        group: 'shared-sections', 
+        animation: 250, // Am crescut animația la 250ms pentru a fi mai fluidă
+        delay: 200, 
+        delayOnTouchOnly: true, 
+        forceFallback: true, 
+        fallbackTolerance: 5,
+        handle: '.section-header', 
+        filter: '.no-drag',
+        onEnd: (evt) => {
+            // 1. Vizual: Fixăm elementul la locul lui după ce drumul (drag) s-a terminat
+            const item = evt.item;
+            const from = evt.from;
+            const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
+            if (originalNextSibling) from.insertBefore(item, originalNextSibling);
+            else from.appendChild(item);
+
+            // 2. Logica: Trimitem indicii exacti către baza de date
+            const destBlockId = evt.to.dataset.blockId;
+            if (destBlockId && (block.id !== destBlockId || evt.oldIndex !== evt.newIndex)) {
+                handleReorderSections(block.id, destBlockId, evt.oldIndex, evt.newIndex);
+            }
+        }
+    });
+    
+    return () => sortable.destroy();
+}, [block.sections, canEditStructure, block.id]); // Am adăugat block.id în dependențe pentru siguranță
 
 return (
   <div className="bg-slate-200/50 dark:bg-slate-800/50 p-3 md:p-5 rounded-[2rem] border-2 border-slate-200/60 dark:border-slate-700/60 relative block-item" data-block-id={block.id}>
@@ -1269,29 +1278,22 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         return [newH, ...h].slice(0, 5); 
       };
 
-      const handleReorderSections = (srcBlockId, destBlockId, oldIdx, newIdx) => {
-        if (srcBlockId === destBlockId && oldIdx === newIdx) return;
-        let movedSec = null;
-        let upd = selectedTerritory.blocks.map(b => {
-            if (b.id === srcBlockId) {
-                const newSecs = [...b.sections];
-                movedSec = newSecs.splice(oldIdx, 1)[0];
-                return { ...b, sections: newSecs };
-            }
-            return b;
-        });
-        if (movedSec) {
-            upd = upd.map(b => {
-                if (b.id === destBlockId) {
-                    const newSecs = [...(b.sections || [])];
-                    newSecs.splice(newIdx, 0, movedSec);
-                    return { ...b, sections: newSecs };
-                }
-                return b;
-            });
-            updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        }
-      };
+     const handleReorderSections = (srcBlockId, destBlockId, oldIdx, newIdx) => {
+    if (srcBlockId === destBlockId && oldIdx === newIdx) return;
+
+    // Creăm copia „surdă” și curată
+    const newBlocks = JSON.parse(JSON.stringify(selectedTerritory.blocks));
+
+    let srcBlock = newBlocks.find(b => b.id === srcBlockId);
+    let destBlock = newBlocks.find(b => b.id === destBlockId);
+
+    if (!srcBlock || !destBlock) return;
+
+    const [movedSec] = srcBlock.sections.splice(oldIdx, 1);
+    destBlock.sections.splice(newIdx, 0, movedSec);
+
+    updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: newBlocks });
+};
 
       const handleReorderLocations = (srcBlockId, srcSecId, destBlockId, destSecId, oldIdx, newIdx) => {
         if (srcBlockId === destBlockId && srcSecId === destSecId) {
