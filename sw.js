@@ -1,4 +1,4 @@
-const CACHE_NAME = 'teritorii-cache-v3'; // Am forțat v3
+const CACHE_NAME = 'teritorii-cache-v4'; // Am forțat v3
 
 const STATIC_ASSETS = [
   './',
