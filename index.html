@@ -2685,9 +2685,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           <div className="fixed bottom-4 right-4 z-[150] flex items-center gap-2 bg-slate-900/90 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-slate-700 pointer-events-none select-none text-xs font-semibold">
             <span className="relative flex h-2 w-2">
               {isSynced && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
-              <span className={`relative inline-flex rounded-full h-2 w-2 ${isSynced ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+              <span className={"relative inline-flex rounded-full h-2 w-2 " + (isSynced ? "bg-green-500" : "bg-amber-500 animate-pulse")}></span>
             </span>
-            <span>{isSynced ? 'Date salvate în Cloud' : 'Se sincronizează...'}</span>
+            <span>{isSynced ? "Date salvate în Cloud" : "Se sincronizează..."}</span>
           </div>
           {/* =================================================== */}
 
