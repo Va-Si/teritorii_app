@@ -1451,20 +1451,24 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         // REPARAT 1: La importul COMPLET, închidem direct modalul și NU mai afișăm nicio altă alertă
                         setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
                         setModals({ ...modals, import: false });
-                    } else {
-                        // REPARAT 2: La importul PARȚIAL, afișăm o notificare simplă, CURĂȚÂND proprietatea onCancel pentru a ascunde butonul Anulează
-                        setAlertBox({
-                            isOpen: true,
-                            title: 'Import Reușit',
-                            message: 'Teritoriile au fost adăugate cu succes!',
-                            isDanger: false,
-                            onConfirm: () => {
-                                setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
-                                setModals({ ...modals, import: false });
-                            },
-                            onCancel: null // Forțează ascunderea butonului de Anulare în componenta ta AlertBox
-                        });
-                    }
+                    // --- ÎNLOCUIEȘTE DOAR NOTIFICAREA DE LA IMPORTUL PARȚIAL ---
+                      } else {
+                          // Trimitem o configurare care obligă AlertBox să nu afișeze text sau acțiune de anulare
+                          setAlertBox({
+                              isOpen: true,
+                              title: 'Import Reușit',
+                              message: 'Teritoriile au fost adăugate cu succes!',
+                              isDanger: false,
+                              onConfirm: () => {
+                                  setAlertBox({ isOpen: false, title: '', message: '', isDanger: false, onCancel: null, cancelText: null });
+                                  setModals({ ...modals, import: false });
+                              },
+                              // Adăugăm aceste proprietăți pentru a forța componenta să lase doar butonul de Confirmare
+                              onCancel: undefined,
+                              cancelText: '', // Golim textul pentru a nu lăsa loc de randare
+                              showCancelButton: false // În caz că folosești un flag de vizibilitate în componentă
+                          });
+                      }
                 }
             };
 
