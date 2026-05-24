@@ -421,11 +421,9 @@
                       if (originalNextSibling) from.insertBefore(item, originalNextSibling);
                       else from.appendChild(item);
                   }
-                  if (destBlockId && (block.id !== destBlockId || evt.oldIndex !== evt.newIndex)) {
-                    const oldIndexCorrected = oldIdx => isBlockStrada && unGroupedLocationsSections.length > 0 ? oldIdx + 1 : oldIdx;
-                    const newIndexCorrected = newIdx => isBlockStrada && unGroupedLocationsSections.length > 0 ? newIdx + 1 : newIdx;
-                    handleReorderSections(block.id, destBlockId, oldIndexCorrected(evt.oldIndex), newIndexCorrected(evt.newIndex));
-                  }
+if (destBlockId && (block.id !== destBlockId || evt.oldIndex !== evt.newIndex)) {
+    handleReorderSections(block.id, destBlockId, evt.oldIndex, evt.newIndex);
+}
               }
           });
           return () => sortable.destroy();
@@ -489,7 +487,7 @@ return (
                       openEditModal={openEditModal} 
                       handleReorderLocations={handleReorderLocations} 
                       isBlockStrada={isBlockStrada} 
-                      isGroupedStrada={false/true}
+              
                       canEditStructure={canEditStructure} 
                       isReadOnly={isReadOnly} 
                       setAlertBox={setAlertBox}
@@ -559,7 +557,7 @@ return (
                       openEditModal={openEditModal} 
                       handleReorderLocations={handleReorderLocations} 
                       isBlockStrada={isBlockStrada} 
-                      isGroupedStrada={false/true}
+                      
                       canEditStructure={canEditStructure} 
                       isReadOnly={isReadOnly}
                       setAlertBox={setAlertBox}
@@ -851,15 +849,7 @@ const generateTerritoryReport = (territory) => {
 const handleRenameGroup = (oldName, newName) => {
   const finalName = newName.trim();
   if(!finalName || oldName === finalName || (settings.groups || DEFAULT_GROUPS).includes(finalName)) return;
-  const handleToggleTag = (tag, isChecked) => {
-  const currentTags = settings.progressTags || ['rusa', 'refuz-categoric'];
-  const newTags = isChecked 
-    ? [...currentTags, tag] 
-    : currentTags.filter(t => t !== tag);
   
-  // Actualizezi starea settings (presupunând că ai o funcție updateSettings/setSettings)
-  updateSettings({ ...settings, progressTags: newTags });
-};
   
   // Dezactivăm confirm-ul din browser și activăm alertBox-ul tău modern
   setAlertBox({
