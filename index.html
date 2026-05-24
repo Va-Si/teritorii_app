@@ -73,13 +73,7 @@
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 overscroll-none overflow-y-scroll !overflow-y-scroll">
   <div id="root"></div>
 
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW refuzat:', err));
-      });
-    }
-  </script>
+  
 
   <script type="text/babel">
     const { useState, useEffect, useMemo, useRef } = React;
