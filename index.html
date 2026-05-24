@@ -503,12 +503,14 @@ return (
                       />
                   </div>
               ))}
+              {/* Adăugăm un grid aici pentru a forța 2 coloane */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">  
 
               {groupedSections.map((sec, sIdx) => {
                 const isSecCollapsed = collapsedSections[sec.id];
-return (
-  <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
-    <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-start gap-3 border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
+          return (
+              <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
+                <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-start gap-3 border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
       
       {/* Zona din stânga: Săgeată + Nume + Buton Editare */}
       {/* Am schimbat items-center în items-start pentru cazul în care textul trece pe rândul 2 */}
@@ -573,7 +575,9 @@ return (
                       />
                   )}
                 </div>
-              )})}
+            );
+  })}
+</div> {/* Aici se închide grid-ul */}
 
               <div className={`no-drag flex flex-col sm:flex-row gap-2 w-full mt-2`}>
                 {isBlockStrada && !isReadOnly && (
