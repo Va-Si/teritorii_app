@@ -480,10 +480,11 @@ return (
       )}
     </div>
 
-        {!isBlockCollapsed && (
+        {/* ÎNCEPUTUL BLOCULUI DE SECȚIUNI */}
+{!isBlockCollapsed && (
   <div ref={sectionsGridRef} data-block-id={block.id} className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
       
-      {/* 1. SCĂRILE SAU CASELE NEGRUPATE (Vor sta în grid de 2 coloane) */}
+      {/* 1. SECȚIUNI NEGRUPATE */}
       {unGroupedLocationsSections.map((sec) => (
           <div key={sec.id} className="w-full section-item no-drag bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
             <SectionLocations 
@@ -501,12 +502,13 @@ return (
           </div>
       ))}
 
-      {/* 2. GRUPĂRILE (Vor sta și ele în același grid de 2 coloane) */}
+      {/* 2. SECȚIUNI GRUPATE */}
       {groupedSections.map((sec) => {
         const isSecCollapsed = collapsedSections[sec.id];
         return (
           <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
-            {/* Header-ul grupării */}
+            
+            {/* HEADER GRUPARE */}
             <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-start gap-3 border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
               <div className="flex items-start gap-2 flex-1 min-w-0">
                  <span className="material-icons text-slate-400 text-xl transition-transform duration-200 shrink-0 mt-0.5" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
@@ -517,6 +519,7 @@ return (
                     )}
                  </h3>
               </div>
+              
               <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
                 {!isReadOnly && (
                   <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
@@ -533,7 +536,7 @@ return (
               </div>
             </div>
 
-            {/* Conținutul grupării */}
+            {/* CONȚINUT GRUPARE */}
             {!isSecCollapsed && (
               <SectionLocations 
                 blockId={block.id} 
@@ -552,7 +555,8 @@ return (
         );
       })}
   </div>
-)}
+)} 
+{/* FINALUL BLOCULUI */}
 
               <div className={`no-drag flex flex-col sm:flex-row gap-2 w-full mt-2`}>
                 {isBlockStrada && !isReadOnly && (
