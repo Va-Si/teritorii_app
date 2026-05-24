@@ -1360,7 +1360,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         } else {
             const checkedIds = fd.getAll('selectedTerritories');
             if(checkedIds.length === 0) {
-                setAlertBox({ isOpen: true, title: 'Selecție Goală', message: 'Selectează cel puțin un teritoriu pentru export!', isDanger: true, onConfirm: () => {} });
+                setAlertBox({ isOpen: true, title: 'Selecție Goală', message: 'Selectează cel puțin un teritoriu pentru export!', isDanger: true, showCancel: false, onConfirm: () => setAlertBox({ isOpen: false, title: '', message: '', isDanger: false })
+                  });
                 return;  
             }
             toExport = territories.filter(t => checkedIds.includes(t.id));
@@ -1455,19 +1456,16 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       } else {
                           // Trimitem o configurare care obligă AlertBox să nu afișeze text sau acțiune de anulare
                           setAlertBox({
-                              isOpen: true,
-                              title: 'Import Reușit',
-                              message: 'Teritoriile au fost adăugate cu succes!',
-                              isDanger: false,
-                              onConfirm: () => {
-                                  setAlertBox({ isOpen: false, title: '', message: '', isDanger: false, onCancel: null, cancelText: null });
-                                  setModals({ ...modals, import: false });
-                              },
-                              // Adăugăm aceste proprietăți pentru a forța componenta să lase doar butonul de Confirmare
-                              onCancel: undefined,
-                              cancelText: '', // Golim textul pentru a nu lăsa loc de randare
-                              showCancelButton: false // În caz că folosești un flag de vizibilitate în componentă
-                          });
+                                  isOpen: true,
+                                  title: 'Import Reușit',
+                                  message: 'Teritoriile au fost adăugate cu succes!',
+                                  isDanger: false,
+                                  showCancel: false, // <--- CORECT
+                                  onConfirm: () => {
+                                      setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
+                                      setModals({ ...modals, import: false });
+                                  }
+                              });
                       }
                 }
             };
@@ -2011,19 +2009,20 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       const isAdminGroup = fd.get('isAdminGroup') === 'on';
                       
                       if(nume.length < 3) {
-                        setAlertBox({ isOpen: true, title: 'Nume invalid', message: 'Numele e prea scurt!', isDanger: true, onConfirm: () => {} });
-                        return;
-                      }
-                      if(parola.length < 4) {
-                        setAlertBox({ isOpen: true, title: 'Parolă slabă', message: 'Parola trebuie să aibă minim 4 caractere!', isDanger: true, onConfirm: () => {} });
-                        return;
-                      }
+                              setAlertBox({ isOpen: true, title: 'Nume invalid', message: 'Numele e prea scurt!', isDanger: true, showCancel: false, onConfirm: () => {} });
+                              return;
+                            }
+                            if(parola.length < 4) {
+                              setAlertBox({ isOpen: true, title: 'Parolă slabă', message: 'Parola trebuie să aibă minim 4 caractere!', isDanger: true, showCancel: false, onConfirm: () => {} });
+                              return;
+                            }
+                            // La fel și pentru eroarea "Acest nume există deja!" -> adaugă showCancel: false
 
                       try { 
                         //Creare usere
                         const check = await db.collection('app_users').where('name', '==', nume).get();
                         if(!check.empty) {
-                          setAlertBox({ isOpen: true, title: 'Atenție', message: 'Acest nume există deja!', isDanger: true, onConfirm: () => {} });
+                          setAlertBox({ isOpen: true, title: 'Atenție', message: 'Acest nume există deja!', isDanger: true, showCancel: false, onConfirm: () => {} });
                           return;
                         }
                         // TRUC TEHNIC: Deschidem o conexiune secundară ca să NU te deconecteze pe tine (Adminul)
@@ -2059,6 +2058,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                           title: 'Succes',
                           message: 'Utilizator creat cu succes și securizat!',
                           isDanger: false,
+                          showCancel: false, // <--- ADAUGĂ ASTA PENTRU A ASCUNDE BUTONUL
                           onConfirm: () => {}
                         });
                         
@@ -2069,7 +2069,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                          title: 'Eroare',
                          message: 'Eroare la creare: ' + err.message,
                          isDanger: true,
-                         onConfirm: () => {}
+                         showCancel: false, // <--- ADAUGĂ LINIA ASTA CA SĂ ASCUNZI BUTONUL
+                         onConfirm: () => setAlertBox({ isOpen: false, title: '', message: '', isDanger: false })
                        });
                       }
                          
