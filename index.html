@@ -612,6 +612,8 @@ const [progressTags, setProgressTags] = useState(() => {
       const [authError, setAuthError] = useState(null);
       const [authForm, setAuthForm] = useState({ name: '', password: '' });
       const [adminUsersList, setAdminUsersList] = useState([]);
+      // Pasul 1: Starea pentru buline de sincronizare (implicit considerăm că e sincronizat)
+const [isSynced, setIsSynced] = React.useState(true);
 
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
@@ -803,35 +805,47 @@ const generateTerritoryReport = (territory) => {
         return () => unsubscribe();
       }, [user, isAdmin]);
 
-      useEffect(() => {
-        if (authLoading || !user) { setLoading(false); return; }
-        setLoading(true);
-        const unsubs = [];
-        
-        unsubs.push(db.collection('users').doc(userDocId).collection('config').doc('settings').onSnapshot(doc => { 
-          if(doc.exists) {
-             const data = doc.data();
-             setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
-          }
-        }));
+     useEffect(() => {
+  if (authLoading || !user) { setLoading(false); return; }
+  setLoading(true);
+  const unsubs = [];
+  
+  // 1. [NESCHIMBAT] Codul pentru setări
+  unsubs.push(db.collection('users').doc(userDocId).collection('config').doc('settings').onSnapshot(doc => { 
+    if(doc.exists) {
+       const data = doc.data();
+       setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
+    }
+  }));
 
-        unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot(snap => {
-          const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          
-          unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
-             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
-             setTerritories([...persT, ...sharedT]);
-             setLoading(false);
-          }));
-        }));
+  // 2. [OPTIMIZAT] Activăm verificarea offline DOAR pe teritoriile personale (unde se pot face modificări)
+  unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
+    const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Pentru teritoriile comune lăsăm onSnapshot simplu, fără includeMetadataChanges (salvăm memorie)
+    unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
+       const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
+       
+       // ==========================================
+       // 🟢 LOGICA SIMPLIFICATĂ PENTRU BULINĂ 🟡
+       // Verificăm doar dacă sunt scrieri în așteptare pentru teritoriile personale
+       setIsSynced(!snap.metadata.hasPendingWrites); 
+       // ==========================================
 
-        if (isAdmin) {
-           unsubs.push(db.collection('app_users').onSnapshot(snap => {
-               setAdminUsersList(snap.docs.map(d => d.data()));
-           }));
-        }
-        return () => unsubs.forEach(u => u());
-      }, [userDocId, authLoading, isAdmin]);
+       setTerritories([...persT, ...sharedT]);
+       setLoading(false);
+    }));
+  }));
+
+  // 3. [NESCHIMBAT] Codul pentru lista de Admin
+  if (isAdmin) {
+     unsubs.push(db.collection('app_users').onSnapshot(snap => {
+         setAdminUsersList(snap.docs.map(d => d.data()));
+     }));
+  }
+  
+  return () => unsubs.forEach(u => u());
+}, [userDocId, authLoading, isAdmin]);
 
       const handleAddGroup = async (newGroupName) => {
         const finalName = newGroupName.trim();
@@ -2666,13 +2680,25 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               </div>
             </div>
           )}
-        </div>
+          {/* 🟢 ADACĂ ACEST COD NOU AICI (Exact în acest spațiu pentru  bulina  sincronizare stare) */}
+          {/* =================================================== */}
+          <div className="fixed bottom-4 right-4 z-[150] flex items-center gap-2 bg-slate-900/90 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-slate-700 pointer-events-none select-none text-xs font-semibold">
+            <span className="relative flex h-2 w-2">
+              {isSynced && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>}
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${isSynced ? 'bg-green-500' : 'bg-amber-500 animate-pulse'}`}></span>
+            </span>
+            <span>{isSynced ? 'Date salvate în Cloud' : 'Se sincronizează...'}</span>
+          </div>
+          {/* =================================================== */}
+
+        </div> {/* <- Acest div a rămas neschimbat (cel care închide tot) */}
       );
-    }
+    } // <- Aici se închide funcția App
 
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
+  
   <script>
     // Această bucată spune telefonului să instaleze aplicația în fundal (Service Worker)
     if ('serviceWorker' in navigator) {
