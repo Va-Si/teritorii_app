@@ -1725,7 +1725,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
               {/* 2. Bannerul Offline - Acum este ÎN header, deci se mișcă împreună cu el */}
                   {!isOnline && selectedTerritoryId && (
-                    <div className={`mt-2 mx-auto w-[90%] max-w-[300px] py-1 px-3 rounded-lg shadow-sm text-[9px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 ${selectedTerritory?.category !== 'personal' ? 'bg-red-500' : 'bg-orange-500'}`}>
+                    <div className={`mt-2 mx-auto w-[70%] max-w-[300px] py-1 px-3 rounded-lg shadow-sm text-[10px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 ${selectedTerritory?.category !== 'personal' ? 'bg-red-500' : 'bg-orange-500'}`}>
                       <span className="material-icons text-[12px]">wifi_off</span>
                       {selectedTerritory?.category !== 'personal' ? 'Offline - Vizualizare Blocată' : 'Offline - Se salvează local'}
                     </div>
