@@ -1203,61 +1203,30 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
    const handleAddBlock = (e) => {
 
         e.preventDefault();
+   const form = e.target;
 
-
-
-      // 1. RESETARE TOTALĂ: Ștergem orice eroare veche de pe ambele câmpuri
-
-  e.target.elements.blocName.setCustomValidity("");
-
-  e.target.elements.stradaName.setCustomValidity("");
-
-        
-
+  // 1. Resetare completă: Ștergem starea de eroare de pe ambele câmpuri
+  form.elements.blocName.setCustomValidity("");
+  form.elements.stradaName.setCustomValidity("");
         const fd = new FormData(e.target);
-
         const bName = fd.get('blocName').trim();
-
         const sName = fd.get('stradaName').trim();
-
-
-
-       // 3. Verificăm logica:
-
-  // - Dacă ambele sunt goale -> Eroare
-
-  // - Dacă ambele sunt completate -> Eroare
-
+      // 3. Validare
   if ((!bName && !sName) || (bName && sName)) {
-
-    // Aplicăm eroarea pe câmpul de bloc (sau poți pune pe oricare dintre ele)
-
-    e.target.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
-
-    e.target.elements.blocName.reportValidity();
-
-    return; // Oprește funcția aici
-
+    // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
+    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+    
+    // Folosim reportValidity pe tot formularul, nu doar pe un input
+    form.reportValidity();
+    return; 
   }
-
-
-
   // 4. Dacă am ajuns aici, totul este corect. 
-
   // Logica ta originală continuă:
-
-        
-
         const type = bName ? 'bloc' : 'strada';
-
         const name = bName || sName;
-
         const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
-
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-
         setModals({...modals, blockAdd: false});
-
       };
 
 
