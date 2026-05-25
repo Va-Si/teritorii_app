@@ -1211,14 +1211,14 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         const bName = fd.get('blocName').trim();
         const sName = fd.get('stradaName').trim();
 
-       // 3. Verificăm logica:
-  // - Dacă ambele sunt goale -> Eroare
-  // - Dacă ambele sunt completate -> Eroare
+  // 3. Validare
   if ((!bName && !sName) || (bName && sName)) {
-    // Aplicăm eroarea pe câmpul de bloc (sau poți pune pe oricare dintre ele)
-    e.target.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
-    e.target.elements.blocName.reportValidity();
-    return; // Oprește funcția aici
+    // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
+    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+    
+    // Folosim reportValidity pe tot formularul, nu doar pe un input
+    form.reportValidity();
+    return; 
   }
 
   // 4. Dacă am ajuns aici, totul este corect. 
