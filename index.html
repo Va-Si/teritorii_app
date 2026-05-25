@@ -1200,36 +1200,37 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-    const handleAddBlock = (e) => {
-        e.preventDefault();
+   const handleAddBlock = (e) => {
+  e.preventDefault();
+  const form = e.target;
 
-      // 1. RESETARE TOTALĂ: Ștergem orice eroare veche de pe ambele câmpuri
-  e.target.elements.blocName.setCustomValidity("");
-  e.target.elements.stradaName.setCustomValidity("");
-        
-        const fd = new FormData(e.target);
-        const bName = fd.get('blocName').trim();
-        const sName = fd.get('stradaName').trim();
+  // Extragem datele
+  const fd = new FormData(form);
+  const bName = fd.get('blocName').trim();
+  const sName = fd.get('stradaName').trim();
 
-  // 3. Validare
+  // 1. Verificăm validitatea
   if ((!bName && !sName) || (bName && sName)) {
-    // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
+    // Setăm eroarea
     form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
     
-    // Folosim reportValidity pe tot formularul, nu doar pe un input
-    form.reportValidity();
-    return; 
+    // Declanșăm bula vizuală
+    form.elements.blocName.reportValidity();
+    return; // Oprim aici
   }
 
-  // 4. Dacă am ajuns aici, totul este corect. 
-  // Logica ta originală continuă:
-        
-        const type = bName ? 'bloc' : 'strada';
-        const name = bName || sName;
-        const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
-        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        setModals({...modals, blockAdd: false});
-      };
+  // 2. Dacă am ajuns aici, totul e corect
+  // Resetăm validarea la final pentru siguranță
+  form.elements.blocName.setCustomValidity("");
+  form.elements.stradaName.setCustomValidity("");
+
+  const type = bName ? 'bloc' : 'strada';
+  const name = bName || sName;
+  const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
+  
+  updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+  setModals({...modals, blockAdd: false});
+};
 
       const handleAddStradaHouses = (e) => {
         e.preventDefault();
@@ -2303,14 +2304,18 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <form onSubmit={handleAddBlock} className="space-y-4">
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dacă este Bloc:</label>
-                    <input name="blocName" placeholder="Nume Bloc (ex: Ceucari 2)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
+                    <input name="blocName" placeholder="Nume Bloc (ex: Ceucari 2)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" 
+                      onInput={(e) => e.target.setCustomValidity("")}
+                      />
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div><span className="text-[10px] font-black uppercase text-slate-300">SAU</span><div className="h-px bg-slate-200 dark:bg-slate-700 flex-1"></div>
                   </div>
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dacă este Stradă:</label>
-                    <input name="stradaName" placeholder="Nume Stradă (ex: Putnei)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
+                    <input name="stradaName" placeholder="Nume Stradă (ex: Putnei)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" 
+                      onInput={(e) => e.target.setCustomValidity("")}
+                      />
                   </div>
                   <div className="flex gap-2 pt-4">
                     {/* Anulează + Efect de micșorare la apăsare */}
