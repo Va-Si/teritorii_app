@@ -2445,7 +2445,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 {(modals.sectionAdd || (modals.stradaAddHouse && modals.isStradaGroup)) && (
     <input 
         name="name" 
-        placeholder={modals.isStradaGroup ? "Nume grupă (ex: Numere Pare sau Impare)" : "Nume scara (ex: Scara 1)"} 
+        placeholder={modals.isStradaGroup ? "Nume (ex: Numere Pare sau Impare)" : "Nume scara (ex: Scara 1)"} 
         onInput={(e) => e.target.setCustomValidity("")}
         className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" 
     />
