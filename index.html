@@ -1723,11 +1723,11 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               </div>
             </header>
           )}
-
+          {/* Bloc Offline - Înghețat (Sticky) */}
           {!isOnline && selectedTerritoryId && (
-            <div className={`mx-4 mt-2 mb-[-10px] py-1.5 px-3 rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 z-20 ${selectedTerritory?.category !== 'personal' ? 'bg-red-500' : 'bg-orange-500'}`}>
+            <div className={`sticky top-2 z-30 mx-4 py-1.5 px-3 rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 z-20 ${selectedTerritory?.category !== 'personal' ? 'bg-red-500' : 'bg-orange-500'}`}>
               <span className="material-icons text-[14px]">wifi_off</span>
-              {selectedTerritory?.category !== 'personal' ? 'Ești Offline - Vizualizare Blocată' : 'Ești Offline - Se salvează local'}
+              {selectedTerritory?.category !== 'personal' ? 'Ești Offline - Editare Blocată' : 'Ești Offline - Se salvează local'}
             </div>
           )}
 
