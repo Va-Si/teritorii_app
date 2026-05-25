@@ -1205,6 +1205,15 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         const fd = new FormData(e.target);
         const bName = fd.get('blocName').trim();
         const sName = fd.get('stradaName').trim();
+
+        // Aici facem validarea folosind input-urile din e.target
+  if (!bName && !sName) {
+    // Declanșăm bula de eroare pe inputul de bloc
+    e.target.elements.blocName.setCustomValidity("Please fill out this field.");
+    e.target.elements.blocName.reportValidity();
+    return; // Oprește funcția aici
+  }
+        
         const type = bName ? 'bloc' : 'strada';
         const name = bName || sName;
         const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
