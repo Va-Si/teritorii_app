@@ -1214,7 +1214,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
   // 3. Validare
   if ((!bName && !sName) || (bName && sName)) {
     // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
-    e.target.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
     
     // Folosim reportValidity pe tot formularul, nu doar pe un input
     form.reportValidity();
