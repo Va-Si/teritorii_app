@@ -1705,6 +1705,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             </header>
           ) : (
             <header className="sticky top-0 z-30 p-4 pb-0">
+              {/* 1. Div-ul tău colorat (Titlul Teritoriului) */}
               <div className={`${selectedTerritory.category !== 'personal' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3`}>
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                   <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
@@ -1721,15 +1722,20 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </div>
                 )}
               </div>
+
+              {/* 2. Bannerul Offline - Acum este ÎN header, deci se mișcă împreună cu el */}
+                  {!isOnline && selectedTerritoryId && (
+                    <div className={`mt-2 mx-auto w-[90%] max-w-[300px] py-1 px-3 rounded-lg shadow-sm text-[9px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 ${selectedTerritory?.category !== 'personal' ? 'bg-red-500' : 'bg-orange-500'}`}>
+                      <span className="material-icons text-[12px]">wifi_off</span>
+                      {selectedTerritory?.category !== 'personal' ? 'Offline - Vizualizare Blocată' : 'Offline - Se salvează local'}
+                    </div>
+                  )}
+
+
+              
             </header>
           )}
-          {/* Bloc Offline - Înghețat (Sticky) */}
-          {!isOnline && selectedTerritoryId && (
-            <div className={`sticky top-2 z-30 mx-4 py-1.5 px-3 rounded-xl shadow-sm text-[10px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 z-20 ${selectedTerritory?.category !== 'personal' ? 'bg-red-500' : 'bg-orange-500'}`}>
-              <span className="material-icons text-[14px]">wifi_off</span>
-              {selectedTerritory?.category !== 'personal' ? 'Ești Offline - Editare Blocată' : 'Ești Offline - Se salvează local'}
-            </div>
-          )}
+          
 
           {!selectedTerritoryId ? (
             <main onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd} className="p-4 pt-2 space-y-4 flex-1 transition-colors">
