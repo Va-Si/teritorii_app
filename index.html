@@ -1200,18 +1200,15 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-   const handleAddBlock = (e) => {
+  const handleAddBlock = (e) => {
   e.preventDefault();
   const form = e.target;
-
-  // Extragem datele
-  const fd = new FormData(form);
-  const bName = fd.get('blocName').trim();
-  const sName = fd.get('stradaName').trim();
+  const bName = form.elements.blocName.value.trim();
+  const sName = form.elements.stradaName.value.trim();
 
   // 1. Verificăm validitatea
   if ((!bName && !sName) || (bName && sName)) {
-    // Setăm eroarea
+    // Punem eroarea pe câmpul de bloc (ca să apară bula)
     form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
     
     // Declanșăm bula vizuală
@@ -1219,11 +1216,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     return; // Oprim aici
   }
 
-  // 2. Dacă am ajuns aici, totul e corect
-  // Resetăm validarea la final pentru siguranță
-  form.elements.blocName.setCustomValidity("");
-  form.elements.stradaName.setCustomValidity("");
-
+  // 2. Dacă am ajuns aici, totul este corect.
   const type = bName ? 'bloc' : 'strada';
   const name = bName || sName;
   const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
@@ -2305,7 +2298,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dacă este Bloc:</label>
                     <input name="blocName" placeholder="Nume Bloc (ex: Ceucari 2)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" 
-                      onInput={(e) => e.target.setCustomValidity("")}
+                      onInput={(e) => {
+                              e.target.form.elements.blocName.setCustomValidity("");
+                              e.target.form.elements.stradaName.setCustomValidity("");
+                            }}
                       />
                   </div>
                   <div className="flex items-center gap-2">
@@ -2314,7 +2310,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dacă este Stradă:</label>
                     <input name="stradaName" placeholder="Nume Stradă (ex: Putnei)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" 
-                      onInput={(e) => e.target.setCustomValidity("")}
+                      onInput={(e) => {
+                              e.target.form.elements.blocName.setCustomValidity("");
+                              e.target.form.elements.stradaName.setCustomValidity("");
+                            }}
                       />
                   </div>
                   <div className="flex gap-2 pt-4">
