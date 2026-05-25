@@ -1203,9 +1203,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
       const handleAddBlock = (e) => {
         e.preventDefault();
 
-        // 1. Resetăm validarea pe ambele câmpuri înainte de orice verificare
-            e.target.elements.blocName.setCustomValidity("");
-            e.target.elements.blocName.reportValidity(); // Aceasta ascunde bula dacă era vizibilă
+      // 1. RESETARE TOTALĂ: Ștergem orice eroare veche de pe ambele câmpuri
+  e.target.elements.blocName.setCustomValidity("");
+  e.target.elements.stradaName.setCustomValidity("");
         
         const fd = new FormData(e.target);
         const bName = fd.get('blocName').trim();
@@ -1216,7 +1216,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
   // - Dacă ambele sunt completate -> Eroare
   if ((!bName && !sName) || (bName && sName)) {
     // Aplicăm eroarea pe câmpul de bloc (sau poți pune pe oricare dintre ele)
-    e.target.elements.blocName.setCustomValidity("Te rog să completezi doar unul (Bloc SAU Stradă).");
+    e.target.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
     e.target.elements.blocName.reportValidity();
     return; // Oprește funcția aici
   }
