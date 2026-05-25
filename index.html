@@ -1284,6 +1284,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
       const handleAddStradaHouses = (e) => {
         e.preventDefault();
         const form = e.target;
+
+        // Dacă modals.isStradaGroup e TRUE, cerem și nume, altfel validăm doar numerele
+        if (modals.isStradaGroup && !valideazaCampul(form.elements.name, "Introdu numele grupei de case!")) return;
+        
         if (!valideazaCampul(form.elements.nums, "Introdu numerele caselor!")) return;
 
         const fd = new FormData(e.target);
@@ -1311,8 +1315,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         e.preventDefault();
         
         const form = e.target;
-        if (!valideazaCampul(form.elements.name, "Introdu numele scării sau al grupei!")) return;
-        if (!valideazaCampul(form.elements.nums, "Introdu numerele caselor/apartamentelor!")) return;
+        if (!valideazaCampul(form.elements.name, "Introdu numele scării!")) return;
+        if (!valideazaCampul(form.elements.nums, "Introdu numerele apartamentelor!")) return;
 
         const fd = new FormData(e.target);
         const filterType = fd.get('filterType');
@@ -2437,11 +2441,15 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   {modals.stradaAddHouse ? 'Adaugă Case' : (modals.isStradaGroup ? 'Adaugă Grupă de Case' : (modals.locationAppend ? 'Adaugă Apartamente' : 'Adăugare Scară'))}
                 </h3>
                 <form onSubmit={modals.stradaAddHouse ? handleAddStradaHouses : (modals.locationAppend ? handleAppendLocations : handleAddSection)} className="space-y-4">
-                 {(!modals.locationAppend && !modals.stradaAddHouse) && (
-                          <input name="name" placeholder={modals.isStradaGroup ? "Nume (ex: Numere Pare sau Impare)" : "Nume (ex: Scara 1)"} 
-                            onInput={(e) => e.target.setCustomValidity("")}
-                            className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
-                        )}
+                {/* Afișăm câmpul 'name' DOAR dacă adăugăm o secțiune (Scară) SAU o Grupă de case */}
+{(modals.sectionAdd || (modals.stradaAddHouse && modals.isStradaGroup)) && (
+    <input 
+        name="name" 
+        placeholder={modals.isStradaGroup ? "Nume grupă (ex: Numere Pare sau Impare)" : "Nume scara (ex: Scara 1)"} 
+        onInput={(e) => e.target.setCustomValidity("")}
+        className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" 
+    />
+)}
                   
                  <textarea name="nums" placeholder="Nr. (ex: 1-15 sau 1, 5, 20)" 
                       onInput={(e) => e.target.setCustomValidity("")}
