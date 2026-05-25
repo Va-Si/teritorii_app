@@ -1200,37 +1200,36 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-     const handleAddBlock = (e) => {
-  e.preventDefault();
-  const form = e.target;
+    const handleAddBlock = (e) => {
+        e.preventDefault();
 
-  // 1. Resetare: Ștergem eroarea veche (asta previne blocarea!)
-  form.elements.blocName.setCustomValidity("");
-  form.elements.stradaName.setCustomValidity("");
+      // 1. RESETARE TOTALĂ: Ștergem orice eroare veche de pe ambele câmpuri
+  e.target.elements.blocName.setCustomValidity("");
+  e.target.elements.stradaName.setCustomValidity("");
         
-  const fd = new FormData(form);
-  const bName = fd.get('blocName').trim();
-  const sName = fd.get('stradaName').trim();
+        const fd = new FormData(e.target);
+        const bName = fd.get('blocName').trim();
+        const sName = fd.get('stradaName').trim();
 
-  // 2. Verificare (Dacă e eroare, setăm mesajul ȘI activăm bula)
+  // 3. Validare
   if ((!bName && !sName) || (bName && sName)) {
-    // Setăm mesajul de eroare
+    // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
     form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
     
-    // AICI E SECRETUL: Aplicăm notificarea strict pe elementul de bloc
-    form.elements.blocName.reportValidity(); 
-    return; // Oprim execuția aici ca să nu salveze
+    // Folosim reportValidity pe tot formularul, nu doar pe un input
+    form.reportValidity();
+    return; 
   }
 
-  // 3. Dacă ajunge aici, înseamnă că datele sunt bune. 
-  // Browserul a uitat eroarea pentru că am dat reset la început.
-  const type = bName ? 'bloc' : 'strada';
-  const name = bName || sName;
-  const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
-  
-  updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-  setModals({...modals, blockAdd: false});
-};
+  // 4. Dacă am ajuns aici, totul este corect. 
+  // Logica ta originală continuă:
+        
+        const type = bName ? 'bloc' : 'strada';
+        const name = bName || sName;
+        const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        setModals({...modals, blockAdd: false});
+      };
 
       const handleAddStradaHouses = (e) => {
         e.preventDefault();
