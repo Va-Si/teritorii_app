@@ -1237,31 +1237,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
       const handleAddSection = (e) => {
         e.preventDefault();
-
-        // --- AICI ÎNCEPE VALIDAREA (Adaugă asta la începutul funcției) ---
-  const nameInput = e.target.elements.name;
-  const numsInput = e.target.elements.nums;
-
-  if (!nameInput.value.trim() || !numsInput.value.trim()) {
-    if (!nameInput.value.trim()) {
-      nameInput.setCustomValidity("Completează numele secțiunii.");
-      nameInput.reportValidity();
-      return;
-    }
-    numsInput.setCustomValidity("Completează numerele.");
-    numsInput.reportValidity();
-    return;
-  }
-  // Resetăm validitatea dacă totul e completat
-  nameInput.setCustomValidity("");
-  numsInput.setCustomValidity("");
-  // ------------------------------------------------------------------
-
-  // --- LOGICA TA ORIGINALĂ CONTINUĂ AICI ---
-
-
-
-
         
         const fd = new FormData(e.target);
         const filterType = fd.get('filterType');
