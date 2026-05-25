@@ -1200,37 +1200,36 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-      const handleAddBlock = (e) => {
-        e.preventDefault();
-const form = e.target;
-  const errorDiv = form.querySelector('#blockError'); // Căutăm div-ul de eroare
-  
-  // 1. Ascundem eroarea la început
-  errorDiv.classList.add('hidden');
-  errorDiv.textContent = "";
-        // 2. Extragem datele
-        
-        const fd = new FormData(e.target);
-        const bName = fd.get('blocName').trim();
-        const sName = fd.get('stradaName').trim();
+    const handleAddBlock = (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const bInput = form.elements.blocName;
+  const sInput = form.elements.stradaName;
 
-// 3. Verificăm logica
+  // 1. Curățăm orice eroare veche înainte de orice verificare
+  bInput.setCustomValidity("");
+  sInput.setCustomValidity("");
+
+  // 2. Extragem valorile (la fel ca la Scări/Apartamente)
+  const bName = bInput.value.trim();
+  const sName = sInput.value.trim();
+
+  // 3. Verificarea (Aici declanșăm bula nativă)
   if ((!bName && !sName) || (bName && sName)) {
-    // Afișăm eroarea ca text simplu, nu ca bulă
-    errorDiv.textContent = "Te rugăm să completezi doar Bloc SAU Stradă!";
-    errorDiv.classList.remove('hidden');
-    return; // Oprește execuția
+    // Punem mesajul exact pe input-ul de bloc pentru a declanșa bula browserului
+    bInput.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+    bInput.reportValidity(); // Aceasta este comanda care "cheamă" bula
+    return; // Oprește execuția imediat
   }
 
-  // 4. Dacă am ajuns aici, totul este corect. 
-  // Logica ta originală continuă:
-        
-        const type = bName ? 'bloc' : 'strada';
-        const name = bName || sName;
-        const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
-        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        setModals({...modals, blockAdd: false});
-      };
+  // 4. Salvarea (Doar dacă am trecut de validare)
+  const type = bName ? 'bloc' : 'strada';
+  const name = bName || sName;
+  const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
+  
+  updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+  setModals({...modals, blockAdd: false});
+};
 
       const handleAddStradaHouses = (e) => {
         e.preventDefault();
@@ -2302,8 +2301,7 @@ const form = e.target;
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
                 <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100">Bloc / Stradă Nouă</h3>
                 <form onSubmit={handleAddBlock} className="space-y-4">
-                  {/* Aici adaugi acest div pentru erori */}
-  <div id="blockError" className="hidden text-red-500 text-[10px] font-black uppercase text-center mt-2"></div>
+                 
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dacă este Bloc:</label>
                     <input name="blocName" placeholder="Nume Bloc (ex: Ceucari 2)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
