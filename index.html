@@ -2683,7 +2683,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
           {/* =================================================== */}
           {/* BULINA FILTRATĂ ȘI SECURIZATĂ PENTRU INLINE BABEL */}
-          {/* 🟢 BULINA VERDE (Sincronizat) */}
+          {/* 🟢 BULINA VERDE (Sincronizat)🟡 BULINA GALBENĂ (Se sincronizează) */}
           {isSynced ? (
             <div className="fixed bottom-4 left-4 z-[150] flex items-center gap-2 bg-slate-900/90 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-slate-700 pointer-events-none select-none text-xs font-semibold">
               <span className="relative flex h-2 w-2">
@@ -2693,7 +2693,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <span>Sincronizat</span>
             </div>
           ) : (
-            {/* 🟡 BULINA GALBENĂ (Se sincronizează) */}
+            
             <div className="fixed bottom-4 left-4 z-[150] flex items-center gap-2 bg-slate-900/90 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-slate-700 pointer-events-none select-none text-xs font-semibold">
               <span className="relative flex h-2 w-2">
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500 animate-pulse"></span>
