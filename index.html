@@ -1201,35 +1201,26 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
       };
 
       const handleAddBlock = (e) => {
-        e.preventDefault();
+  e.preventDefault();
 
-      // 1. RESETARE TOTALĂ: Ștergem orice eroare veche de pe ambele câmpuri
-  e.target.elements.blocName.setCustomValidity("");
-  e.target.elements.stradaName.setCustomValidity("");
-        
-        const fd = new FormData(e.target);
-        const bName = fd.get('blocName').trim();
-        const sName = fd.get('stradaName').trim();
+  // Păstrăm codul tău original de extragere a datelor
+  const fd = new FormData(e.target);
+  const bName = fd.get('blocName').trim();
+  const sName = fd.get('stradaName').trim();
 
-  // 3. Validare
-  if ((!bName && !sName) || (bName && sName)) {
-    // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
-    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
-    
-    // Folosim reportValidity pe tot formularul, nu doar pe un input
-    form.reportValidity();
-    return; 
-  }
+  // Dacă ambele sunt goale, nu salvăm nimic (se oprește silent, fără blocaje)
+  if (!bName && !sName) return;
 
-  // 4. Dacă am ajuns aici, totul este corect. 
-  // Logica ta originală continuă:
-        
-        const type = bName ? 'bloc' : 'strada';
-        const name = bName || sName;
-        const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
-        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        setModals({...modals, blockAdd: false});
-      };
+  // Dacă ambele sunt completate, oprește salvarea ca să nu se încurce datele
+  if (bName && sName) return;
+
+  // Dacă a trecut de verificări, logica ta originală salvează datele curat
+  const type = bName ? 'bloc' : 'strada';
+  const name = bName || sName;
+  const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
+  updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+  setModals({...modals, blockAdd: false});
+};
 
       const handleAddStradaHouses = (e) => {
         e.preventDefault();
