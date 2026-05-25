@@ -1202,23 +1202,23 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
       const handleAddBlock = (e) => {
         e.preventDefault();
+const form = e.target;
 
-      // 1. RESETARE TOTALĂ: Ștergem orice eroare veche de pe ambele câmpuri
-  e.target.elements.blocName.setCustomValidity("");
-  e.target.elements.stradaName.setCustomValidity("");
+  // 1. RESETARE VITALĂ: Ștergem orice eroare veche de pe ambele câmpuri
+  // Asta se execută în fiecare milisecundă în care apeși "Salvează"
+  form.elements.blocName.setCustomValidity("");
+  form.elements.stradaName.setCustomValidity("");
         
         const fd = new FormData(e.target);
         const bName = fd.get('blocName').trim();
         const sName = fd.get('stradaName').trim();
 
-  // 3. Validare
+// 3. Verificăm logica:
   if ((!bName && !sName) || (bName && sName)) {
-    // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
-    e.target.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
-    
-    // Folosim reportValidity pe tot formularul, nu doar pe un input
-    form.reportValidity();
-    return; 
+    // Punem eroarea pe câmpul de bloc și forțăm browserul să o afișeze
+    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+    form.reportValidity(); 
+    return; // Oprește execuția, nu se salvează nimic
   }
 
   // 4. Dacă am ajuns aici, totul este corect. 
