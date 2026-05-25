@@ -1200,28 +1200,30 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-   const handleAddBlock = (e) => {
-
+      const handleAddBlock = (e) => {
         e.preventDefault();
-   const form = e.target;
 
-  // 1. Resetare completă: Ștergem starea de eroare de pe ambele câmpuri
-  form.elements.blocName.setCustomValidity("");
-  form.elements.stradaName.setCustomValidity("");
+      // 1. RESETARE TOTALĂ: Ștergem orice eroare veche de pe ambele câmpuri
+  e.target.elements.blocName.setCustomValidity("");
+  e.target.elements.stradaName.setCustomValidity("");
+        
         const fd = new FormData(e.target);
         const bName = fd.get('blocName').trim();
         const sName = fd.get('stradaName').trim();
-      // 3. Validare
+
+  // 3. Validare
   if ((!bName && !sName) || (bName && sName)) {
     // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
-    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+    e.target.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
     
     // Folosim reportValidity pe tot formularul, nu doar pe un input
     form.reportValidity();
     return; 
   }
+
   // 4. Dacă am ajuns aici, totul este corect. 
   // Logica ta originală continuă:
+        
         const type = bName ? 'bloc' : 'strada';
         const name = bName || sName;
         const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
@@ -1229,7 +1231,28 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         setModals({...modals, blockAdd: false});
       };
 
+      const handleAddStradaHouses = (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const filterType = fd.get('filterType');
+        const nums = parseNumbers(fd.get('nums'), filterType === 'even', filterType === 'odd');
 
+        const upd = selectedTerritory.blocks.map(b => {
+          if (b.id === modals.stradaAddHouse) {
+            const defaultSectionIndex = b.sections ? b.sections.findIndex(s => !s.name || s.name === 'Case') : -1;
+            if (defaultSectionIndex >= 0) {
+              const newSections = [...b.sections];
+              newSections[defaultSectionIndex] = { ...newSections[defaultSectionIndex], locations: [...newSections[defaultSectionIndex].locations, ...nums] };
+              return { ...b, sections: newSections };
+            } else {
+               return { ...b, sections: [{ id: Date.now().toString(), name: '', locations: nums }, ...(b.sections || [])] };
+            }
+          }
+          return b;
+        });
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        setModals({...modals, stradaAddHouse: null});
+      };
 
       const handleAddSection = (e) => {
         e.preventDefault();
@@ -2278,7 +2301,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
                 <h3 className="font-black text-lg mb-6 uppercase tracking-widest text-slate-800 dark:text-slate-100">Bloc / Stradă Nouă</h3>
                 <form onSubmit={handleAddBlock} className="space-y-4">
-                 
                   <div>
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Dacă este Bloc:</label>
                     <input name="blocName" placeholder="Nume Bloc (ex: Ceucari 2)" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
