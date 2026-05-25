@@ -1202,17 +1202,27 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
       const handleAddBlock = (e) => {
         e.preventDefault();
+
+        // 1. Resetăm validarea pe ambele câmpuri înainte de orice verificare
+            e.target.elements.blocName.setCustomValidity("");
+            e.target.elements.blocName.reportValidity(); // Aceasta ascunde bula dacă era vizibilă
+        
         const fd = new FormData(e.target);
         const bName = fd.get('blocName').trim();
         const sName = fd.get('stradaName').trim();
 
-        // Aici facem validarea folosind input-urile din e.target
-  if (!bName && !sName) {
-    // Declanșăm bula de eroare pe inputul de bloc
-    e.target.elements.blocName.setCustomValidity("Please fill out this field.");
+       // 3. Verificăm logica:
+  // - Dacă ambele sunt goale -> Eroare
+  // - Dacă ambele sunt completate -> Eroare
+  if ((!bName && !sName) || (bName && sName)) {
+    // Aplicăm eroarea pe câmpul de bloc (sau poți pune pe oricare dintre ele)
+    e.target.elements.blocName.setCustomValidity("Te rog să completezi doar unul (Bloc SAU Stradă).");
     e.target.elements.blocName.reportValidity();
     return; // Oprește funcția aici
   }
+
+  // 4. Dacă am ajuns aici, totul este corect. 
+  // Logica ta originală continuă:
         
         const type = bName ? 'bloc' : 'strada';
         const name = bName || sName;
