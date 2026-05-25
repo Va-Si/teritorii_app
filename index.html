@@ -1200,23 +1200,32 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-  const handleAddBlock = (e) => {
+ const handleAddBlock = (e) => {
   e.preventDefault();
   const form = e.target;
+
+  // Aceasta este „plasa de siguranță”. Nu strică nimic, doar se asigură că nu plecăm cu erori vechi.
+  form.elements.blocName.setCustomValidity("");
+  form.elements.stradaName.setCustomValidity("");
+
   const bName = form.elements.blocName.value.trim();
   const sName = form.elements.stradaName.value.trim();
 
-  // 1. Verificăm validitatea
-  if ((!bName && !sName) || (bName && sName)) {
-    // Punem eroarea pe câmpul de bloc (ca să apară bula)
-    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
-    
-    // Declanșăm bula vizuală
+  // Cazul A: Nimic completat
+  if (!bName && !sName) {
+    form.elements.blocName.setCustomValidity("Te rugăm să introduci numele Blocului sau al Străzii pentru a continua.");
     form.elements.blocName.reportValidity();
-    return; // Oprim aici
+    return;
   }
 
-  // 2. Dacă am ajuns aici, totul este corect.
+  // Cazul B: Ambele completate
+  if (bName && sName) {
+    form.elements.blocName.setCustomValidity("Te rugăm să completezi doar una dintre rubrici, nu ambele!");
+    form.elements.blocName.reportValidity();
+    return;
+  }
+
+  // Dacă ajunge aici, înseamnă că datele sunt perfecte
   const type = bName ? 'bloc' : 'strada';
   const name = bName || sName;
   const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
