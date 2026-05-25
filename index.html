@@ -1200,29 +1200,30 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-    const handleAddBlock = (e) => {
+  const handleAddBlock = (e) => {
   e.preventDefault();
   const form = e.target;
-  const bInput = form.elements.blocName;
-  const sInput = form.elements.stradaName;
 
-  // 1. Curățăm orice eroare veche înainte de orice verificare
-  bInput.setCustomValidity("");
-  sInput.setCustomValidity("");
+  // 1. Resetare completă: Ștergem starea de eroare de pe ambele câmpuri
+  form.elements.blocName.setCustomValidity("");
+  form.elements.stradaName.setCustomValidity("");
 
-  // 2. Extragem valorile (la fel ca la Scări/Apartamente)
-  const bName = bInput.value.trim();
-  const sName = sInput.value.trim();
+  // 2. Extragem datele
+  const fd = new FormData(form);
+  const bName = fd.get('blocName').trim();
+  const sName = fd.get('stradaName').trim();
 
-  // 3. Verificarea (Aici declanșăm bula nativă)
+  // 3. Validare
   if ((!bName && !sName) || (bName && sName)) {
-    // Punem mesajul exact pe input-ul de bloc pentru a declanșa bula browserului
-    bInput.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
-    bInput.reportValidity(); // Aceasta este comanda care "cheamă" bula
-    return; // Oprește execuția imediat
+    // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
+    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+    
+    // Folosim reportValidity pe tot formularul, nu doar pe un input
+    form.reportValidity();
+    return; 
   }
 
-  // 4. Salvarea (Doar dacă am trecut de validare)
+  // 4. Dacă validarea a trecut (a ajuns aici), salvăm
   const type = bName ? 'bloc' : 'strada';
   const name = bName || sName;
   const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
