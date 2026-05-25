@@ -1200,24 +1200,34 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-      const handleAddBlock = (e) => {
+     const handleAddBlock = (e) => {
   e.preventDefault();
+  const form = e.target;
 
-  // Păstrăm codul tău original de extragere a datelor
-  const fd = new FormData(e.target);
+  // 1. Resetare: Ștergem eroarea veche (asta previne blocarea!)
+  form.elements.blocName.setCustomValidity("");
+  form.elements.stradaName.setCustomValidity("");
+        
+  const fd = new FormData(form);
   const bName = fd.get('blocName').trim();
   const sName = fd.get('stradaName').trim();
 
-  // Dacă ambele sunt goale, nu salvăm nimic (se oprește silent, fără blocaje)
-  if (!bName && !sName) return;
+  // 2. Verificare (Dacă e eroare, setăm mesajul ȘI activăm bula)
+  if ((!bName && !sName) || (bName && sName)) {
+    // Setăm mesajul de eroare
+    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+    
+    // AICI E SECRETUL: Aplicăm notificarea strict pe elementul de bloc
+    form.elements.blocName.reportValidity(); 
+    return; // Oprim execuția aici ca să nu salveze
+  }
 
-  // Dacă ambele sunt completate, oprește salvarea ca să nu se încurce datele
-  if (bName && sName) return;
-
-  // Dacă a trecut de verificări, logica ta originală salvează datele curat
+  // 3. Dacă ajunge aici, înseamnă că datele sunt bune. 
+  // Browserul a uitat eroarea pentru că am dat reset la început.
   const type = bName ? 'bloc' : 'strada';
   const name = bName || sName;
   const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
+  
   updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
   setModals({...modals, blockAdd: false});
 };
