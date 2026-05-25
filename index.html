@@ -1200,60 +1200,67 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         }
       };
 
-  const handleAddBlock = (e) => {
-  e.preventDefault();
-  const form = e.target;
+   const handleAddBlock = (e) => {
 
-  // 1. Resetare completă: Ștergem starea de eroare de pe ambele câmpuri
-  form.elements.blocName.setCustomValidity("");
-  form.elements.stradaName.setCustomValidity("");
+        e.preventDefault();
 
-  // 2. Extragem datele
-  const fd = new FormData(form);
-  const bName = fd.get('blocName').trim();
-  const sName = fd.get('stradaName').trim();
 
-  // 3. Validare
+
+      // 1. RESETARE TOTALĂ: Ștergem orice eroare veche de pe ambele câmpuri
+
+  e.target.elements.blocName.setCustomValidity("");
+
+  e.target.elements.stradaName.setCustomValidity("");
+
+        
+
+        const fd = new FormData(e.target);
+
+        const bName = fd.get('blocName').trim();
+
+        const sName = fd.get('stradaName').trim();
+
+
+
+       // 3. Verificăm logica:
+
+  // - Dacă ambele sunt goale -> Eroare
+
+  // - Dacă ambele sunt completate -> Eroare
+
   if ((!bName && !sName) || (bName && sName)) {
-    // Setăm eroarea din nou, dar acum știm sigur că nu mai există nicio stare veche „blocată”
-    form.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
-    
-    // Folosim reportValidity pe tot formularul, nu doar pe un input
-    form.reportValidity();
-    return; 
+
+    // Aplicăm eroarea pe câmpul de bloc (sau poți pune pe oricare dintre ele)
+
+    e.target.elements.blocName.setCustomValidity("Completează doar un câmp (Bloc SAU Stradă)");
+
+    e.target.elements.blocName.reportValidity();
+
+    return; // Oprește funcția aici
+
   }
 
-  // 4. Dacă validarea a trecut (a ajuns aici), salvăm
-  const type = bName ? 'bloc' : 'strada';
-  const name = bName || sName;
-  const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
-  
-  updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-  setModals({...modals, blockAdd: false});
-};
 
-      const handleAddStradaHouses = (e) => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const filterType = fd.get('filterType');
-        const nums = parseNumbers(fd.get('nums'), filterType === 'even', filterType === 'odd');
 
-        const upd = selectedTerritory.blocks.map(b => {
-          if (b.id === modals.stradaAddHouse) {
-            const defaultSectionIndex = b.sections ? b.sections.findIndex(s => !s.name || s.name === 'Case') : -1;
-            if (defaultSectionIndex >= 0) {
-              const newSections = [...b.sections];
-              newSections[defaultSectionIndex] = { ...newSections[defaultSectionIndex], locations: [...newSections[defaultSectionIndex].locations, ...nums] };
-              return { ...b, sections: newSections };
-            } else {
-               return { ...b, sections: [{ id: Date.now().toString(), name: '', locations: nums }, ...(b.sections || [])] };
-            }
-          }
-          return b;
-        });
+  // 4. Dacă am ajuns aici, totul este corect. 
+
+  // Logica ta originală continuă:
+
+        
+
+        const type = bName ? 'bloc' : 'strada';
+
+        const name = bName || sName;
+
+        const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
+
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        setModals({...modals, stradaAddHouse: null});
+
+        setModals({...modals, blockAdd: false});
+
       };
+
+
 
       const handleAddSection = (e) => {
         e.preventDefault();
