@@ -821,11 +821,13 @@ const generateTerritoryReport = (territory) => {
   setLoading(true);
   const unsubs = [];
   
-  // 1. [NESCHIMBAT] Codul pentru setări
-  unsubs.push(db.collection('users').doc(userDocId).collection('config').doc('settings').onSnapshot(doc => { 
+ // 1. [MODIFICAT PENTRU GLOBAL] Codul pentru setări globale
+  unsubs.push(db.collection('config').doc('global_settings').onSnapshot(doc => { 
     if(doc.exists) {
        const data = doc.data();
        setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
+    } else {
+       db.collection('config').doc('global_settings').set({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
     }
   }));
 
@@ -875,8 +877,8 @@ const generateTerritoryReport = (territory) => {
           return;
         }
 
-        const updatedGroups = [...(settings.groups || DEFAULT_GROUPS), finalName];
-        await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+       const updatedGroups = [...(settings.groups || DEFAULT_GROUPS), finalName];
+        await db.collection('config').doc('global_settings').set({ ...settings, groups: updatedGroups });
       };
       const handleToggleTag = (tag, isChecked) => {
   const currentTags = settings.progressTags || ['rusa', 'refuz-categoric'];
@@ -914,8 +916,8 @@ const handleRenameGroup = (oldName, newName) => {
     isDanger: false, // Albastru, fiindcă e o modificare de structură, nu o ștergere definitivă
     onConfirm: async () => {
       try {
-        const updatedGroups = (settings.groups || DEFAULT_GROUPS).map(g => g === oldName ? finalName : g);
-        await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+       const updatedGroups = (settings.groups || DEFAULT_GROUPS).map(g => g === oldName ? finalName : g);
+        await db.collection('config').doc('global_settings').set({ ...settings, groups: updatedGroups });
 
         const usersSnap = await db.collection('app_users').where('group', '==', oldName).get();
         const batch1 = db.batch();
@@ -966,8 +968,8 @@ const handleRenameGroup = (oldName, newName) => {
           message: `Sigur ștergi definitiv "${groupName}" din listă? (Notă: teritoriile și utilizatorii existenți nu vor fi șterși, doar ascunși)`,
           isDanger: true,
           onConfirm: async () => { // Am mutat async-ul aici pentru Firebase
-            const updatedGroups = (settings.groups || DEFAULT_GROUPS).filter(g => g !== groupName);
-            await db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, groups: updatedGroups });
+          const updatedGroups = (settings.groups || DEFAULT_GROUPS).filter(g => g !== groupName);
+            await db.collection('config').doc('global_settings').set({ ...settings, groups: updatedGroups });
           }
         });
       };
@@ -1492,8 +1494,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
             const targetCategory = catType === 'personal' ? 'personal' : activeGroupView;
 
-            if (data.settings && isAdmin) {
-                await db.collection('users').doc(userDocId).collection('config').doc('settings').set(data.settings);
+           if (data.settings && isAdmin) {
+                await db.collection('config').doc('global_settings').set(data.settings);
             }
 
             // Funcția internă care execută scrierea în Firebase
@@ -2744,9 +2746,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               </div>
 
 
-              <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm mb-8">
+             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm mb-8">
                  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><span className="material-icons">palette</span> Etichete și culori</h3>
-                 <SettingsLabelList settings={settings} setAlertBox={setAlertBox} updateSettingsLabels={(newLabels) => db.collection('users').doc(userDocId).collection('config').doc('settings').set({ ...settings, labels: newLabels })} />
+                 <SettingsLabelList settings={settings} setAlertBox={setAlertBox} updateSettingsLabels={(newLabels) => db.collection('config').doc('global_settings').set({ ...settings, labels: newLabels })} />
               </div>
             </div>
           )}
