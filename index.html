@@ -411,6 +411,8 @@
 
       const unGroupedLocationsSections = (block.sections || []).filter(sec => !sec.name || sec.name === 'Case');
       const groupedSections = (block.sections || []).filter(sec => sec.name && sec.name !== 'Case');
+      // <--- AICI O PUI conditia logica care verifica si calculeaza daca exista case :
+  const hasHouses = (block.sections || []).some(s => s.locations && s.locations.length > 0);
 
 useEffect(() => {
     if (!sectionsGridRef.current || !canEditStructure) return;
@@ -584,16 +586,30 @@ return (
                 </div>
               )})}
 
-              <div className={`no-drag w-full mt-2`}>
-  {canEditStructure && (
-    <button 
-      onClick={() => setModals({...modals, sectionAdd: block.id, isStradaGroup: isBlockStrada})} 
-      className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2"
-    >
-      <span className="material-icons text-3xl">{isBlockStrada ? 'maps_home_work' : 'add_business'}</span>
-      <span className="font-black text-[10px] uppercase tracking-widest text-center">{isBlockStrada ? 'Adaugă Grupă de Case' : 'Adaugă Scară'}</span>
-    </button>
-  )}
+              {/* Containerul pentru butoanele de jos */}
+<div className={`no-drag w-full mt-2 flex flex-col gap-2`}>
+    
+    {/* BUTONUL MARE DE ADĂUGARE CASĂ - Apare doar dacă NU există case */}
+    {isBlockStrada && !isReadOnly && !hasHouses && (
+        <button 
+            onClick={() => setModals({...modals, stradaAddHouse: block.id})} 
+            className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2"
+        >
+            <span className="material-icons text-3xl">home</span>
+            <span className="font-black text-[10px] uppercase tracking-widest">Adaugă Case</span>
+        </button>
+    )}
+
+    {/* BUTONUL MARE DE ADĂUGARE GRUPĂ - Apare mereu (dacă ai permisiuni) */}
+    {canEditStructure && (
+        <button 
+            onClick={() => setModals({...modals, sectionAdd: block.id, isStradaGroup: isBlockStrada})} 
+            className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2"
+        >
+            <span className="material-icons text-3xl">{isBlockStrada ? 'maps_home_work' : 'add_business'}</span>
+            <span className="font-black text-[10px] uppercase tracking-widest text-center">{isBlockStrada ? 'Adaugă Grupă de Case' : 'Adaugă Scară'}</span>
+        </button>
+    )}
 </div>
             </div>
           )}
