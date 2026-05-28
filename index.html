@@ -469,19 +469,23 @@ return (
         </h2>
       </div>
 
-      {/* Zona din dreapta: Butonul mare de Ștergere */}
-      {/* REPARAT: shrink-0 garantează că acest buton rămâne fix pe poziție indiferent de lungimea textului din stânga */}
+    {/* Zona din dreapta: Butoanele de Acțiune */}
       {canEditStructure && (
-        <div className="flex items-center shrink-0 no-drag" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center shrink-0 no-drag gap-2" onClick={e => e.stopPropagation()}>
+          {/* BUTON NOU: Adaugă Casă (apare doar la străzi) */}
+          {isBlockStrada && (
+             <button onClick={() => setModals({...modals, stradaAddHouse: block.id})} className="material-icons text-blue-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm">add</button>
+          )}
+          {/* BUTON EXISTENT: Ștergere */}
           <button onClick={() => { 
-             setAlertBox({
-                 isOpen: true,
-                 title: isBlockStrada ? 'Ștergere Stradă' : 'Ștergere Bloc',
-                 message: `Ești sigur că vrei să ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'} "${block.name}"? Toate datele din interior se vor perde.`,
-                 isDanger: true,
-                 onConfirm: () => {
-                   updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
-                 }
+              setAlertBox({
+                  isOpen: true,
+                  title: isBlockStrada ? 'Ștergere Stradă' : 'Ștergere Bloc',
+                  message: `Ești sigur că vrei să ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'} "${block.name}"? Toate datele din interior se vor perde.`,
+                  isDanger: true,
+                  onConfirm: () => {
+                    updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
+                  }
                });
           }} className="material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
         </div>
@@ -580,20 +584,17 @@ return (
                 </div>
               )})}
 
-              <div className={`no-drag flex flex-col sm:flex-row gap-2 w-full mt-2`}>
-                {isBlockStrada && !isReadOnly && (
-                  <button onClick={() => setModals({...modals, stradaAddHouse: block.id})} className="flex-1 p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
-                      <span className="material-icons text-3xl">home</span>
-                      <span className="font-black text-[10px] uppercase tracking-widest">Adaugă Casă</span>
-                  </button>
-                )}
-                {canEditStructure && (
-                   <button onClick={() => setModals({...modals, sectionAdd: block.id, isStradaGroup: isBlockStrada})} className="flex-1 p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
-                     <span className="material-icons text-3xl">{isBlockStrada ? 'maps_home_work' : 'add_business'}</span>
-                     <span className="font-black text-[10px] uppercase tracking-widest text-center">{isBlockStrada ? 'Adaugă Grupă de Case' : 'Adaugă Scară'}</span>
-                   </button>
-                )}
-              </div>
+              <div className={`no-drag w-full mt-2`}>
+  {canEditStructure && (
+    <button 
+      onClick={() => setModals({...modals, sectionAdd: block.id, isStradaGroup: isBlockStrada})} 
+      className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2"
+    >
+      <span className="material-icons text-3xl">{isBlockStrada ? 'maps_home_work' : 'add_business'}</span>
+      <span className="font-black text-[10px] uppercase tracking-widest text-center">{isBlockStrada ? 'Adaugă Grupă de Case' : 'Adaugă Scară'}</span>
+    </button>
+  )}
+</div>
             </div>
           )}
         </div>
