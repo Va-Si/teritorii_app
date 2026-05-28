@@ -2616,21 +2616,27 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
                 <div className="p-5 flex-1 overflow-y-scroll space-y-6">
                   <div className="grid grid-cols-3 gap-2">
-                    {settings.labels.map(l => (
-                      <button key={l.id} 
-                        onClick={() => {
-                          const { blockId, sectionId, loc } = modals.locationEdit;
-                          const newHistory = recordHistory(loc, 'status_change', l.id);
-                          const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, status: l.id, history: newHistory } : x) } : s) } : b);
-                          updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-                          setModals({...modals, locationEdit: null});
-                        }}
-                        style={{ backgroundColor: l.color, color: l.textColor }}
-                        className="p-2 rounded-xl text-[9px] font-black uppercase border border-black/5 flex items-center justify-center text-center leading-tight min-h-[44px] shadow-sm active:scale-90 transition-transform"
-                      >
-                        {l.label}
-                      </button>
-                    ))}
+                   {settings.labels.map(l => {
+  // Verificăm dacă aceasta este eticheta selectată pentru acest apartament
+  const isSelected = l.id === modals.locationEdit.loc.status;
+
+  return (
+    <button key={l.id} 
+      onClick={() => {
+        const { blockId, sectionId, loc } = modals.locationEdit;
+        const newHistory = recordHistory(loc, 'status_change', l.id);
+        const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, status: l.id, history: newHistory } : x) } : s) } : b);
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        // Fereastra nu se mai închide automat
+      }}
+      style={{ backgroundColor: l.color, color: l.textColor }}
+      // Adăugăm ring-4 pentru un contur gros și vizibil dacă este selectat
+      className={`p-2 rounded-xl text-[9px] font-black uppercase border border-black/5 flex items-center justify-center text-center leading-tight min-h-[44px] shadow-sm active:scale-90 transition-all ${isSelected ? 'ring-4 ring-black dark:ring-white' : ''}`}
+    >
+      {l.label}
+    </button>
+  );
+})}
                   </div>
 
                   <div>
