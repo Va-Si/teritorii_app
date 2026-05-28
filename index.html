@@ -2641,18 +2641,22 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     <button key={l.id} 
       onClick={() => {
         const { blockId, sectionId, loc } = modals.locationEdit;
+        // 1. Calculăm noul istoric (această funcție o ai deja)
         const newHistory = recordHistory(loc, 'status_change', l.id);
+        // 2. Facem update în Firebase
         const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, status: l.id, history: newHistory } : x) } : s) } : b);
         // 1. Trimitem la baza de date
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
         // Fereastra nu se mai închide automat
         // 2. ACTUALIZARE IMEDIATĂ (Asta lipsea)
         // Actualizăm starea locală a modalului pentru ca React să aplice conturul instantaneu
+        // Aici adăugăm și "history: newHistory" în obiectul `loc`
         setModals(prev => ({
            ...prev,
            locationEdit: {
              ...prev.locationEdit,
-             loc: { ...prev.locationEdit.loc, status: l.id }
+             loc: { ...prev.locationEdit.loc, status: l.id,history: newHistory // <--- Această linie face magia! 
+                   }
            }
         }));
       }}
