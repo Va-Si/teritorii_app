@@ -1873,8 +1873,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     return (
                       <div key={t.id} onClick={() => setSelectedTerritoryId(t.id)} className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
                         <div className="flex justify-between items-start mb-2 pr-[110px]">
-                          <div>
-                            <h3 className={`font-black text-lg leading-tight uppercase ${t.isDone ? 'text-green-900 dark:text-green-400' : isOverdue ? 'text-red-900 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>{t.name}</h3>
+                          <div className="min-w-0 flex-1">
+                            <h3 className={`font-black text-lg leading-tight uppercase truncate min-w-0 ${t.isDone ? 'text-green-900 dark:text-green-400' : isOverdue ? 'text-red-900 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>{t.name}</h3>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                               <p className={`text-[10px] font-bold uppercase ${t.isDone ? 'text-green-700 dark:text-green-500' : isOverdue ? 'text-red-700 dark:text-red-500' : 'text-slate-400'}`}>{formatDate(t.startDate)} ➔ {formatDate(t.endDate)}</p>
                               {isOverdue && <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded-md bg-red-600 text-white shadow-sm shrink-0">Returnare Întârziată</span>}
