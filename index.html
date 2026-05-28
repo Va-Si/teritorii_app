@@ -1383,7 +1383,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         } : b);
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
         setCollapsedSections(prev => ({...prev, [sectionId]: false}));
-        setModals({...modals, locationAppend: null});
+       // Numarul la ultimele istoric editari Schimbă cifra 5 cu 10, 20 sau cât ai nevoie! 
+       setModals({...modals, locationAppend: null});
       };
 
       const recordHistory = (loc, actiuneStr, labelId = null) => {
@@ -1824,13 +1825,16 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             <header className="sticky top-0 z-30 p-4 pb-0">
               {/* 1. Div-ul tău colorat (Titlul Teritoriului) */}
               <div className={`${selectedTerritory.category !== 'personal' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3`}>
+                {/* AICI ESTE CONTAINERUL TEXTULUI */}
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
                   <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
-                  <h1 className="font-black text-white uppercase text-base md:text-xl truncate">{selectedTerritory.name}</h1>
+                  {/* ADĂUGĂM min-w-0 ȘI PE h1 */}
+                  <h1 className="font-black text-white uppercase text-base md:text-xl truncate min-w-0 flex-1">{selectedTerritory.name}</h1>
                   {canEditStructure && (
                     <button onClick={() => setModals({...modals, territoryEdit: true})} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
                   )}
                 </div>
+                {/* AICI ESTE CONTAINERUL BUTOANELOR DE DREAPTA */}
                 {((isAdmin || isGroupAdmin || selectedTerritory.category === 'personal') && !isReadOnly) && (
                   <div className="shrink-0 flex items-center">
                     <button onClick={() => handleToggleDone(selectedTerritory)} className={`material-icons p-3 rounded-full transition shadow-sm ${selectedTerritory.isDone ? 'bg-white text-green-600 shadow-xl' : 'bg-black/10 hover:bg-black/20 text-white/80'}`}>
@@ -2727,7 +2731,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
                   {canEditStructure && (
                      <p className="text-[10px] font-bold text-center text-slate-400 bg-slate-100 dark:bg-slate-900 p-2 rounded-xl flex items-center justify-center gap-1 shrink-0">
-                       <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pătrățelul cu nr. app/case pentru a muta
+                       <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pătrățelul cu nr. apartament/casă pentru a le muta
                      </p>
                   )}
 
