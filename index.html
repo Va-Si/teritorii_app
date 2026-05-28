@@ -2626,8 +2626,18 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         const { blockId, sectionId, loc } = modals.locationEdit;
         const newHistory = recordHistory(loc, 'status_change', l.id);
         const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, status: l.id, history: newHistory } : x) } : s) } : b);
+        // 1. Trimitem la baza de date
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
         // Fereastra nu se mai închide automat
+        // 2. ACTUALIZARE IMEDIATĂ (Asta lipsea)
+        // Actualizăm starea locală a modalului pentru ca React să aplice conturul instantaneu
+        setModals(prev => ({
+           ...prev,
+           locationEdit: {
+             ...prev.locationEdit,
+             loc: { ...prev.locationEdit.loc, status: l.id }
+           }
+        }));
       }}
       style={{ backgroundColor: l.color, color: l.textColor }}
       // Adăugăm ring-4 pentru un contur gros și vizibil dacă este selectat
