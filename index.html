@@ -667,29 +667,35 @@ const [progressTags, setProgressTags] = useState(() => {
     }
 };
 
-    useEffect(() => {
-    const handleBackButton = () => {
-        if (navStack.length > 0) {
-            const lastAction = navStack[navStack.length - 1];
-            
-            // Închidem modalul/fereastra curentă
-            if (lastAction.type === 'territory') {
-                setSelectedTerritoryId(null);
-            } else {
-                // Setăm tipul acțiunii pe null pentru a închide fereastra
-                setModals(prev => ({ ...prev, [lastAction.type]: null }));
-                
-                // Dacă închidem un "locationEdit", curățăm și numărul
-                if(lastAction.type === 'locationEdit') setEditLocNumber('');
-            }
-            
-            // Scoatem din stivă
-            setNavStack(prev => prev.slice(0, -1));
-        }
-    };
-
-    window.addEventListener('popstate', handleBackButton);
-    return () => window.removeEventListener('popstate', handleBackButton);
+   useEffect(() => {
+  const handleBackButton = () => {
+    if (navStack.length > 0) {
+      const lastAction = navStack[navStack.length - 1];
+      
+      // Închide fereastra activă
+      if (lastAction.type === 'territory') {
+        setSelectedTerritoryId(null);
+      } else {
+        // Aceasta este cheia: setăm la null orice modal care a fost deschis
+        // Folosim o funcție care resetează starea obiectului modals
+        setModals(prev => {
+           let newState = { ...prev };
+           // Forțăm închiderea tuturor ferestrelor posibile
+           Object.keys(newState).forEach(key => newState[key] = null);
+           // Dacă era o fereastră complexă cu date, le ștergem și pe acelea
+           return newState;
+        });
+        
+        // Curățăm și alte stări auxiliare dacă este cazul
+        if(lastAction.type === 'locationEdit') setEditLocNumber('');
+      }
+      
+      setNavStack(prev => prev.slice(0, -1));
+    }
+  };
+  
+  window.addEventListener('popstate', handleBackButton);
+  return () => window.removeEventListener('popstate', handleBackButton);
 }, [navStack]);
   // --- AICI SE TERMINĂ CODUL NOU ---
 
@@ -1418,7 +1424,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         setModals({ ...modals, renameItem: null });
       };
 
-      const openRenameModal = (type, blockId, sectionId, currentName) => setModals({ ...modals, renameItem: { type, blockId, sectionId, currentName } });
+     const openRenameModal = (type, blockId, sectionId, currentName) => {
+    navigateTo('renameItem', { type, blockId, sectionId, currentName });
+};
 
      const handleAppendLocations = (e) => {
         e.preventDefault();
@@ -2075,7 +2083,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           {modals.auth && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center border-4 border-slate-100 dark:border-slate-700 relative">
-                <button onClick={() => setModals({...modals, auth: false})} className="absolute top-4 right-4 material-icons text-slate-400 hover:text-slate-600 transition-colors">close</button>
+                <button onClick={() => navigateTo('profileEdit', true)} className="absolute top-4 right-4 material-icons text-slate-400 hover:text-slate-600 transition-colors">close</button>
                 
                 <div className="space-y-6 pt-4">
                   <div className="flex flex-col items-center gap-3 bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
@@ -2395,7 +2403,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                        const oldName = modals.adminEditUser.name;
                        await db.collection('app_users').doc(modals.adminEditUser.id).update({ name: newName, password: newPass, group: newGroup, isAdminGroup: newIsAdminGroup });
                        await updateUserNameInHistory(modals.adminEditUser.id, oldName, newName);
-                       setModals({...modals, adminEditUser: null, adminPanel: true});
+                       window.history.back();
                    } catch(err) {
                        alert("Eroare la actualizare: " + err.message);
                    }
@@ -2424,7 +2432,13 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </label>
                   {/* --- ÎNLOCUIEȘTE DOAR ACEST BLOC DIN MODALUL ADMIN --- */}
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setModals({...modals, adminEditUser: null, adminPanel: true})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+                <button 
+                    type="button" 
+                    onClick={() => window.history.back()} 
+                    className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs"
+                  >
+                    Anulează
+                  </button>
                 <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm active:scale-95 transition-all">Salvează</button>
               </div>
                 </form>
