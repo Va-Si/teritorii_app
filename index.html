@@ -327,7 +327,7 @@
       );
     }
 
-    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly, territory, setAlertBox }) {
+    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, navigateTo, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly, territory, setAlertBox }) {
       const gridRef = useRef(null);
       const isUngroupedSection = !sec.name || sec.name === 'Case';
       
@@ -391,8 +391,8 @@
                 return;
             }
                 // 3. Dacă totul e ok, deschidem
-                openEditModal(blockId, sec.id, loc, lIdx);
-              }} 
+                navigateTo('locationEdit', { blockId, sectionId: sec.id, loc, lIdx });
+            }}  
               style={getLabelStyle(loc.status)}
               className="square-btn rounded-lg shadow-sm" // <--- AM ȘTERS cursor-not-allowed DE
           >
@@ -404,7 +404,7 @@
       );
     }
 
-    function BlockComponent({ block, territory, getLabelStyle, openEditModal, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, isReadOnly, setAlertBox }) {
+    function BlockComponent({ block, territory, getLabelStyle, openEditModal, navigateTo, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, isReadOnly, setAlertBox }) {
       const isBlockStrada = block.type === 'strada';
       const isBlockCollapsed = collapsedBlocks[block.id];
       const sectionsGridRef = useRef(null);
@@ -505,6 +505,7 @@ return (
                       territory={territory} // ADĂUGAT
                       getLabelStyle={getLabelStyle} 
                       openEditModal={openEditModal} 
+                      navigateTo={navigateTo}
                       handleReorderLocations={handleReorderLocations} 
                       isBlockStrada={isBlockStrada} 
               
@@ -575,6 +576,7 @@ return (
                       sec={sec} 
                       getLabelStyle={getLabelStyle} 
                       openEditModal={openEditModal} 
+                      navigateTo={navigateTo}
                       handleReorderLocations={handleReorderLocations} 
                       isBlockStrada={isBlockStrada} 
                       
@@ -618,7 +620,7 @@ return (
     }
 
     function App() {
-      // Încarcă setările din localStorage sau pune un default
+      // În componenta principală (App.js sau unde ții starea) aici tu definești „stările” (inima aplicației), Încarcă setările din localStorage sau pune un default
 const [progressTags, setProgressTags] = useState(() => {
     const saved = localStorage.getItem('progressTags');
     return saved ? JSON.parse(saved) : ['rusa', 'refuz-categoric']; // Default-ul tău
@@ -639,9 +641,49 @@ const [progressTags, setProgressTags] = useState(() => {
       const [authLoading, setAuthLoading] = useState(true);
       const [authError, setAuthError] = useState(null);
       const [authForm, setAuthForm] = useState({ name: '', password: '' });
+      // ... (codul tău existent cu progressTags, territories, etc.) ...
       const [adminUsersList, setAdminUsersList] = useState([]);
       // Pasul 1: Starea pentru buline de sincronizare (implicit considerăm că e sincronizat)
-const [isSynced, setIsSynced] = React.useState(true);
+      const [isSynced, setIsSynced] = React.useState(true);
+
+      const [navStack, setNavStack] = useState([]);
+
+      const navigateTo = (type, data) => {
+        // 1. "Păcălim" browserul să nu închidă aplicația
+        window.history.pushState({ type }, ''); 
+        // 2. Adăugăm în stiva noastră internă
+        setNavStack(prev => [...prev, { type, data }]);
+        
+        // 3. Executăm acțiunea vizuală reală
+        if (type === 'territory') {
+        setSelectedTerritoryId(data);
+    } else {
+        // Aceasta pune automat datele în obiectul 'modals'
+        setModals(prev => ({ ...prev, [type]: data }));
+    }
+};
+
+      useEffect(() => {
+      const handleBackButton = () => {
+          if (navStack.length > 0) {
+              const lastAction = navStack[navStack.length - 1];
+              
+              // Închidem vizual elementul
+              if (lastAction.type === 'territory') {
+                setSelectedTerritoryId(null);
+            } else {
+                // Închide automat orice modal
+                setModals(prev => ({ ...prev, [lastAction.type]: null }));
+            }
+            setNavStack(prev => prev.slice(0, -1));
+        }
+    };
+      window.addEventListener('popstate', handleBackButton);
+      return () => window.removeEventListener('popstate', handleBackButton);
+  }, [navStack]);
+  // --- AICI SE TERMINĂ CODUL NOU ---
+
+      
 
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
@@ -1779,7 +1821,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className="bg-blue-600 text-white shadow-xl p-3 sm:p-4 md:p-5 rounded-[2rem] flex flex-col gap-4">
                 <div className="flex flex-row items-center justify-between gap-2 px-1 w-full">
                   <div className="flex items-center gap-2 sm:gap-3 font-black text-xl sm:text-2xl tracking-tighter shrink-0">
-                    <button onClick={() => setModals({...modals, auth: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-slate-100 transition shadow-inner overflow-hidden shrink-0" title="Profil">
+                    {/* BUTON PROFIL */}
+                    <button onClick={() => navigateTo('auth', true)} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-slate-100 transition shadow-inner overflow-hidden shrink-0" title="Profil">
                         <span className="text-base sm:text-lg font-black uppercase">
                           {currentUserName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)} {/* Codul care il am pana acum arata 2 initiale la nume dar Acesta arata doar un initial //{currentUserName.charAt(0)} */}
                         </span>
@@ -1787,8 +1830,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     <span className="truncate">Teritorii</span>
                   </div>
                   <div className="flex items-center justify-end gap-1.5 sm:gap-3 md:gap-4 shrink-0">
+                    {/* BUTON ADMIN */}
                     {isAdmin && (
-                      <button onClick={() => setModals({...modals, adminPanel: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Panou Administrare">
+                     <button onClick={() => navigateTo('adminPanel', true)} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Panou Administrare">
                           <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">admin_panel_settings</span>
                       </button>
                     )}
@@ -1796,17 +1840,19 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     <button onClick={() => document.getElementById('importData').click()} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Importă Date">
                         <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">upload</span>
                     </button>
+                    {/* BUTON EXPORT */}
                     <button onClick={() => {
                         setExportConfig({ category: activeTab === 'personal' ? 'personal' : activeGroupView, mode: 'full' });
-                        setModals({...modals, export: true});
+                        navigateTo('export', true);
                     }} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Exportă Date">
                         <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">download</span>
                     </button>
-                    <button onClick={() => setModals({...modals, theme: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Schimbă Tema">
+                    {/* BUTON TEMĂ */}
+                    <button onClick={() => navigateTo('theme', true)} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Schimbă Tema">
                         <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">palette</span>
                     </button>
                     {isAdmin && (
-                      <button onClick={() => setModals({...modals, settings: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Setări Culori">
+                      <button onClick={() => navigateTo('settings', true)} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Setări Culori">
                           <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">settings</span>
                       </button>
                     )}
@@ -1827,11 +1873,11 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className={`${selectedTerritory.category !== 'personal' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3`}>
                 {/* AICI ESTE CONTAINERUL TEXTULUI */}
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0 w-full overflow-hidden">
-                  <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
-                  {/* ADĂUGĂM min-w-0 ȘI PE h1 */}
+                  <button onClick={() => window.history.back()} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
+                  {/* butonul care deschide un teritoriu: ADĂUGĂM min-w-0 ȘI PE h1 */}
                   <h1 className="font-black text-white uppercase text-base md:text-xl truncate block w-full">{selectedTerritory.name}</h1>
                   {canEditStructure && (
-                    <button onClick={() => setModals({...modals, territoryEdit: true})} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
+                    <button onClick={() => navigateTo('territoryEdit', true)} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
                   )}
                 </div>
                 {/* AICI ESTE CONTAINERUL BUTOANELOR DE DREAPTA */}
@@ -1871,7 +1917,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     const prog = calculateProgress(t);
                     const isOverdue = !t.isDone && t.endDate < todayStr;
                     return (
-                      <div key={t.id} onClick={() => setSelectedTerritoryId(t.id)} className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
+                      <div key={t.id} onClick={() => navigateTo('territory', t.id)} className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
                         <div className="flex justify-between items-start mb-2 pr-[110px]">
                           <div className="min-w-0 flex-1">
                             <h3 className={`font-black text-lg leading-tight uppercase truncate min-w-0 ${t.isDone ? 'text-green-900 dark:text-green-400' : isOverdue ? 'text-red-900 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>{t.name}</h3>
@@ -1922,7 +1968,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </div>
               )}
               {!selectedTerritoryId && (isAdmin || isGroupAdmin || activeTab === 'personal') && (
-                <button onClick={() => setModals({...modals, territoryAdd: true})} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
+                <button onClick={() => navigateTo('territoryAdd', true)} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
                   <span className="material-icons text-3xl">add</span>
                 </button>
               )}
@@ -1997,7 +2043,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <div className="space-y-8 pb-4" ref={blocksContainerRef}>
                   {(selectedTerritory.blocks || []).map((block, bIdx) => (
                     <BlockComponent 
-                      key={block.id} block={block} territory={selectedTerritory} getLabelStyle={getLabelStyle}
+                      key={block.id} block={block} territory={selectedTerritory} navigateTo={navigateTo} getLabelStyle={getLabelStyle}
                       openEditModal={openEditModal} openRenameModal={openRenameModal} handleReorderLocations={handleReorderLocations} handleReorderSections={handleReorderSections}
                       updateTerritory={updateTerritory} collapsedBlocks={collapsedBlocks} toggleBlock={toggleBlock}
                       collapsedSections={collapsedSections} toggleSection={toggleSection} setModals={setModals} modals={modals} canEditStructure={canEditStructure} isReadOnly={isReadOnly}
@@ -2277,7 +2323,24 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             
                             {/* Butoanele tale originale de editare și ștergere (Rămase Neschimbate) */}
                             <div className="flex gap-2">
-                              <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
+                              <button 
+    onClick={() => {
+        // 1. Închidem panoul de admin (ca să nu rămână vizibil în spate)
+        setModals(prev => ({ ...prev, adminPanel: false }));
+        
+        // 2. "Navigăm" către editarea utilizatorului, salvând acest pas în istoric
+        navigateTo('adminEditUser', { 
+            id: u.id, 
+            name: u.name, 
+            password: u.password, 
+            group: u.group, 
+            isAdminGroup: u.isAdminGroup 
+        });
+    }} 
+    className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
+>
+    edit
+</button>
                               <button onClick={() => {
                                   setAlertBox({
                                       isOpen: true,
