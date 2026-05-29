@@ -653,7 +653,11 @@ const [progressTags, setProgressTags] = useState(() => {
         window.history.pushState({ type }, ''); 
         // 2. Adăugăm în stiva noastră internă
         setNavStack(prev => [...prev, { type, data }]);
-        
+        // FIX PENTRU NUMĂRUL DE LOCAȚIE:
+    // Când navigăm la 'locationEdit', setăm automat numărul în starea editLocNumber
+    if (type === 'locationEdit') {
+        setEditLocNumber(data.loc.number);
+    }
         // 3. Executăm acțiunea vizuală reală
         if (type === 'territory') {
         setSelectedTerritoryId(data);
@@ -663,24 +667,30 @@ const [progressTags, setProgressTags] = useState(() => {
     }
 };
 
-      useEffect(() => {
-      const handleBackButton = () => {
-          if (navStack.length > 0) {
-              const lastAction = navStack[navStack.length - 1];
-              
-              // Închidem vizual elementul
-              if (lastAction.type === 'territory') {
+    useEffect(() => {
+    const handleBackButton = () => {
+        if (navStack.length > 0) {
+            const lastAction = navStack[navStack.length - 1];
+            
+            // Închidem modalul/fereastra curentă
+            if (lastAction.type === 'territory') {
                 setSelectedTerritoryId(null);
             } else {
-                // Închide automat orice modal
+                // Setăm tipul acțiunii pe null pentru a închide fereastra
                 setModals(prev => ({ ...prev, [lastAction.type]: null }));
+                
+                // Dacă închidem un "locationEdit", curățăm și numărul
+                if(lastAction.type === 'locationEdit') setEditLocNumber('');
             }
+            
+            // Scoatem din stivă
             setNavStack(prev => prev.slice(0, -1));
         }
     };
-      window.addEventListener('popstate', handleBackButton);
-      return () => window.removeEventListener('popstate', handleBackButton);
-  }, [navStack]);
+
+    window.addEventListener('popstate', handleBackButton);
+    return () => window.removeEventListener('popstate', handleBackButton);
+}, [navStack]);
   // --- AICI SE TERMINĂ CODUL NOU ---
 
       
@@ -2324,23 +2334,22 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             {/* Butoanele tale originale de editare și ștergere (Rămase Neschimbate) */}
                             <div className="flex gap-2">
                               <button 
-    onClick={() => {
-        // 1. Închidem panoul de admin (ca să nu rămână vizibil în spate)
-        setModals(prev => ({ ...prev, adminPanel: false }));
-        
-        // 2. "Navigăm" către editarea utilizatorului, salvând acest pas în istoric
-        navigateTo('adminEditUser', { 
-            id: u.id, 
-            name: u.name, 
-            password: u.password, 
-            group: u.group, 
-            isAdminGroup: u.isAdminGroup 
-        });
-    }} 
-    className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
->
-    edit
-</button>
+                                  onClick={() => {
+                                    
+                                      
+                                      // 2. "Navigăm" către editarea utilizatorului, salvând acest pas în istoric
+                                      navigateTo('adminEditUser', { 
+                                          id: u.id, 
+                                          name: u.name, 
+                                          password: u.password, 
+                                          group: u.group, 
+                                          isAdminGroup: u.isAdminGroup 
+                                      });
+                                  }} 
+                                  className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
+                              >
+                                  edit
+                              </button>
                               <button onClick={() => {
                                   setAlertBox({
                                       isOpen: true,
