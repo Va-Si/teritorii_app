@@ -680,23 +680,39 @@ const [progressTags, setProgressTags] = useState(() => {
     }
 };
 
-   useEffect(() => {
-  const handleBackButton = () => {
-    if (navStack.length > 0) {
-      // Resetăm TOATE ferestrele la starea inițială (închis)
-      setModals(INITIAL_MODALS);
-      
-      // Curățăm alte stări auxiliare dacă este cazul
-      setEditLocNumber('');
-      
-      // Scoatem din stivă
-      setNavStack(prev => prev.slice(0, -1));
-    }
-  };
-  
-  window.addEventListener('popstate', handleBackButton);
-  return () => window.removeEventListener('popstate', handleBackButton);
-}, [navStack]);
+  useEffect(() => {
+     const handleBackButton = () => {
+       setNavStack(prev => {
+         const newStack = prev.slice(0, -1);
+         
+         let nextModals = { ...INITIAL_MODALS };
+         let nextTerritoryId = null;
+
+         // Parcurgem istoric pentru a vedea ce trebuie să rămână deschis (ex: ne întoarcem din Edit User înapoi la Admin Panel)
+         newStack.forEach(item => {
+             if (item.type === 'territory') {
+                 nextTerritoryId = item.data;
+             } else {
+                 nextModals[item.type] = item.data;
+             }
+         });
+
+         // Aplicăm stările
+         setModals(nextModals);
+         setSelectedTerritoryId(nextTerritoryId); // Asta repară ieșirea din Teritoriu!
+         setEditLocNumber('');
+         
+         // Închidem și alertele mici dacă erau deschise când s-a dat "Înapoi"
+         setAlertBox(prevBox => ({ ...prevBox, isOpen: false }));
+         setPromptBox(prevBox => ({ ...prevBox, isOpen: false }));
+
+         return newStack;
+       });
+     };
+     
+     window.addEventListener('popstate', handleBackButton);
+     return () => window.removeEventListener('popstate', handleBackButton);
+   }, []);
   // --- AICI SE TERMINĂ CODUL NOU ---
 
       
@@ -2084,7 +2100,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           {modals.auth && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center border-4 border-slate-100 dark:border-slate-700 relative">
-                <button onClick={() => navigateTo('profileEdit', true)} className="absolute top-4 right-4 material-icons text-slate-400 hover:text-slate-600 transition-colors">close</button>
+                <button onClick={() => window.history.back()} className="absolute top-4 right-4 material-icons text-slate-400 hover:text-slate-600 transition-colors">close</button>
                 
                 <div className="space-y-6 pt-4">
                   <div className="flex flex-col items-center gap-3 bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
@@ -2899,9 +2915,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mb-6"
                 />
                 <div className="flex gap-2">
-                 <button 
+                <button 
   type="button" 
-  onClick={() => window.history.back()} 
+  onClick={() => setPromptBox({ ...promptBox, isOpen: false })} 
   className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors"
 >
   Anulează
@@ -2912,10 +2928,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     const inputEl = document.getElementById('promptBoxInput');
     if (!valideazaCampul(inputEl, "Introdu o denumire!")) return;
     promptBox.onConfirm(promptBox.value.trim()); 
-    // Nu mai punem setPromptBox aici, ci ne întoarcem
-    window.history.back(); 
+    setPromptBox({ ...promptBox, isOpen: false }); 
   }} 
-  className="..."
+  className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition-all"
 >
   Salvează
 </button>
@@ -2939,9 +2954,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </p>
                 <div className="flex gap-2">
                   {/* Butonul de Anulare (apare doar dacă showCancel nu este false) */}
-                 {alertBox.showCancel !== false && (
+                {alertBox.showCancel !== false && (
   <button 
-    onClick={() => window.history.back()} // În loc de setAlertBox
+    onClick={() => setAlertBox(prev => ({...prev, isOpen: false}))}
     className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors"
   >
     Anulează
@@ -2951,9 +2966,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 <button 
   onClick={() => { 
     alertBox.onConfirm(); 
-    window.history.back(); // În loc de setAlertBox
+    setAlertBox(prev => ({...prev, isOpen: false}));
   }} 
-  className="..."
+  className={`flex-[2] p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition-all text-white ${alertBox.isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
 >
   {alertBox.showCancel === false ? 'Confirm' : 'Confirmă'}
 </button>
