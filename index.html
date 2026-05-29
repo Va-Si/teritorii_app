@@ -620,16 +620,20 @@ return (
     }
 
     function App() {
-      // În componenta principală (App.js sau unde ții starea) aici tu definești „stările” (inima aplicației), Încarcă setările din localStorage sau pune un default
-      const INITIAL_MODALS = { 
-  territoryAdd: false, territoryEdit: false, blockAdd: false, 
-  sectionAdd: null, locationAppend: null, locationEdit: null, 
-  settings: false, theme: false, stradaAddHouse: null, 
-  renameItem: null, auth: false, adminPanel: false, 
-  profileEdit: false, adminEditUser: null, isStradaGroup: false, 
-  export: false, report: null, import: false // Am adăugat și import dacă îl ai
-};
-      const [modals, setModals] = useState(INITIAL_MODALS);
+      // 1. Definim „blueprint-ul” (starea inițială) o singură dată
+  const INITIAL_MODALS = { 
+    territoryAdd: false, territoryEdit: false, blockAdd: false, 
+    sectionAdd: null, locationAppend: null, locationEdit: null, 
+    settings: false, theme: false, stradaAddHouse: null, 
+    renameItem: null, auth: false, adminPanel: false, 
+    profileEdit: false, adminEditUser: null, isStradaGroup: false, 
+    export: false, report: null, import: false 
+  };
+
+  // 2. Definim starea `modals` folosind acel blueprint (O SINGURĂ DATĂ!)
+  const [modals, setModals] = useState(INITIAL_MODALS);
+
+  // 3. Definim restul stărilor (ca `progressTags`, `toast` etc.)
 const [progressTags, setProgressTags] = useState(() => {
     const saved = localStorage.getItem('progressTags');
     return saved ? JSON.parse(saved) : ['rusa', 'refuz-categoric']; // Default-ul tău
@@ -697,7 +701,7 @@ const [progressTags, setProgressTags] = useState(() => {
 
       
 
-      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
+      
       const [toast, setToast] = useState(null);
       // Acest efect închide toast-ul automat după 2 secunde
       useEffect(() => {
