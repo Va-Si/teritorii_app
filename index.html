@@ -474,9 +474,9 @@ return (
     {/* Zona din dreapta: Butoanele de Acțiune */}
       {canEditStructure && (
         <div className="flex items-center shrink-0 no-drag gap-2" onClick={e => e.stopPropagation()}>
-          {/* BUTON NOU: Adaugă Casă (apare doar la străzi) */}
+          {/* BUTON NOU mic: Adaugă Casă (apare doar la străzi) */}
           {isBlockStrada && (
-             <button onClick={() => setModals({...modals, stradaAddHouse: block.id})} className="material-icons text-blue-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm">add</button>
+            <button onClick={() => navigateTo('stradaAddHouse', block.id)} className="material-icons text-blue-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm">add</button>
           )}
           {/* BUTON EXISTENT: Ștergere */}
           <button onClick={() => { 
@@ -547,7 +547,7 @@ return (
       {/* Cu shrink-0, aceste butoane rămân sigure pe poziție indiferent de lungimea textului din stânga */}
       <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
         {!isReadOnly && (
-          <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
+         <button onClick={() => navigateTo('locationAppend', {blockId: block.id, sectionId: sec.id})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
             <span className="material-icons text-[20px] block">add</span>
           </button>
         )}
@@ -593,10 +593,7 @@ return (
     
     {/* BUTONUL MARE DE ADĂUGARE CASĂ - Apare doar dacă NU există case */}
     {isBlockStrada && !isReadOnly && !hasHouses && (
-        <button 
-            onClick={() => setModals({...modals, stradaAddHouse: block.id})} 
-            className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2"
-        >
+        <button onClick={() => navigateTo('stradaAddHouse', block.id)} className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
             <span className="material-icons text-3xl">home</span>
             <span className="font-black text-[10px] uppercase tracking-widest">Adaugă Case</span>
         </button>
@@ -604,10 +601,7 @@ return (
 
     {/* BUTONUL MARE DE ADĂUGARE GRUPĂ - Apare mereu (dacă ai permisiuni) */}
     {canEditStructure && (
-        <button 
-            onClick={() => setModals({...modals, sectionAdd: block.id, isStradaGroup: isBlockStrada})} 
-            className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2"
-        >
+       <button onClick={() => navigateTo('sectionAdd', block.id, { isStradaGroup: isBlockStrada })} className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
             <span className="material-icons text-3xl">{isBlockStrada ? 'maps_home_work' : 'add_business'}</span>
             <span className="font-black text-[10px] uppercase tracking-widest text-center">{isBlockStrada ? 'Adaugă Grupă de Case' : 'Adaugă Scară'}</span>
         </button>
@@ -661,58 +655,52 @@ const [progressTags, setProgressTags] = useState(() => {
 
       const [navStack, setNavStack] = useState([]);
 
-      const navigateTo = (type, data) => {
-        // 1. "Păcălim" browserul să nu închidă aplicația
-        window.history.pushState({ type }, ''); 
-        // 2. Adăugăm în stiva noastră internă
-        setNavStack(prev => [...prev, { type, data }]);
-        // FIX PENTRU NUMĂRUL DE LOCAȚIE:
-    // Când navigăm la 'locationEdit', setăm automat numărul în starea editLocNumber
-    if (type === 'locationEdit') {
-        setEditLocNumber(data.loc.number);
-    }
-        // 3. Executăm acțiunea vizuală reală
-        if (type === 'territory') {
-        setSelectedTerritoryId(data);
-    } else {
-        // Aceasta pune automat datele în obiectul 'modals'
-        setModals(prev => ({ ...prev, [type]: data }));
-    }
-};
+      const navigateTo = (type, data, extraStates = {}) => {
+          window.history.pushState({ type }, '');
+          setNavStack(prev => [...prev, { type, data, extraStates }]);
+          
+          if (type === 'locationEdit') setEditLocNumber(data.loc.number);
+          
+          if (type === 'territory') {
+              setSelectedTerritoryId(data);
+          } else {
+              setModals(prev => ({ ...prev, [type]: data, ...extraStates }));
+          }
+      };
 
-  useEffect(() => {
-     const handleBackButton = () => {
-       setNavStack(prev => {
-         const newStack = prev.slice(0, -1);
-         
-         let nextModals = { ...INITIAL_MODALS };
-         let nextTerritoryId = null;
+      useEffect(() => {
+        const handleBackButton = () => {
+          setNavStack(prev => {
+            const newStack = prev.slice(0, -1);
+            
+            let nextModals = { ...INITIAL_MODALS };
+            let nextTerritoryId = null;
 
-         // Parcurgem istoric pentru a vedea ce trebuie să rămână deschis (ex: ne întoarcem din Edit User înapoi la Admin Panel)
-         newStack.forEach(item => {
-             if (item.type === 'territory') {
-                 nextTerritoryId = item.data;
-             } else {
-                 nextModals[item.type] = item.data;
-             }
-         });
+            // Reconstruim corect stările din istoric ca să nu închidem teritoriul deschis
+            newStack.forEach(item => {
+                if (item.type === 'territory') {
+                    nextTerritoryId = item.data;
+                } else if (item.type !== 'alert' && item.type !== 'prompt') {
+                    nextModals[item.type] = item.data;
+                    if (item.extraStates) Object.assign(nextModals, item.extraStates);
+                }
+            });
 
-         // Aplicăm stările
-         setModals(nextModals);
-         setSelectedTerritoryId(nextTerritoryId); // Asta repară ieșirea din Teritoriu!
-         setEditLocNumber('');
-         
-         // Închidem și alertele mici dacă erau deschise când s-a dat "Înapoi"
-         setAlertBox(prevBox => ({ ...prevBox, isOpen: false }));
-         setPromptBox(prevBox => ({ ...prevBox, isOpen: false }));
+            setModals(nextModals);
+            setSelectedTerritoryId(nextTerritoryId);
+            setEditLocNumber('');
+            
+            // Închidem chenarele mici la swipe back
+            setAlertBoxState(prevBox => ({ ...prevBox, isOpen: false }));
+            setPromptBoxState(prevBox => ({ ...prevBox, isOpen: false }));
 
-         return newStack;
-       });
-     };
-     
-     window.addEventListener('popstate', handleBackButton);
-     return () => window.removeEventListener('popstate', handleBackButton);
-   }, []);
+            return newStack;
+          });
+        };
+        
+        window.addEventListener('popstate', handleBackButton);
+        return () => window.removeEventListener('popstate', handleBackButton);
+      }, []);
   // --- AICI SE TERMINĂ CODUL NOU ---
 
       
@@ -794,10 +782,24 @@ const generateTerritoryReport = (territory) => {
 };
      
 
-      // Adaugă asta sub celelalte state-uri din App:
-      const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
-      //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
-      const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
+     // State-urile protejate pentru Alerte și Prompt-uri (Integrează chenarele mici în istoric)
+      const [alertBox, setAlertBoxState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
+      const setAlertBox = (data) => {
+          if (typeof data !== 'function' && data && data.isOpen) {
+              window.history.pushState({ type: 'alert' }, '');
+              setNavStack(prev => [...prev, { type: 'alert' }]);
+          }
+          setAlertBoxState(data);
+      };
+
+      const [promptBox, setPromptBoxState] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
+      const setPromptBox = (data) => {
+          if (typeof data !== 'function' && data && data.isOpen) {
+              window.history.pushState({ type: 'prompt' }, '');
+              setNavStack(prev => [...prev, { type: 'prompt' }]);
+          }
+          setPromptBoxState(data);
+      };
       // tab la useri
       const [adminUserTab, setAdminUserTab] = useState('All');
       const getFilteredAndSortedUsers = () => {
@@ -2088,7 +2090,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </div>
                 
                 {canEditStructure && (
-                  <button onClick={() => setModals({...modals, blockAdd: true})} className="no-drag w-full py-8 bg-blue-100/50 dark:bg-blue-900/20 border-4 border-dashed border-blue-200 dark:border-blue-900 rounded-[2rem] text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all flex flex-col items-center gap-2 shadow-sm mb-20">
+                 <button onClick={() => navigateTo('blockAdd', true)} className="no-drag w-full py-8 bg-blue-100/50 dark:bg-blue-900/20 border-4 border-dashed border-blue-200 dark:border-blue-900 rounded-[2rem] text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all flex flex-col items-center gap-2 shadow-sm mb-20">
                     <span className="material-icons text-4xl">domain_add</span>
                     <span className="font-black text-xs uppercase tracking-widest">Adaugă Bloc / Stradă</span>
                   </button>
@@ -2134,7 +2136,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </div>
                   
                   {isAdmin && (
-                    <button onClick={() => setModals({...modals, auth: false, profileEdit: true})} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => s<button onClick={() => navigateTo('profileEdit', true, { auth: false })} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">etModals({...modals, auth: false, profileEdit: true})} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
                       <span className="material-icons">edit</span> Editează Nume/Parolă
                     </button>
                   )}
