@@ -60,9 +60,13 @@
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-track { margin: 4px; }
    body {
-    /* Acestea opresc refresh-ul la swipe */
-    overscroll-behavior-y: none;
+   /* "contain" oprește refresh-ul, dar lasă scroll-ul să meargă în pagină */
+    overscroll-behavior-y: contain; 
+    /* Permite scroll-ul vertical, dar blochează gesturile de sistem */
     touch-action: pan-y;
+	   -webkit-tap-highlight-color: transparent; 
+    scrollbar-gutter: stable;
+    /* NU pune overflow: hidden aici, pentru că altfel blochezi scroll-ul definitiv */
 }
 
 body {
@@ -899,21 +903,7 @@ useEffect(() => {
         applyTheme(theme);
       }, [theme]);
 
-		useEffect(() => {
-  const preventRefresh = (e) => {
-    // Dacă suntem la începutul paginii și utilizatorul trage în jos
-    if (window.scrollY === 0 && e.touches[0].pageY > 0) {
-      e.preventDefault();
-    }
-  };
-
-  // Folosim passive: false pentru a permite preventDefault()
-  document.addEventListener('touchmove', preventRefresh, { passive: false });
-
-  return () => {
-    document.removeEventListener('touchmove', preventRefresh);
-  };
-}, []);
+		
 
       useEffect(() => {
         const unsubAuth = auth.onAuthStateChanged(firebaseUser => {
