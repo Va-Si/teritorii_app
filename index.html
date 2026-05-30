@@ -655,32 +655,37 @@ const [progressTags, setProgressTags] = useState(() => {
 
       const [navStack, setNavStack] = useState([]);
 
-      const navigateTo = (type, data, extraStates = {}) => {
-          window.history.pushState({ type }, '');
-          setNavStack(prev => [...prev, { type, data, extraStates }]);
-          
-          if (type === 'locationEdit') setEditLocNumber(data.loc.number);
-          
-          if (type === 'territory') {
-              setSelectedTerritoryId(data);
-          } else {
-              setModals(prev => ({ ...prev, [type]: data, ...extraStates }));
-          }
-      };
+     const navigateTo = (type, data, extraStates = {}) => {
+    // 1. Împingem în istoric
+    window.history.pushState({ type }, ''); 
+    setNavStack(prev => [...prev, { type, data, extraStates }]);
+    
+    // 2. FIX: Dacă e editare, setăm numărul ca să nu dispară
+    if (type === 'locationEdit') {
+        setEditLocNumber(data.loc.number);
+    }
+    
+    // 3. Executăm
+    if (type === 'territory') {
+        setSelectedTerritoryId(data);
+    } else {
+        setModals(prev => ({ ...prev, [type]: data, ...extraStates }));
+    }
+};
 
-      useEffect(() => {
-        const handleBackButton = () => {
-          setNavStack(prev => {
+    useEffect(() => {
+    const handleBackButton = () => {
+        setNavStack(prev => {
+            if (prev.length === 0) return [];
             const newStack = prev.slice(0, -1);
             
+            // Construim starea următoare
             let nextModals = { ...INITIAL_MODALS };
             let nextTerritoryId = null;
 
-            // Reconstruim corect stările din istoric ca să nu închidem teritoriul deschis
             newStack.forEach(item => {
-                if (item.type === 'territory') {
-                    nextTerritoryId = item.data;
-                } else if (item.type !== 'alert' && item.type !== 'prompt') {
+                if (item.type === 'territory') nextTerritoryId = item.data;
+                else {
                     nextModals[item.type] = item.data;
                     if (item.extraStates) Object.assign(nextModals, item.extraStates);
                 }
@@ -688,19 +693,19 @@ const [progressTags, setProgressTags] = useState(() => {
 
             setModals(nextModals);
             setSelectedTerritoryId(nextTerritoryId);
-            setEditLocNumber('');
+          // Adaugă asta pentru a curăța starea veche dacă te întorci la listă
+if (!nextModals.locationEdit) {
+    setEditLocNumber(''); 
+}
             
-            // Închidem chenarele mici la swipe back
-            setAlertBoxState(prevBox => ({ ...prevBox, isOpen: false }));
-            setPromptBoxState(prevBox => ({ ...prevBox, isOpen: false }));
-
+            // NU mai pune setEditLocNumber('') aici, altfel se șterge numele când dai înapoi!
             return newStack;
-          });
-        };
-        
-        window.addEventListener('popstate', handleBackButton);
-        return () => window.removeEventListener('popstate', handleBackButton);
-      }, []);
+        });
+    };
+    
+    window.addEventListener('popstate', handleBackButton);
+    return () => window.removeEventListener('popstate', handleBackButton);
+}, []);
   // --- AICI SE TERMINĂ CODUL NOU ---
 
       
@@ -1270,7 +1275,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         // 4. Notificări
         if (isNowDone) {
             const reportText = generateTerritoryReport(t);
-            setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
+           navigateTo('report', { text: reportText, territory: t });
         } else {
             setToast("❌ Teritoriu debifat!");
         }
@@ -1809,7 +1814,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
          <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500 relative animate-in zoom-in-95">
            {/* Buton X personalizat: mai mare, dreptunghiular */}
            <button 
-             onClick={() => setModals({...modals, report: null})} 
+             onClick={() => window.history.back()}
              className="absolute top-4 right-4 w-12 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 transition-all active:scale-90">
              <span className="material-icons text-xl text-slate-500">close</span>
              </button>
@@ -2125,7 +2130,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             onChange={(e) => { 
                                 setActiveGroupView(e.target.value); 
                                 setActiveTab(e.target.value); 
-                                setModals({...modals, auth: false}); 
+                               window.history.back();
                             }}
                             className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl font-black text-sm uppercase outline-none focus:ring-2 focus:ring-blue-500 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 cursor-pointer shadow-sm"
                           >
@@ -2175,7 +2180,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                        if(newPass && newPass.length >= 6) {
                            await auth.currentUser.updatePassword(newPass);
                        }
-                       setModals({...modals, profileEdit: false});
+                      window.history.back();
                    } catch(err) {
                        alert("Eroare la actualizare: " + err.message);
                    }
@@ -2204,7 +2209,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   <h3 className="font-black text-lg uppercase tracking-widest text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <span className="material-icons text-blue-500">admin_panel_settings</span> Utilizatori
                   </h3>
-                  <button onClick={() => setModals({...modals, adminPanel: false})} className="material-icons text-slate-400 hover:text-red-500 transition-colors">close</button>
+                 <button onClick={() => window.history.back()} className="material-icons text-slate-400 hover:text-red-500 transition-colors">close</button>
                 </div>
 
                 <div className="overflow-y-auto flex-1 pr-2 space-y-6">
@@ -2409,8 +2414,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <form onSubmit={async (e) => {
                    e.preventDefault();
                    const form = e.target;
-                   if (!valideazaCampul(form.elements.name, "Numele nu poate fi lăsat gol!")) return;
-                   if (!valideazaCampul(form.elements.password, "Parola nu poate fi lăsată goală!")) return;
+                   if (!valideazaCampul(form.elements.name, "Nume obligatoriu!")) return;
+                   if (!valideazaCampul(form.elements.password, "Parola obligatorie!")) return;
 
                    const fd = new FormData(e.target);
                    const newName = fd.get('name').trim();
@@ -2600,7 +2605,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
                   <div className="flex gap-2 pt-2">
                     {/* Anulează + Efect de micșorare la apăsare */}
-                    <button type="button" onClick={() => setModals({...modals, sectionAdd: null, locationAppend: null, stradaAddHouse: null, isStradaGroup: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+                  <button type="button" onClick={() => window.history.back()} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
                     {/* Salvează + Efect de micșorare la apăsare */}
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
                   </div>
@@ -2731,12 +2736,12 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             const { blockId, sectionId, loc } = modals.locationEdit;
                             const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.filter(l => l.id !== loc.id) } : s) } : b);
                             updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-                            setModals({...modals, locationEdit: null});
+                            window.history.back()};
                           }
                         });
                       }} className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
                    )}
-                    <button onClick={() => setModals({...modals, locationEdit: null})} className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600">close</button>
+                    <button onClick={() => window.history.back()} className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600">close</button>
                   </div>
                 </div>
 
@@ -2852,7 +2857,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <h2 className="font-black text-2xl text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
                   <span className="material-icons text-blue-500 text-3xl">settings</span> Setări
                 </h2>
-                <button onClick={() => setModals({...modals, settings: false})} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
+                <button onClick={() => window.history.back()} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
               </div>
               {/* 2. SECȚIUNE GRUPE (Codul vechi) */}
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
@@ -2917,9 +2922,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mb-6"
                 />
                 <div className="flex gap-2">
-                <button 
+              <button 
   type="button" 
-  onClick={() => setPromptBox({ ...promptBox, isOpen: false })} 
+  onClick={() => setPromptBox(prev => ({...prev, isOpen: false}))} 
   className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors"
 >
   Anulează
@@ -2930,7 +2935,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     const inputEl = document.getElementById('promptBoxInput');
     if (!valideazaCampul(inputEl, "Introdu o denumire!")) return;
     promptBox.onConfirm(promptBox.value.trim()); 
-    setPromptBox({ ...promptBox, isOpen: false }); 
+    setPromptBox(prev => ({...prev, isOpen: false})); 
   }} 
   className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition-all"
 >
@@ -2956,7 +2961,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </p>
                 <div className="flex gap-2">
                   {/* Butonul de Anulare (apare doar dacă showCancel nu este false) */}
-                {alertBox.showCancel !== false && (
+               {alertBox.showCancel !== false && (
   <button 
     onClick={() => setAlertBox(prev => ({...prev, isOpen: false}))}
     className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors"
@@ -2984,7 +2989,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-black text-lg uppercase tracking-widest text-slate-800 dark:text-slate-100">Aspect Aplicație</h3>
-                  <button onClick={() => setModals({...modals, theme: false})} className="material-icons text-slate-400 transition-colors">close</button>
+                 <button onClick={() => window.history.back()} className="material-icons text-slate-400 transition-colors">close</button>
                 </div>
                 <div className="space-y-3">
                   {[
@@ -2994,7 +2999,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   ].map(t => (
                     <button 
                       key={t.id} 
-                      onClick={() => { setTheme(t.id); localStorage.setItem('app-theme', t.id); setModals({...modals, theme: false}); }}
+                      onClick={() => { setTheme(t.id); localStorage.setItem('app-theme', t.id); window.history.back(); }}
                       className={"w-full flex items-center gap-4 p-4 rounded-2xl font-black uppercase text-xs transition-all " + (theme === t.id ? "bg-blue-600 text-white shadow-lg" : "bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700")}
                     >
                       <span className="material-icons">{t.icon}</span>
