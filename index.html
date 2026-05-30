@@ -2191,7 +2191,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     // 1. Spunem browserului să creeze un nou "pas" în istorie
     window.history.pushState(null, '', window.location.href); 
     // 2. Deschidem modalul
-    setModals({...modals, auth: false, profileEdit: true})} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
+    setModals({...modals, auth: false, profileEdit: true}); 
+  }}className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
                       <span className="material-icons">edit</span> Editează Nume/Parolă
                     </button>
                   )}
