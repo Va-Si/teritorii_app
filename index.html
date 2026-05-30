@@ -2400,7 +2400,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             
                             {/* Butoanele tale originale de editare și ștergere (Rămase Neschimbate) */}
                             <div className="flex gap-2">
-                              <button onClick={() => setModals({...modals, adminPanel: true, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
+                              <button onClick={() => setModals({...modals, adminPanel: true, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-2 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
                               <button onClick={() => {
                                   setAlertBox({
                                       isOpen: true,
@@ -2411,7 +2411,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                                         db.collection('app_users').doc(u.id).delete();
                                       }
                                     });
-                              }} className="material-icons text-slate-400 hover:text-red-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">delete</button>
+                              }} className="material-icons text-slate-400 hover:text-red-500 text-lg p-2 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">delete</button>
                             </div>
                           </div>
                         ))
