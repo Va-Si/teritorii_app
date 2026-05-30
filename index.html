@@ -65,17 +65,11 @@
     touch-action: pan-y;
 }
 
-body {
-    /* Blocăm refresh-ul și permitem doar scroll vertical */
-    overscroll-behavior-y: none;
-    touch-action: pan-y;
-    
-    /* Setările tale estetice */
-    -webkit-tap-highlight-color: transparent;
-    scrollbar-gutter: stable;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-}
+body { 
+        -webkit-tap-highlight-color: transparent; 
+        scrollbar-gutter: stable;
+		
+    }
     
     .sortable-ghost { opacity: 0.4; }
     .sortable-drag { cursor: grabbing !important; }
