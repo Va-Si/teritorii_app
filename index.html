@@ -59,11 +59,11 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-track { margin: 4px; }
-   body, #root {
-    /* Forțăm browserul să nu permită gestul de refresh */
-    overscroll-behavior-y: none !important;
-    touch-action: pan-y !important;
-}
+    body { 
+        -webkit-tap-highlight-color: transparent; 
+        scrollbar-gutter: stable;
+		
+    }
 
 
     
