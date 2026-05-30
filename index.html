@@ -646,9 +646,15 @@ const [isSynced, setIsSynced] = React.useState(true);
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
 	
- useEffect(() => {
+useEffect(() => {
+  const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+
+  // Dacă deschidem ceva (modal sau teritoriu), adăugăm în istoric
+  if (isAnyModalOpen || selectedTerritoryId !== null) {
+    window.history.pushState(null, '', window.location.href);
+  }
+
   const handleBackButton = (event) => {
-    // 1. Verificăm dacă există modale deschise
     const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
 
     if (isAnyModalOpen) {
