@@ -649,32 +649,47 @@ const [isSynced, setIsSynced] = React.useState(true);
 // --- ACEST EFECT GESTIONEAZĂ TOTUL: BUTONUL BACK ȘI ISTORICUL ---
 useEffect(() => {
   const handleBackButton = (event) => {
-    const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+    event.preventDefault(); // Oprim comportamentul implicit al browserului
 
-    // 1. Dacă e un modal deschis, închide-l
-    if (isAnyModalOpen) {
-      event.preventDefault();
-      setModals({ 
-        territoryAdd: false, territoryEdit: false, blockAdd: false, 
-        sectionAdd: null, locationAppend: null, locationEdit: null, 
-        settings: false, theme: false, stradaAddHouse: null, 
-        renameItem: null, auth: false, adminPanel: false, 
-        profileEdit: false, adminEditUser: null, isStradaGroup: false, 
-        export: false, report: null, import: false 
-      });
-      setPromptBox(prev => ({...prev, isOpen: false}));
-      setAlertBox(prev => ({...prev, isOpen: false}));
-    } 
-    // 2. Dacă e un teritoriu deschis (fără modal), închide teritoriul
-    else if (selectedTerritoryId !== null) {
-      event.preventDefault();
+    // --- 1. PRIORITATEA DE SUS (Alert/Prompt) ---
+    if (alertBox.isOpen) { setAlertBox(prev => ({...prev, isOpen: false})); return; }
+    if (promptBox.isOpen) { setPromptBox(prev => ({...prev, isOpen: false})); return; }
+
+    // --- 2. PRIORITATEA DE MIJLOC (Sub-modale și Editări - Închiderea lor te întoarce la meniul părinte) ---
+    if (modals.adminEditUser) { setModals(prev => ({...prev, adminEditUser: null})); return; }
+    if (modals.renameItem) { setModals(prev => ({...prev, renameItem: null})); return; }
+    if (modals.stradaAddHouse) { setModals(prev => ({...prev, stradaAddHouse: null})); return; }
+    if (modals.sectionAdd) { setModals(prev => ({...prev, sectionAdd: null})); return; }
+    if (modals.locationAppend) { setModals(prev => ({...prev, locationAppend: null})); return; }
+    if (modals.locationEdit) { setModals(prev => ({...prev, locationEdit: null})); return; }
+    if (modals.report) { setModals(prev => ({...prev, report: null})); return; }
+
+    // --- 3. PRIORITATEA DE BAZĂ (Meniuri principale) ---
+    if (modals.settings) { setModals(prev => ({...prev, settings: false})); return; }
+    if (modals.adminPanel) { setModals(prev => ({...prev, adminPanel: false})); return; }
+    if (modals.profileEdit) { setModals(prev => ({...prev, profileEdit: false})); return; }
+    if (modals.territoryAdd) { setModals(prev => ({...prev, territoryAdd: false})); return; }
+    if (modals.territoryEdit) { setModals(prev => ({...prev, territoryEdit: false})); return; }
+
+    // --- 4. ULTIMUL NIVEL (Teritoriul deschis) ---
+    if (selectedTerritoryId !== null) {
       setSelectedTerritoryId(null);
+      return;
     }
   };
 
   window.addEventListener('popstate', handleBackButton);
+
+  // Adăugăm în istoric doar dacă e ceva deschis
+  const isAnyOpen = Object.values(modals).some(v => v !== null && v !== false) 
+                    || alertBox.isOpen || promptBox.isOpen || selectedTerritoryId !== null;
+  
+  if (isAnyOpen) {
+    window.history.pushState(null, '', window.location.href);
+  }
+
   return () => window.removeEventListener('popstate', handleBackButton);
-}, [modals, selectedTerritoryId]); // Dependențele sunt esențiale aici
+}, [modals, selectedTerritoryId, alertBox.isOpen, promptBox.isOpen]);
 
 
 // --- ACEST EFECT GESTIONEAZĂ ISTORICUL (Când deschizi ceva, adaugă în istoric) ---
