@@ -327,7 +327,7 @@
       );
     }
 
-    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, navigateTo, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly, territory, setAlertBox }) {
+    function SectionLocations({ blockId, sec, getLabelStyle, openEditModal, handleReorderLocations, isBlockStrada, isGroupedStrada, canEditStructure, isReadOnly, territory, setAlertBox }) {
       const gridRef = useRef(null);
       const isUngroupedSection = !sec.name || sec.name === 'Case';
       
@@ -391,8 +391,8 @@
                 return;
             }
                 // 3. Dacă totul e ok, deschidem
-                navigateTo('locationEdit', { blockId, sectionId: sec.id, loc, lIdx });
-            }}  
+                openEditModal(blockId, sec.id, loc, lIdx);
+              }} 
               style={getLabelStyle(loc.status)}
               className="square-btn rounded-lg shadow-sm" // <--- AM ȘTERS cursor-not-allowed DE
           >
@@ -404,7 +404,7 @@
       );
     }
 
-    function BlockComponent({ block, territory, getLabelStyle, openEditModal, navigateTo, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, isReadOnly, setAlertBox }) {
+    function BlockComponent({ block, territory, getLabelStyle, openEditModal, openRenameModal, handleReorderLocations, handleReorderSections, updateTerritory, collapsedBlocks, toggleBlock, collapsedSections, toggleSection, setModals, modals, canEditStructure, isReadOnly, setAlertBox }) {
       const isBlockStrada = block.type === 'strada';
       const isBlockCollapsed = collapsedBlocks[block.id];
       const sectionsGridRef = useRef(null);
@@ -474,9 +474,9 @@ return (
     {/* Zona din dreapta: Butoanele de Acțiune */}
       {canEditStructure && (
         <div className="flex items-center shrink-0 no-drag gap-2" onClick={e => e.stopPropagation()}>
-          {/* BUTON NOU mic: Adaugă Casă (apare doar la străzi) */}
+          {/* BUTON NOU: Adaugă Casă (apare doar la străzi) */}
           {isBlockStrada && (
-            <button onClick={() => navigateTo('stradaAddHouse', block.id)} className="material-icons text-blue-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm">add</button>
+             <button onClick={() => setModals({...modals, stradaAddHouse: block.id})} className="material-icons text-blue-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm">add</button>
           )}
           {/* BUTON EXISTENT: Ștergere */}
           <button onClick={() => { 
@@ -505,7 +505,6 @@ return (
                       territory={territory} // ADĂUGAT
                       getLabelStyle={getLabelStyle} 
                       openEditModal={openEditModal} 
-                      navigateTo={navigateTo}
                       handleReorderLocations={handleReorderLocations} 
                       isBlockStrada={isBlockStrada} 
               
@@ -547,7 +546,7 @@ return (
       {/* Cu shrink-0, aceste butoane rămân sigure pe poziție indiferent de lungimea textului din stânga */}
       <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
         {!isReadOnly && (
-         <button onClick={() => navigateTo('locationAppend', {blockId: block.id, sectionId: sec.id})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
+          <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
             <span className="material-icons text-[20px] block">add</span>
           </button>
         )}
@@ -576,7 +575,6 @@ return (
                       sec={sec} 
                       getLabelStyle={getLabelStyle} 
                       openEditModal={openEditModal} 
-                      navigateTo={navigateTo}
                       handleReorderLocations={handleReorderLocations} 
                       isBlockStrada={isBlockStrada} 
                       
@@ -593,7 +591,10 @@ return (
     
     {/* BUTONUL MARE DE ADĂUGARE CASĂ - Apare doar dacă NU există case */}
     {isBlockStrada && !isReadOnly && !hasHouses && (
-        <button onClick={() => navigateTo('stradaAddHouse', block.id)} className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
+        <button 
+            onClick={() => setModals({...modals, stradaAddHouse: block.id})} 
+            className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2"
+        >
             <span className="material-icons text-3xl">home</span>
             <span className="font-black text-[10px] uppercase tracking-widest">Adaugă Case</span>
         </button>
@@ -601,7 +602,10 @@ return (
 
     {/* BUTONUL MARE DE ADĂUGARE GRUPĂ - Apare mereu (dacă ai permisiuni) */}
     {canEditStructure && (
-       <button onClick={() => navigateTo('sectionAdd', block.id, { isStradaGroup: isBlockStrada })} className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2">
+        <button 
+            onClick={() => setModals({...modals, sectionAdd: block.id, isStradaGroup: isBlockStrada})} 
+            className="w-full p-4 md:p-6 border-4 border-dashed border-slate-300 dark:border-slate-700 rounded-3xl text-slate-400 hover:text-blue-500 hover:bg-white dark:hover:bg-slate-800/80 hover:border-blue-300 transition-all flex flex-col items-center gap-2"
+        >
             <span className="material-icons text-3xl">{isBlockStrada ? 'maps_home_work' : 'add_business'}</span>
             <span className="font-black text-[10px] uppercase tracking-widest text-center">{isBlockStrada ? 'Adaugă Grupă de Case' : 'Adaugă Scară'}</span>
         </button>
@@ -614,20 +618,7 @@ return (
     }
 
     function App() {
-      // 1. Definim „blueprint-ul” (starea inițială) o singură dată
-  const INITIAL_MODALS = { 
-    territoryAdd: false, territoryEdit: false, blockAdd: false, 
-    sectionAdd: null, locationAppend: null, locationEdit: null, 
-    settings: false, theme: false, stradaAddHouse: null, 
-    renameItem: null, auth: false, adminPanel: false, 
-    profileEdit: false, adminEditUser: null, isStradaGroup: false, 
-    export: false, report: null, import: false 
-  };
-
-  // 2. Definim starea `modals` folosind acel blueprint (O SINGURĂ DATĂ!)
-  const [modals, setModals] = useState(INITIAL_MODALS);
-
-  // 3. Definim restul stărilor (ca `progressTags`, `toast` etc.)
+      // Încarcă setările din localStorage sau pune un default
 const [progressTags, setProgressTags] = useState(() => {
     const saved = localStorage.getItem('progressTags');
     return saved ? JSON.parse(saved) : ['rusa', 'refuz-categoric']; // Default-ul tău
@@ -648,70 +639,45 @@ const [progressTags, setProgressTags] = useState(() => {
       const [authLoading, setAuthLoading] = useState(true);
       const [authError, setAuthError] = useState(null);
       const [authForm, setAuthForm] = useState({ name: '', password: '' });
-      // ... (codul tău existent cu progressTags, territories, etc.) ...
       const [adminUsersList, setAdminUsersList] = useState([]);
       // Pasul 1: Starea pentru buline de sincronizare (implicit considerăm că e sincronizat)
-      const [isSynced, setIsSynced] = React.useState(true);
+const [isSynced, setIsSynced] = React.useState(true);
 
-      const [navStack, setNavStack] = useState([]);
-
-     const navigateTo = (type, data, extraStates = {}) => {
-    // 1. Împingem în istoric
-    window.history.pushState({ type }, ''); 
-    setNavStack(prev => [...prev, { type, data, extraStates }]);
-    
-    // 2. FIX: Dacă e editare, setăm numărul ca să nu dispară
-    if (type === 'locationEdit') {
-        setEditLocNumber(data.loc.number);
-    }
-    
-    // 3. Executăm
-    if (type === 'territory') {
-        setSelectedTerritoryId(data);
-    } else {
-        setModals(prev => ({ ...prev, [type]: data, ...extraStates }));
-    }
-};
-
-    useEffect(() => {
-    const handleBackButton = () => {
-        setNavStack(prev => {
-            if (prev.length === 0) return [];
-            const newStack = prev.slice(0, -1);
-            
-            // Construim starea următoare
-            let nextModals = { ...INITIAL_MODALS };
-            let nextTerritoryId = null;
-
-            newStack.forEach(item => {
-                if (item.type === 'territory') nextTerritoryId = item.data;
-                else {
-                    nextModals[item.type] = item.data;
-                    if (item.extraStates) Object.assign(nextModals, item.extraStates);
-                }
-            });
-
-            setModals(nextModals);
-            setSelectedTerritoryId(nextTerritoryId);
-          // Adaugă asta pentru a curăța starea veche dacă te întorci la listă
-if (!nextModals.locationEdit) {
-    setEditLocNumber(''); 
-}
-            
-            // NU mai pune setEditLocNumber('') aici, altfel se șterge numele când dai înapoi!
-            return newStack;
-        });
-    };
-    
-    window.addEventListener('popstate', handleBackButton);
-    return () => window.removeEventListener('popstate', handleBackButton);
-}, []);
-  // --- AICI SE TERMINĂ CODUL NOU ---
-
-      
-
-      
+      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
+	useEffect(() => {
+  const handleBackButton = (event) => {
+    // Verificăm dacă avem modale deschise
+    const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+
+    if (isAnyModalOpen) {
+      // Dacă există modale, "furăm" butonul back
+      event.preventDefault(); // Încercăm să oprim navigarea browserului
+      
+      // Închidem modalele (exact ca la swipe)
+      setModals({ 
+        territoryAdd: false, territoryEdit: false, blockAdd: false, 
+        sectionAdd: null, locationAppend: null, locationEdit: null, 
+        settings: false, theme: false, stradaAddHouse: null, 
+        renameItem: null, auth: false, adminPanel: false, 
+        profileEdit: false, adminEditUser: null, isStradaGroup: false, 
+        export: false, report: null, import: false 
+      });
+      setPromptBox(prev => ({...prev, isOpen: false}));
+      setAlertBox(prev => ({...prev, isOpen: false}));
+    }
+  };
+
+  // Când un modal se deschide, adăugăm o stare în istoric pentru a "prinde" butonul back
+  const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+  
+  if (isAnyModalOpen) {
+    window.history.pushState(null, '', window.location.href);
+  }
+
+  window.addEventListener('popstate', handleBackButton);
+  return () => window.removeEventListener('popstate', handleBackButton);
+}, [modals]); // Se re-execută de fiecare dată când starea modalelor se schimbă
       // Acest efect închide toast-ul automat după 2 secunde
       useEffect(() => {
         if (toast) {
@@ -787,24 +753,10 @@ const generateTerritoryReport = (territory) => {
 };
      
 
-     // State-urile protejate pentru Alerte și Prompt-uri (Integrează chenarele mici în istoric)
-      const [alertBox, setAlertBoxState] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
-      const setAlertBox = (data) => {
-          if (typeof data !== 'function' && data && data.isOpen) {
-              window.history.pushState({ type: 'alert' }, '');
-              setNavStack(prev => [...prev, { type: 'alert' }]);
-          }
-          setAlertBoxState(data);
-      };
-
-      const [promptBox, setPromptBoxState] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
-      const setPromptBox = (data) => {
-          if (typeof data !== 'function' && data && data.isOpen) {
-              window.history.pushState({ type: 'prompt' }, '');
-              setNavStack(prev => [...prev, { type: 'prompt' }]);
-          }
-          setPromptBoxState(data);
-      };
+      // Adaugă asta sub celelalte state-uri din App:
+      const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
+      //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
+      const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
       // tab la useri
       const [adminUserTab, setAdminUserTab] = useState('All');
       const getFilteredAndSortedUsers = () => {
@@ -1142,11 +1094,33 @@ const handleRenameGroup = (oldName, newName) => {
       const handleTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
       const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
       const handleTouchEnd = () => {
-        if (!touchStart || !touchEnd) return;
-        const dist = touchStart - touchEnd;
-        if (dist > 50) setActiveTab(activeGroupView);
-        if (dist < -50) setActiveTab('personal');
-      };
+    if (!touchStart || !touchEnd) return;
+    const dist = touchStart - touchEnd;
+    
+    // Verificăm dacă vreun modal este deschis (dacă valoarea din state nu e null sau false)
+    const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+
+    if (Math.abs(dist) > 50) { // Prag de 50px pentru swipe
+        if (isAnyModalOpen) {
+            // Dacă e ceva deschis, închidem ferestrele (fără history.back!)
+            setModals({ 
+                territoryAdd: false, territoryEdit: false, blockAdd: false, 
+                sectionAdd: null, locationAppend: null, locationEdit: null, 
+                settings: false, theme: false, stradaAddHouse: null, 
+                renameItem: null, auth: false, adminPanel: false, 
+                profileEdit: false, adminEditUser: null, isStradaGroup: false, 
+                export: false, report: null, import: false 
+            });
+        } else {
+            // Dacă e totul închis, facem swipe la tab-uri (logica ta originală)
+            if (dist > 50) setActiveTab(activeGroupView); 
+            if (dist < -50) setActiveTab('personal');
+        }
+    }
+    
+    setTouchStart(null);
+    setTouchEnd(null);
+};
       
       const toggleBlock = (id) => setCollapsedBlocks(prev => ({...prev, [id]: !prev[id]}));
       const toggleSection = (id) => setCollapsedSections(prev => ({...prev, [id]: !prev[id]}));
@@ -1275,7 +1249,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         // 4. Notificări
         if (isNowDone) {
             const reportText = generateTerritoryReport(t);
-           navigateTo('report', { text: reportText, territory: t });
+            setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
         } else {
             setToast("❌ Teritoriu debifat!");
         }
@@ -1303,7 +1277,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           isDone: false, notes: '', blocks: [], order: territories.length
         };
 
-        
+        setModals({...modals, territoryAdd: false});
         if (category !== 'personal') {
            newTerritory.createdBy = userDocId;
            newTerritory.group = category; 
@@ -1311,7 +1285,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         } else {
            await db.collection('users').doc(userDocId).collection('territories').add(newTerritory);
         }
-       window.history.back();
       };
 
       const handleEditTerritory = async (e) => {
@@ -1329,7 +1302,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           startDate: fd.get('startDate'), endDate: fd.get('endDate'),
           originalEndDate: fd.get('endDate')
         };
-        
+        setModals({...modals, territoryEdit: false});
 
         if (newCategory !== selectedTerritory.category) {
             updateData.category = newCategory;
@@ -1346,7 +1319,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         } else {
             await updateTerritory(selectedTerritory.id, selectedTerritory.category, updateData);
         }
-        window.history.back();
       };
 
  const handleAddBlock = (e) => {
@@ -1380,7 +1352,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
   const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
   
   updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-  window.history.back();
+  setModals({...modals, blockAdd: false});
 };
 
       const handleAddStradaHouses = (e) => {
@@ -1410,7 +1382,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           return b;
         });
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        window.history.back();
+        setModals({...modals, stradaAddHouse: null});
       };
 
       const handleAddSection = (e) => {
@@ -1427,7 +1399,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         const upd = selectedTerritory.blocks.map(b => b.id === modals.sectionAdd ? { ...b, sections: [...(b.sections||[]), { id: Date.now().toString(), name: fd.get('name'), locations: nums }] } : b);
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
         setCollapsedBlocks(prev => ({...prev, [modals.sectionAdd]: false}));
-        window.history.back();
+        setModals({...modals, sectionAdd: null});
       };
       
       const handleRename = (e) => {
@@ -1446,12 +1418,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             return b;
         });
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        window.history.back();
+        setModals({ ...modals, renameItem: null });
       };
 
-     const openRenameModal = (type, blockId, sectionId, currentName) => {
-    navigateTo('renameItem', { type, blockId, sectionId, currentName });
-};
+      const openRenameModal = (type, blockId, sectionId, currentName) => setModals({ ...modals, renameItem: { type, blockId, sectionId, currentName } });
 
      const handleAppendLocations = (e) => {
         e.preventDefault();
@@ -1469,7 +1439,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
         setCollapsedSections(prev => ({...prev, [sectionId]: false}));
        // Numarul la ultimele istoric editari Schimbă cifra 5 cu 10, 20 sau cât ai nevoie! 
-       window.history.back();
+       setModals({...modals, locationAppend: null});
       };
 
       const recordHistory = (loc, actiuneStr, labelId = null) => {
@@ -1537,7 +1507,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
       const openEditModal = (blockId, sectionId, loc, locIdx) => {
         setEditLocNumber(loc.number);
-       navigateTo('locationEdit', { blockId, sectionId, loc, locIdx });
+        setModals(prev => ({ ...prev, locationEdit: { blockId, sectionId, loc, locIdx } }));
       };
 
       const handleExportAction = (e) => {
@@ -1573,7 +1543,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         document.body.appendChild(dl);
         dl.click();
         dl.remove();
-        window.history.back();
+        setModals({...modals, export: false});
       };
 
 
@@ -1640,9 +1610,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     }
                     if (count > 0) await batch1.commit();
 
-                   if (mode === 'full') {
-                        // Închidem totul direct prin istoric
-                        window.history.back();
+                    if (mode === 'full') {
+                        // REPARAT 1: La importul COMPLET, închidem direct modalul și NU mai afișăm nicio altă alertă
+                        setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
+                        setModals({ ...modals, import: false });
                     // --- ÎNLOCUIEȘTE DOAR NOTIFICAREA DE LA IMPORTUL PARȚIAL ---
                       } else {
                           // Trimitem o configurare care obligă AlertBox să nu afișeze text sau acțiune de anulare
@@ -1653,8 +1624,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                                   isDanger: false,
                                   showCancel: false, // <--- CORECT
                                   onConfirm: () => {
-                                        window.history.back();
-                                    }
+                                      setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
+                                      setModals({ ...modals, import: false });
+                                  }
                               });
                       }
                 }
@@ -1814,7 +1786,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
          <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500 relative animate-in zoom-in-95">
            {/* Buton X personalizat: mai mare, dreptunghiular */}
            <button 
-             onClick={() => window.history.back()}
+             onClick={() => setModals({...modals, report: null})} 
              className="absolute top-4 right-4 w-12 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 transition-all active:scale-90">
              <span className="material-icons text-xl text-slate-500">close</span>
              </button>
@@ -1845,8 +1817,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               {/* Buton Anulează (modificat) */}
 <button 
   onClick={() => {
-    handleCancelCompletion(modals.report.territory); 
-    window.history.back(); // Închide modalul după ce a terminat
+      handleCancelCompletion(modals.report.territory); 
   }} 
   className="w-full p-3 bg-red-500 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-red-600 active:scale-95 shadow-lg"
 >
@@ -1863,8 +1834,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className="bg-blue-600 text-white shadow-xl p-3 sm:p-4 md:p-5 rounded-[2rem] flex flex-col gap-4">
                 <div className="flex flex-row items-center justify-between gap-2 px-1 w-full">
                   <div className="flex items-center gap-2 sm:gap-3 font-black text-xl sm:text-2xl tracking-tighter shrink-0">
-                    {/* BUTON PROFIL */}
-                    <button onClick={() => navigateTo('auth', true)} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-slate-100 transition shadow-inner overflow-hidden shrink-0" title="Profil">
+                    <button onClick={() => setModals({...modals, auth: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-slate-100 transition shadow-inner overflow-hidden shrink-0" title="Profil">
                         <span className="text-base sm:text-lg font-black uppercase">
                           {currentUserName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)} {/* Codul care il am pana acum arata 2 initiale la nume dar Acesta arata doar un initial //{currentUserName.charAt(0)} */}
                         </span>
@@ -1872,9 +1842,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     <span className="truncate">Teritorii</span>
                   </div>
                   <div className="flex items-center justify-end gap-1.5 sm:gap-3 md:gap-4 shrink-0">
-                    {/* BUTON ADMIN */}
                     {isAdmin && (
-                     <button onClick={() => navigateTo('adminPanel', true)} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Panou Administrare">
+                      <button onClick={() => setModals({...modals, adminPanel: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Panou Administrare">
                           <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">admin_panel_settings</span>
                       </button>
                     )}
@@ -1882,19 +1851,17 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     <button onClick={() => document.getElementById('importData').click()} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Importă Date">
                         <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">upload</span>
                     </button>
-                    {/* BUTON EXPORT */}
                     <button onClick={() => {
                         setExportConfig({ category: activeTab === 'personal' ? 'personal' : activeGroupView, mode: 'full' });
-                        navigateTo('export', true);
+                        setModals({...modals, export: true});
                     }} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Exportă Date">
                         <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">download</span>
                     </button>
-                    {/* BUTON TEMĂ */}
-                    <button onClick={() => navigateTo('theme', true)} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Schimbă Tema">
+                    <button onClick={() => setModals({...modals, theme: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Schimbă Tema">
                         <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">palette</span>
                     </button>
                     {isAdmin && (
-                      <button onClick={() => navigateTo('settings', true)} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Setări Culori">
+                      <button onClick={() => setModals({...modals, settings: true})} className="w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Setări Culori">
                           <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">settings</span>
                       </button>
                     )}
@@ -1915,11 +1882,11 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className={`${selectedTerritory.category !== 'personal' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3`}>
                 {/* AICI ESTE CONTAINERUL TEXTULUI */}
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0 w-full overflow-hidden">
-                  <button onClick={() => window.history.back()} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
-                  {/* butonul care deschide un teritoriu: ADĂUGĂM min-w-0 ȘI PE h1 */}
+                  <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
+                  {/* ADĂUGĂM min-w-0 ȘI PE h1 */}
                   <h1 className="font-black text-white uppercase text-base md:text-xl truncate block w-full">{selectedTerritory.name}</h1>
                   {canEditStructure && (
-                    <button onClick={() => navigateTo('territoryEdit', true)} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
+                    <button onClick={() => setModals({...modals, territoryEdit: true})} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
                   )}
                 </div>
                 {/* AICI ESTE CONTAINERUL BUTOANELOR DE DREAPTA */}
@@ -1959,7 +1926,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     const prog = calculateProgress(t);
                     const isOverdue = !t.isDone && t.endDate < todayStr;
                     return (
-                      <div key={t.id} onClick={() => navigateTo('territory', t.id)} className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
+                      <div key={t.id} onClick={() => setSelectedTerritoryId(t.id)} className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
                         <div className="flex justify-between items-start mb-2 pr-[110px]">
                           <div className="min-w-0 flex-1">
                             <h3 className={`font-black text-lg leading-tight uppercase truncate min-w-0 ${t.isDone ? 'text-green-900 dark:text-green-400' : isOverdue ? 'text-red-900 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>{t.name}</h3>
@@ -2010,7 +1977,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </div>
               )}
               {!selectedTerritoryId && (isAdmin || isGroupAdmin || activeTab === 'personal') && (
-                <button onClick={() => navigateTo('territoryAdd', true)} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
+                <button onClick={() => setModals({...modals, territoryAdd: true})} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
                   <span className="material-icons text-3xl">add</span>
                 </button>
               )}
@@ -2085,7 +2052,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <div className="space-y-8 pb-4" ref={blocksContainerRef}>
                   {(selectedTerritory.blocks || []).map((block, bIdx) => (
                     <BlockComponent 
-                      key={block.id} block={block} territory={selectedTerritory} navigateTo={navigateTo} getLabelStyle={getLabelStyle}
+                      key={block.id} block={block} territory={selectedTerritory} getLabelStyle={getLabelStyle}
                       openEditModal={openEditModal} openRenameModal={openRenameModal} handleReorderLocations={handleReorderLocations} handleReorderSections={handleReorderSections}
                       updateTerritory={updateTerritory} collapsedBlocks={collapsedBlocks} toggleBlock={toggleBlock}
                       collapsedSections={collapsedSections} toggleSection={toggleSection} setModals={setModals} modals={modals} canEditStructure={canEditStructure} isReadOnly={isReadOnly}
@@ -2095,7 +2062,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </div>
                 
                 {canEditStructure && (
-                 <button onClick={() => navigateTo('blockAdd', true)} className="no-drag w-full py-8 bg-blue-100/50 dark:bg-blue-900/20 border-4 border-dashed border-blue-200 dark:border-blue-900 rounded-[2rem] text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all flex flex-col items-center gap-2 shadow-sm mb-20">
+                  <button onClick={() => setModals({...modals, blockAdd: true})} className="no-drag w-full py-8 bg-blue-100/50 dark:bg-blue-900/20 border-4 border-dashed border-blue-200 dark:border-blue-900 rounded-[2rem] text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all flex flex-col items-center gap-2 shadow-sm mb-20">
                     <span className="material-icons text-4xl">domain_add</span>
                     <span className="font-black text-xs uppercase tracking-widest">Adaugă Bloc / Stradă</span>
                   </button>
@@ -2107,7 +2074,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           {modals.auth && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[200]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center border-4 border-slate-100 dark:border-slate-700 relative">
-                <button onClick={() => window.history.back()} className="absolute top-4 right-4 material-icons text-slate-400 hover:text-slate-600 transition-colors">close</button>
+                <button onClick={() => setModals({...modals, auth: false})} className="absolute top-4 right-4 material-icons text-slate-400 hover:text-slate-600 transition-colors">close</button>
                 
                 <div className="space-y-6 pt-4">
                   <div className="flex flex-col items-center gap-3 bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
@@ -2130,7 +2097,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             onChange={(e) => { 
                                 setActiveGroupView(e.target.value); 
                                 setActiveTab(e.target.value); 
-                               window.history.back();
+                                setModals({...modals, auth: false}); 
                             }}
                             className="w-full bg-white dark:bg-slate-800 p-3 rounded-xl font-black text-sm uppercase outline-none focus:ring-2 focus:ring-blue-500 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 cursor-pointer shadow-sm"
                           >
@@ -2141,10 +2108,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </div>
                   
                   {isAdmin && (
-  <button onClick={() => navigateTo('profileEdit', true, { auth: false })} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
-    <span className="material-icons">edit</span> Editează Nume/Parolă
-  </button>
-)}
+                    <button onClick={() => setModals({...modals, auth: false, profileEdit: true})} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
+                      <span className="material-icons">edit</span> Editează Nume/Parolă
+                    </button>
+                  )}
 
                   <button onClick={async () => {
                     try { await auth.signOut(); } catch(e) {}
@@ -2180,7 +2147,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                        if(newPass && newPass.length >= 6) {
                            await auth.currentUser.updatePassword(newPass);
                        }
-                      window.history.back();
+                       setModals({...modals, profileEdit: false});
                    } catch(err) {
                        alert("Eroare la actualizare: " + err.message);
                    }
@@ -2194,7 +2161,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                      <input name="password" type="password" placeholder="Minim 6 caractere" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <button type="button" onClick={() => window.history.back()} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition">Anulează</button>
+                    <button type="button" onClick={() => setModals({...modals, profileEdit: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition">Anulează</button>
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition">Salvează</button>
                   </div>
                 </form>
@@ -2209,7 +2176,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   <h3 className="font-black text-lg uppercase tracking-widest text-slate-800 dark:text-slate-100 flex items-center gap-2">
                     <span className="material-icons text-blue-500">admin_panel_settings</span> Utilizatori
                   </h3>
-                 <button onClick={() => window.history.back()} className="material-icons text-slate-400 hover:text-red-500 transition-colors">close</button>
+                  <button onClick={() => setModals({...modals, adminPanel: false})} className="material-icons text-slate-400 hover:text-red-500 transition-colors">close</button>
                 </div>
 
                 <div className="overflow-y-auto flex-1 pr-2 space-y-6">
@@ -2365,23 +2332,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             
                             {/* Butoanele tale originale de editare și ștergere (Rămase Neschimbate) */}
                             <div className="flex gap-2">
-                              <button 
-                                  onClick={() => {
-                                    
-                                      
-                                      // 2. "Navigăm" către editarea utilizatorului, salvând acest pas în istoric
-                                      navigateTo('adminEditUser', { 
-                                          id: u.id, 
-                                          name: u.name, 
-                                          password: u.password, 
-                                          group: u.group, 
-                                          isAdminGroup: u.isAdminGroup 
-                                      });
-                                  }} 
-                                  className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
-                              >
-                                  edit
-                              </button>
+                              <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
                               <button onClick={() => {
                                   setAlertBox({
                                       isOpen: true,
@@ -2414,8 +2365,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <form onSubmit={async (e) => {
                    e.preventDefault();
                    const form = e.target;
-                   if (!valideazaCampul(form.elements.name, "Nume obligatoriu!")) return;
-                   if (!valideazaCampul(form.elements.password, "Parola obligatorie!")) return;
+                   if (!valideazaCampul(form.elements.name, "Numele nu poate fi lăsat gol!")) return;
+                   if (!valideazaCampul(form.elements.password, "Parola nu poate fi lăsată goală!")) return;
 
                    const fd = new FormData(e.target);
                    const newName = fd.get('name').trim();
@@ -2427,7 +2378,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                        const oldName = modals.adminEditUser.name;
                        await db.collection('app_users').doc(modals.adminEditUser.id).update({ name: newName, password: newPass, group: newGroup, isAdminGroup: newIsAdminGroup });
                        await updateUserNameInHistory(modals.adminEditUser.id, oldName, newName);
-                       window.history.back();
+                       setModals({...modals, adminEditUser: null, adminPanel: true});
                    } catch(err) {
                        alert("Eroare la actualizare: " + err.message);
                    }
@@ -2456,13 +2407,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </label>
                   {/* --- ÎNLOCUIEȘTE DOAR ACEST BLOC DIN MODALUL ADMIN --- */}
               <div className="flex gap-2 pt-2">
-                <button 
-                    type="button" 
-                    onClick={() => window.history.back()} 
-                    className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs"
-                  >
-                    Anulează
-                  </button>
+                <button type="button" onClick={() => setModals({...modals, adminEditUser: null, adminPanel: true})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
                 <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm active:scale-95 transition-all">Salvează</button>
               </div>
                 </form>
@@ -2520,7 +2465,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </div>
                  {/* --- ÎNLOCUIEȘTE DOAR ACEST BLOC DIN MODALUL TERITORIU --- */}
           <div className="flex gap-2 pt-4">
-            <button type="button" onClick={() => window.history.back()} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+            <button type="button" onClick={() => setModals({...modals, territoryAdd: false, territoryEdit: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
             <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
           </div>
                 </form>
@@ -2557,7 +2502,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </div>
                   <div className="flex gap-2 pt-4">
                     {/* Anulează + Efect de micșorare la apăsare */}
-                    <button type="button" onClick={() => window.history.back()} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+                    <button type="button" onClick={() => setModals({...modals, blockAdd: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
                     {/* Salvează + Efect de micșorare la apăsare */}
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
                   </div>
@@ -2605,7 +2550,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
                   <div className="flex gap-2 pt-2">
                     {/* Anulează + Efect de micșorare la apăsare */}
-                  <button type="button" onClick={() => window.history.back()} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+                    <button type="button" onClick={() => setModals({...modals, sectionAdd: null, locationAppend: null, stradaAddHouse: null, isStradaGroup: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
                     {/* Salvează + Efect de micșorare la apăsare */}
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
                   </div>
@@ -2627,7 +2572,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
                   <div className="flex gap-2 pt-2">
                     {/* Anulează + Efect de micșorare la apăsare */}
-                    <button type="button" onClick={() => window.history.back()} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+                    <button type="button" onClick={() => setModals({...modals, renameItem: null})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
                     {/* Salvează + Efect de micșorare la apăsare */}
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
                   </div>
@@ -2693,7 +2638,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
                                {/* --- INLOCUIESTE DOAR ACEST DIV PENTRU ANIMAȚIILE BUTOANELOR --- */}
             <div className="flex gap-2 pt-4 shrink-0">
-             <button type="button" onClick={() => window.history.back()} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+             <button type="button" onClick={() => setModals({...modals, export: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
              <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase shadow-sm active:scale-95 transition-all">EXPORTĂ ACUM</button>
             </div>
                 </form>
@@ -2736,12 +2681,12 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             const { blockId, sectionId, loc } = modals.locationEdit;
                             const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.filter(l => l.id !== loc.id) } : s) } : b);
                             updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-                           window.history.back();
+                            setModals({...modals, locationEdit: null});
                           }
                         });
                       }} className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
                    )}
-                    <button onClick={() => window.history.back()} className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600">close</button>
+                    <button onClick={() => setModals({...modals, locationEdit: null})} className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600">close</button>
                   </div>
                 </div>
 
@@ -2857,7 +2802,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <h2 className="font-black text-2xl text-slate-800 dark:text-slate-100 uppercase flex items-center gap-2">
                   <span className="material-icons text-blue-500 text-3xl">settings</span> Setări
                 </h2>
-                <button onClick={() => window.history.back()} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
+                <button onClick={() => setModals({...modals, settings: false})} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
               </div>
               {/* 2. SECȚIUNE GRUPE (Codul vechi) */}
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
@@ -2922,28 +2867,14 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mb-6"
                 />
                 <div className="flex gap-2">
-            <button 
-                type="button" 
-                onClick={() => {
-                  setPromptBox(prev => ({...prev, isOpen: false})); // FORȚEAZĂ închiderea
-                  window.history.back(); // NAVIGARE
-                }} 
-                className="..."
-              >
-                Anulează
-              </button>
+                  <button onClick={() => setPromptBox({ ...promptBox, isOpen: false })} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors">Anulează</button>
+                  <button onClick={() => { 
+                    const inputEl = document.getElementById('promptBoxInput');
+                    if (!valideazaCampul(inputEl, "Introdu o denumire!")) return; // Oprește și arată bula dacă e gol
 
-<button 
-  onClick={() => { 
-    const inputEl = document.getElementById('promptBoxInput');
-    if (!valideazaCampul(inputEl, "Introdu o denumire!")) return;
-    promptBox.onConfirm(promptBox.value.trim()); 
-    setPromptBox(prev => ({...prev, isOpen: false})); 
-  }} 
-  className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition-all"
->
-  Salvează
-</button>
+                    promptBox.onConfirm(promptBox.value.trim()); 
+                    setPromptBox({ ...promptBox, isOpen: false }); 
+                  }} className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition-all active:scale-95">Salvează</button>
                 </div>
               </div>
             </div>
@@ -2964,24 +2895,14 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </p>
                 <div className="flex gap-2">
                   {/* Butonul de Anulare (apare doar dacă showCancel nu este false) */}
-               {alertBox.showCancel !== false && (
-  <button 
-    onClick={() => setAlertBox(prev => ({...prev, isOpen: false}))}
-    className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors"
-  >
-    Anulează
-  </button>
-)}
-
-<button 
-  onClick={() => { 
-    alertBox.onConfirm(); 
-    setAlertBox(prev => ({...prev, isOpen: false}));
-  }} 
-  className={`flex-[2] p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition-all text-white ${alertBox.isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
->
-  {alertBox.showCancel === false ? 'Confirm' : 'Confirmă'}
-</button>
+                  {alertBox.showCancel !== false && (
+      
+                    <button onClick={() => setAlertBox({ ...alertBox, isOpen: false })} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors">Anulează</button>
+                  )}
+                  {/* Butonul de Confirmare (acum scrie "Confirm" când este notificare simplă) */}
+                  <button onClick={() => { alertBox.onConfirm(); setAlertBox({ ...alertBox, isOpen: false }); }} className={`flex-1 p-4 text-white rounded-2xl font-black uppercase text-xs shadow-sm transition-all active:scale-95 ${alertBox.isDanger ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}>
+                     {alertBox.showCancel === false ? 'Confirm' : 'Confirmă'}
+                  </button>
                 </div>
                </div>
              </div>
@@ -2992,7 +2913,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-black text-lg uppercase tracking-widest text-slate-800 dark:text-slate-100">Aspect Aplicație</h3>
-                 <button onClick={() => window.history.back()} className="material-icons text-slate-400 transition-colors">close</button>
+                  <button onClick={() => setModals({...modals, theme: false})} className="material-icons text-slate-400 transition-colors">close</button>
                 </div>
                 <div className="space-y-3">
                   {[
@@ -3002,7 +2923,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   ].map(t => (
                     <button 
                       key={t.id} 
-                      onClick={() => { setTheme(t.id); localStorage.setItem('app-theme', t.id); window.history.back(); }}
+                      onClick={() => { setTheme(t.id); localStorage.setItem('app-theme', t.id); setModals({...modals, theme: false}); }}
                       className={"w-full flex items-center gap-4 p-4 rounded-2xl font-black uppercase text-xs transition-all " + (theme === t.id ? "bg-blue-600 text-white shadow-lg" : "bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700")}
                     >
                       <span className="material-icons">{t.icon}</span>
