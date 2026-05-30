@@ -2053,7 +2053,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               {!selectedTerritoryId && (isAdmin || isGroupAdmin || activeTab === 'personal') && (
                 <button onClick={() => {
 				    window.history.pushState(null, '', window.location.href);
-				    setModals({...modals, territoryAdd: true})} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
+				    setModals({...modals, territoryAdd: true}); 
+					}}
+					className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
                   <span className="material-icons text-3xl">add</span>
                 </button>
               )}
