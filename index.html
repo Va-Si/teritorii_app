@@ -646,15 +646,14 @@ const [isSynced, setIsSynced] = React.useState(true);
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
 	useEffect(() => {
+ useEffect(() => {
   const handleBackButton = (event) => {
-    // Verificăm dacă avem modale deschise
+    // 1. Verificăm dacă există modale deschise
     const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
 
     if (isAnyModalOpen) {
-      // Dacă există modale, "furăm" butonul back
-      event.preventDefault(); // Încercăm să oprim navigarea browserului
-      
-      // Închidem modalele (exact ca la swipe)
+      event.preventDefault(); // Oprim acțiunea implicită
+      // Închidem toate modalele
       setModals({ 
         territoryAdd: false, territoryEdit: false, blockAdd: false, 
         sectionAdd: null, locationAppend: null, locationEdit: null, 
@@ -665,8 +664,17 @@ const [isSynced, setIsSynced] = React.useState(true);
       });
       setPromptBox(prev => ({...prev, isOpen: false}));
       setAlertBox(prev => ({...prev, isOpen: false}));
+    } 
+    // 2. Verificăm dacă avem un teritoriu deschis
+    else if (selectedTerritoryId !== null) {
+      event.preventDefault(); // Oprim ieșirea din aplicație
+      setSelectedTerritoryId(null); // Ne întoarcem la lista principală
     }
   };
+
+  window.addEventListener('popstate', handleBackButton);
+  return () => window.removeEventListener('popstate', handleBackButton);
+}, [modals, selectedTerritoryId]); // Atenție: am adăugat selectedTerritoryId
 
   // Când un modal se deschide, adăugăm o stare în istoric pentru a "prinde" butonul back
   const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
