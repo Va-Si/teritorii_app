@@ -59,11 +59,17 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-track { margin: 4px; }
-    body { 
-        -webkit-tap-highlight-color: transparent; 
-        scrollbar-gutter: stable;
-		
-    }
+   body {
+  /* Blochează refresh-ul, dar păstrează scroll-ul */
+  overscroll-behavior-y: contain;
+  
+  /* Se asigură că elementul nu trece peste limite */
+  touch-action: pan-y; 
+  
+  /* Asigură-te că înălțimea este corectă pentru mobil */
+  height: 100%;
+  overflow-y: auto;
+}
 
 
     
