@@ -894,7 +894,20 @@ useEffect(() => {
         applyTheme(theme);
       }, [theme]);
 
-		
+		useEffect(() => {
+  const preventRefresh = (e) => {
+    // Dacă scroll-ul este la 0 (sus de tot), blocăm acțiunea
+    if (window.scrollY === 0 && e.cancelable) {
+       // Permitem scroll-ul, dar blocăm "tragerea" excesivă care declanșează refresh
+       e.preventDefault();
+    }
+  };
+
+  // Folosim passive: false pentru a putea face preventDefault
+  window.addEventListener('touchmove', preventRefresh, { passive: false });
+  
+  return () => window.removeEventListener('touchmove', preventRefresh);
+}, []);
 
       useEffect(() => {
         const unsubAuth = auth.onAuthStateChanged(firebaseUser => {
