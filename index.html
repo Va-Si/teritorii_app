@@ -59,14 +59,10 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-track { margin: 4px; }
-   body {
-   /* "contain" oprește refresh-ul, dar lasă scroll-ul să meargă în pagină */
-    overscroll-behavior-y: contain; 
-    /* Permite scroll-ul vertical, dar blochează gesturile de sistem */
-    touch-action: pan-y;
-	   -webkit-tap-highlight-color: transparent; 
-    scrollbar-gutter: stable;
-    /* NU pune overflow: hidden aici, pentru că altfel blochezi scroll-ul definitiv */
+   body, #root {
+    /* Forțăm browserul să nu permită gestul de refresh */
+    overscroll-behavior-y: none !important;
+    touch-action: pan-y !important;
 }
 
 
