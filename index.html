@@ -65,11 +65,12 @@
     touch-action: pan-y;
 }
 
-body { 
-        -webkit-tap-highlight-color: transparent; 
-        scrollbar-gutter: stable;
-		
-    }
+body {
+    overscroll-behavior-y: none;
+    touch-action: pan-y;
+    overflow-y: scroll;
+    height: 100%;
+}
     
     .sortable-ghost { opacity: 0.4; }
     .sortable-drag { cursor: grabbing !important; }
@@ -897,6 +898,22 @@ useEffect(() => {
         };
         applyTheme(theme);
       }, [theme]);
+
+		useEffect(() => {
+  const preventRefresh = (e) => {
+    // Dacă suntem la începutul paginii și utilizatorul trage în jos
+    if (window.scrollY === 0 && e.touches[0].pageY > 0) {
+      e.preventDefault();
+    }
+  };
+
+  // Folosim passive: false pentru a permite preventDefault()
+  document.addEventListener('touchmove', preventRefresh, { passive: false });
+
+  return () => {
+    document.removeEventListener('touchmove', preventRefresh);
+  };
+}, []);
 
       useEffect(() => {
         const unsubAuth = auth.onAuthStateChanged(firebaseUser => {
