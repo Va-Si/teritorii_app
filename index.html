@@ -59,11 +59,17 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-track { margin: 4px; }
-  body { 
-        -webkit-tap-highlight-color: transparent; 
-        scrollbar-gutter: stable;
-		
-    }
+  body {
+  height: 100%;
+  overflow: hidden;              /* NU mai lăsăm body să scrolleze */
+  overscroll-behavior-y: none;   /* taie “bounce/refresh” */
+}
+	  #root {
+  height: 100vh;
+  overflow-y: auto;              /* scroll aici */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain; /* nu “propagă” overscroll la pagină */
+}
 
 
     
@@ -74,7 +80,7 @@
   </style>
 </head>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 overscroll-none overflow-y-scroll !overflow-y-scroll">
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 overflow-hidden">
   <div id="root"></div>
   
 
