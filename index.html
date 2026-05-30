@@ -59,13 +59,22 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-track { margin: 4px; }
-    body { 
-    -webkit-tap-highlight-color: transparent; 
-    scrollbar-gutter: stable;
+   body {
+    /* Acestea opresc refresh-ul la swipe */
+    overscroll-behavior-y: none;
+    touch-action: pan-y;
+}
+
+body {
+    /* Blocăm refresh-ul și permitem doar scroll vertical */
+    overscroll-behavior-y: none;
+    touch-action: pan-y;
     
-    /* ADĂUGĂ ACESTE DOUĂ LINII */
-    overscroll-behavior-y: none; 
-    touch-action: pan-y; 
+    /* Setările tale estetice */
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-gutter: stable;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
 }
     
     .sortable-ghost { opacity: 0.4; }
