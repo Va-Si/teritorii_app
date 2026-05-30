@@ -136,32 +136,7 @@
       const isDragging = useRef(false);
       const lastY = useRef(0);
 
-      useEffect(() => {
-        const handleMove = (e) => {
-          if (!isDragging.current) return;
-          e.preventDefault(); 
-          const currentY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-          const deltaY = currentY - lastY.current;
-          setHeight(prev => Math.max(70, prev + deltaY));
-          lastY.current = currentY;
-        };
-        const handleEnd = () => {
-          isDragging.current = false;
-          document.body.style.userSelect = '';
-        };
-
-        document.addEventListener('mousemove', handleMove);
-        document.addEventListener('mouseup', handleEnd);
-        document.addEventListener('touchmove', handleMove, { passive: false });
-        document.addEventListener('touchend', handleEnd);
-
-        return () => {
-          document.removeEventListener('mousemove', handleMove);
-          document.removeEventListener('mouseup', handleEnd);
-          document.removeEventListener('touchmove', handleMove);
-          document.removeEventListener('touchend', handleEnd);
-        };
-      }, []);
+     
 
       const handleStart = (e) => {
         isDragging.current = true;
@@ -619,110 +594,339 @@ return (
 
     function App() {
       // Încarcă setările din localStorage sau pune un default
+		// CONFIGURARE ȘI STATE-URI
+		// Date generale
 const [progressTags, setProgressTags] = useState(() => {
     const saved = localStorage.getItem('progressTags');
     return saved ? JSON.parse(saved) : ['rusa', 'refuz-categoric']; // Default-ul tău
-});
+	});
       const [territories, setTerritories] = useState([]);
       const [settings, setSettings] = useState({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
+		// Interfață / UI
       const [activeTab, setActiveTab] = useState('personal');
       const [activeGroupView, setActiveGroupView] = useState('Grupa 5'); 
       
       const [selectedTerritoryId, setSelectedTerritoryId] = useState(null);
       const [loading, setLoading] = useState(true);
-      const [touchStart, setTouchStart] = useState(null);
-      const [touchEnd, setTouchEnd] = useState(null);
+     
       const [theme, setTheme] = useState(localStorage.getItem('app-theme') || 'system');
-      
+      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
+      const [toast, setToast] = useState(null);
+		// Autentificare
       const [user, setUser] = useState(null); 
       const [userDocId, setUserDocId] = useState(null);
       const [authLoading, setAuthLoading] = useState(true);
       const [authError, setAuthError] = useState(null);
       const [authForm, setAuthForm] = useState({ name: '', password: '' });
       const [adminUsersList, setAdminUsersList] = useState([]);
+		// Stări auxiliare
       // Pasul 1: Starea pentru buline de sincronizare (implicit considerăm că e sincronizat)
-const [isSynced, setIsSynced] = React.useState(true);
+		const [isSynced, setIsSynced] = React.useState(true);
+		const [isOnline, setIsOnline] = useState(navigator.onLine);
+		const [touchStart, setTouchStart] = useState(null);
+      	const [touchEnd, setTouchEnd] = useState(null);
+		const [collapsedBlocks, setCollapsedBlocks] = useState({});
+      	const [collapsedSections, setCollapsedSections] = useState({});
+		const [editLocNumber, setEditLocNumber] = useState('');
+		const [adminUserTab, setAdminUserTab] = useState('All');
 
-      const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
-      const [toast, setToast] = useState(null);
+      // AlertBox & PromptBox
 		   // Adaugă asta sub celelalte state-uri din App:
       const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
       //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
       const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
-		  const [exportConfig, setExportConfig] = useState({ category: 'personal', mode: 'full' });
-      const [editLocNumber, setEditLocNumber] = useState('');
-      const [collapsedBlocks, setCollapsedBlocks] = useState({});
-      const [collapsedSections, setCollapsedSections] = useState({});
+	  const [exportConfig, setExportConfig] = useState({ category: 'personal', mode: 'full' });
+   //Referințe (useRef)
+     const blocksContainerRef = useRef(null);
+		 const territoriesListRef = useRef(null);
+		//Calcule Memoria (useMemo
+		 const selectedTerritory = useMemo(() => {
+        const t = territories.find(t => t.id === selectedTerritoryId);
+        if (t && !t.blocks) t.blocks = t.sections && t.sections.length > 0 ? [{ id: 'legacy_block', name: 'Grupare Veche', type: 'bloc', sections: t.sections }] : [];
+        return t;
+      }, [territories, selectedTerritoryId]);
+		 const filteredTerritories = useMemo(() => {
+        let list = territories.filter(t => t.category === activeTab || (!t.category && activeTab === 'Grupa 5')).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
+        if (activeTab !== 'personal' && !isAdmin && !isGroupAdmin) list = list.filter(t => !t.isDone);
+        return list;
+      }, [territories, activeTab, isAdmin, isGroupAdmin]);
+
+		//Toate useEffect
+
+		 useEffect(() => {
+        if (selectedTerritoryId && !loading && !territories.find(t => t.id === selectedTerritoryId)) {
+          setSelectedTerritoryId(null);
+        }
+      }, [territories, selectedTerritoryId, loading]);
 	
-// --- ACEST EFECT GESTIONEAZĂ TOTUL: BUTONUL BACK ȘI ISTORICUL ---
-useEffect(() => {
-  const handleBackButton = (event) => {
-    event.preventDefault();
+					// --- ACEST EFECT GESTIONEAZĂ TOTUL: BUTONUL BACK ȘI ISTORICUL ---
+												useEffect(() => {
+							  const handleBackButton = (event) => {
+							    // 1. Verificăm dacă există ceva deschis (Modale, Alert, etc.)
+							    const isAnyModalOpen = Object.values(modals || {}).some(v => v !== null && v !== false);
+							    
+							    if (alertBox?.isOpen) { 
+							      event.preventDefault(); 
+							      setAlertBox(prev => ({...prev, isOpen: false})); 
+							      return; 
+							    }
+							    
+							    if (promptBox?.isOpen) { 
+							      event.preventDefault(); 
+							      setPromptBox(prev => ({...prev, isOpen: false})); 
+							      return; 
+							    }
+							
+							    if (isAnyModalOpen) {
+							      event.preventDefault(); // Oprim browserul să iasă din aplicație
+							      // Închidem toate modalele dacă vreunul e deschis
+							      setModals({ 
+							        territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, 
+							        locationAppend: null, locationEdit: null, settings: false, theme: false, 
+							        stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, 
+							        profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, 
+							        report: null, import: false 
+							      });
+							      return;
+							    }
+							
+							    // 2. Dacă nu e niciun modal deschis, dar avem un teritoriu selectat, închide teritoriul
+							    if (selectedTerritoryId !== null) {
+							      event.preventDefault();
+							      setSelectedTerritoryId(null);
+							      return;
+							    }
+							    
+							    // Dacă am ajuns aici, butonul Back își face treaba nativ (închide aplicația)
+							  };
+							
+							  window.addEventListener('popstate', handleBackButton);
+							  return () => window.removeEventListener('popstate', handleBackButton);
+							}, [modals, selectedTerritoryId, alertBox?.isOpen, promptBox?.isOpen]);
+					
+					
+					// --- ACEST EFECT GESTIONEAZĂ ISTORICUL (Când deschizi ceva, adaugă în istoric) ---
+					useEffect(() => {
+					  const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+					  
+					  if (isAnyModalOpen || selectedTerritoryId !== null) {
+					    window.history.pushState(null, '', window.location.href);
+					  }
+					}, [modals, selectedTerritoryId]);
+							// Se re-execută de fiecare dată când starea modalelor se schimbă
+					      // Acest efect închide toast-ul automat după 2 secunde
+					      useEffect(() => {
+					        if (toast) {
+					          const timer = setTimeout(() => setToast(null), 2000);
+					          return () => clearTimeout(timer);
+					          }
+					        }, [toast]);
 
-    // Verificăm dacă există și dacă sunt deschise (folosind ?. pentru siguranță)
-    if (alertBox?.isOpen) { setAlertBox(prev => ({...prev, isOpen: false})); return; }
-    if (promptBox?.isOpen) { setPromptBox(prev => ({...prev, isOpen: false})); return; }
+							 useEffect(() => {
+					        const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+					        window.addEventListener('online', updateOnlineStatus);
+					        window.addEventListener('offline', updateOnlineStatus);
+					        // Curățăm ascultătorii când închidem aplicația
+					        return () => {
+					          window.removeEventListener('online', updateOnlineStatus);
+					          window.removeEventListener('offline', updateOnlineStatus);
+					        };
+					      }, []);
+					    
+					    
 
-    // Prioritățile de modale
-    if (modals?.adminEditUser) { setModals(prev => ({...prev, adminEditUser: null})); return; }
-    if (modals?.renameItem) { setModals(prev => ({...prev, renameItem: null})); return; }
-    if (modals?.stradaAddHouse) { setModals(prev => ({...prev, stradaAddHouse: null})); return; }
-    if (modals?.sectionAdd) { setModals(prev => ({...prev, sectionAdd: null})); return; }
-    if (modals?.locationAppend) { setModals(prev => ({...prev, locationAppend: null})); return; }
-    if (modals?.locationEdit) { setModals(prev => ({...prev, locationEdit: null})); return; }
-    if (modals?.report) { setModals(prev => ({...prev, report: null})); return; }
-    if (modals?.settings) { setModals(prev => ({...prev, settings: false})); return; }
-    if (modals?.adminPanel) { setModals(prev => ({...prev, adminPanel: false})); return; }
-    if (modals?.profileEdit) { setModals(prev => ({...prev, profileEdit: false})); return; }
-    if (modals?.territoryAdd) { setModals(prev => ({...prev, territoryAdd: false})); return; }
-    if (modals?.territoryEdit) { setModals(prev => ({...prev, territoryEdit: false})); return; }
+				
+				
+									 useEffect(() => {
+				        const root = window.document.documentElement;
+				        const applyTheme = (t) => {
+				          if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+				            root.classList.add('dark');
+				          } else {
+				            root.classList.remove('dark');
+				          }
+				        };
+				        applyTheme(theme);
+				      }, [theme]);
 
-    // Ultimul nivel: Teritoriul
-    if (selectedTerritoryId !== null) {
-      setSelectedTerritoryId(null);
-      return;
-    }
-  };
+							 useEffect(() => {
+					        const handleMove = (e) => {
+					          if (!isDragging.current) return;
+					          e.preventDefault(); 
+					          const currentY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+					          const deltaY = currentY - lastY.current;
+					          setHeight(prev => Math.max(70, prev + deltaY));
+					          lastY.current = currentY;
+					        };
+					        const handleEnd = () => {
+					          isDragging.current = false;
+					          document.body.style.userSelect = '';
+					        };
+					
+					        document.addEventListener('mousemove', handleMove);
+					        document.addEventListener('mouseup', handleEnd);
+					        document.addEventListener('touchmove', handleMove, { passive: false });
+					        document.addEventListener('touchend', handleEnd);
+					
+					        return () => {
+					          document.removeEventListener('mousemove', handleMove);
+					          document.removeEventListener('mouseup', handleEnd);
+					          document.removeEventListener('touchmove', handleMove);
+					          document.removeEventListener('touchend', handleEnd);
+					        };
+					      }, []);
 
-  window.addEventListener('popstate', handleBackButton);
+									 useEffect(() => {
+							        const unsubAuth = auth.onAuthStateChanged(firebaseUser => {
+							          if (firebaseUser && firebaseUser.email === ADMIN_EMAIL) {
+							              setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'Admin', email: firebaseUser.email });
+							              setUserDocId(firebaseUser.uid);
+							              setActiveGroupView('Grupa 5');
+							              setActiveTab('personal');
+							          } else {
+							              const customUserStr = localStorage.getItem('custom_user');
+							              if (customUserStr) {
+							                  try {
+							                      const cu = JSON.parse(customUserStr);
+							                      setUser(cu);
+							                      setUserDocId(cu.id);
+							                      setActiveGroupView(cu.group || 'Grupa 5');
+							                      setActiveTab('personal');
+							                  } catch(e) {}
+							              } else {
+							                 setUser(null);
+							              }
+							          }
+							          setAuthLoading(false);
+							        });
+							        return () => unsubAuth();
+							      }, []);
 
-  // Verificăm siguranța și la pushState
-  const isAnyOpen = Object.values(modals || {}).some(v => v !== null && v !== false) 
-                    || alertBox?.isOpen 
-                    || promptBox?.isOpen 
-                    || selectedTerritoryId !== null;
-  
-  if (isAnyOpen) {
-    window.history.pushState(null, '', window.location.href);
-  }
 
-  return () => window.removeEventListener('popstate', handleBackButton);
-}, [modals, selectedTerritoryId, alertBox?.isOpen, promptBox?.isOpen]);
+							   useEffect(() => {
+					        if (!user || isAdmin) return;
+					        const unsubscribe = db.collection('app_users').doc(user.id).onSnapshot(doc => {
+					            if (!doc.exists) {
+					                localStorage.removeItem('custom_user');
+					                setUser(null);
+					                setUserDocId(null);
+					                setModals(prev => ({...prev, auth: false}));
+					            } else {
+					                const data = doc.data();
+					                if (data.name !== user.name || data.password !== user.password || data.group !== user.group || data.isAdminGroup !== user.isAdminGroup) {
+					                    const updatedUser = { ...user, name: data.name, password: data.password, group: data.group, isAdminGroup: data.isAdminGroup };
+					                    setUser(updatedUser);
+					                    localStorage.setItem('custom_user', JSON.stringify(updatedUser));
+					                    if(data.group && user.group !== data.group) {
+					                        setActiveGroupView(data.group);
+					                        //setActiveTab(data.group); ca sa nu apara la deshdiere compartimentu Grupa ci personal
+					                    }
+					                }
+					            }
+					        });
+					        return () => unsubscribe();
+					      }, [user, isAdmin]);
 
 
-// --- ACEST EFECT GESTIONEAZĂ ISTORICUL (Când deschizi ceva, adaugă în istoric) ---
-useEffect(() => {
-  const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
-  
-  if (isAnyModalOpen || selectedTerritoryId !== null) {
-    window.history.pushState(null, '', window.location.href);
-  }
-}, [modals, selectedTerritoryId]);
-		// Se re-execută de fiecare dată când starea modalelor se schimbă
-      // Acest efect închide toast-ul automat după 2 secunde
-      useEffect(() => {
-        if (toast) {
-          const timer = setTimeout(() => setToast(null), 2000);
-          return () => clearTimeout(timer);
-          }
-        }, [toast]);
-    
-      const handleCancelCompletion = (t) => {
-    // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
-    const updateData = { 
-        isDone: false,
-        endDate: t.originalEndDate || t.endDate 
-    };
+							     useEffect(() => {
+								  if (authLoading || !user) { setLoading(false); return; }
+								  setLoading(true);
+								  const unsubs = [];
+								  
+								 // 1. [MODIFICAT PENTRU GLOBAL] Codul pentru setări globale
+								  unsubs.push(db.collection('config').doc('global_settings').onSnapshot(doc => { 
+								    if(doc.exists) {
+								       const data = doc.data();
+								       setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
+								    } else {
+								       db.collection('config').doc('global_settings').set({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
+								    }
+								  }));
+								
+								  // 2. [OPTIMIZAT] Activăm verificarea offline DOAR pe teritoriile personale (unde se pot face modificări)
+								  unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
+								    const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+								    
+								    // Pentru teritoriile comune lăsăm onSnapshot simplu, fără includeMetadataChanges (salvăm memorie)
+								    unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
+								       const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
+								       
+								       // ==========================================
+								       // 🟢 LOGICA SIMPLIFICATĂ PENTRU BULINĂ 🟡
+								       // Verificăm doar dacă sunt scrieri în așteptare pentru teritoriile personale
+								       setIsSynced(!snap.metadata.hasPendingWrites); 
+								       // ==========================================
+								
+								       setTerritories([...persT, ...sharedT]);
+								       setLoading(false);
+								    }));
+								  }));
+								
+								  // 3. [NESCHIMBAT] Codul pentru lista de Admin
+								  if (isAdmin) {
+								     unsubs.push(db.collection('app_users').onSnapshot(snap => {
+								         setAdminUsersList(snap.docs.map(d => d.data()));
+								     }));
+								  }
+								  
+								  return () => unsubs.forEach(u => u());
+								}, [userDocId, authLoading, isAdmin]);
+
+
+							  useEffect(() => {
+							        if (!territoriesListRef.current || selectedTerritoryId) return;
+							        const sortable = Sortable.create(territoriesListRef.current, {
+							          animation: 150, delay: 200, delayOnTouchOnly: true, filter: '.no-drag', forceFallback: true, fallbackTolerance: 5,
+							          onEnd: (evt) => {
+							            if (evt.oldIndex !== evt.newIndex) {
+							              const reordered = [...filteredTerritories];
+							              const [moved] = reordered.splice(evt.oldIndex, 1);
+							              reordered.splice(evt.newIndex, 0, moved);
+							              reordered.forEach((t, index) => { 
+							                if (t.order !== index) {
+							                   if (t.category !== 'personal') db.collection('shared_territories').doc(t.id).update({ order: index });
+							                   else db.collection('users').doc(userDocId).collection('territories').doc(t.id).update({ order: index });
+							                }
+							              });
+							            }
+							          }
+							        });
+							        return () => sortable.destroy();
+							      }, [filteredTerritories, selectedTerritoryId, activeTab]);
+
+							  useEffect(() => {
+						          if (!blocksContainerRef.current || !selectedTerritoryId || !canEditStructure) return;
+						          const sortable = Sortable.create(blocksContainerRef.current, {
+						            animation: 150, delay: 200, delayOnTouchOnly: true, forceFallback: true, fallbackTolerance: 5,
+						            handle: '.block-header', filter: '.no-drag',
+						            onEnd: (evt) => {
+						              if (evt.oldIndex !== evt.newIndex) {
+						                const newBlocks = [...(selectedTerritory.blocks || [])];
+						                const [movedItem] = newBlocks.splice(evt.oldIndex, 1);
+						                newBlocks.splice(evt.newIndex, 0, movedItem);
+						
+						                const item = evt.item;
+						                const from = evt.from;
+						                const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
+						                if (originalNextSibling) from.insertBefore(item, originalNextSibling);
+						                else from.appendChild(item);
+						
+						                updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: newBlocks });
+						              }
+						            }
+						          });
+						          return () => sortable.destroy();
+						      }, [selectedTerritoryId, selectedTerritory?.blocks, canEditStructure]);
+
+				//Toate funcțiile (const handle..., const
+		
+		
+				  const handleCancelCompletion = (t) => {
+							    // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
+							    const updateData = { 
+							        isDone: false,
+							        endDate: t.originalEndDate || t.endDate 
+							    };
 
     // 2. Actualizăm starea locală pentru UI
     setTerritories(prev => prev.map(item => 
@@ -783,7 +987,7 @@ const generateTerritoryReport = (territory) => {
 
      
       // tab la useri
-      const [adminUserTab, setAdminUserTab] = useState('All');
+     
       const getFilteredAndSortedUsers = () => {
         // 1. Filtrăm utilizatorii în funcție de tab-ul ales
         let filtered = [...(adminUsersList || [])]; // Dacă variabila ta are alt nume (ex: usersList), schimbă appUsers cu numele ei
@@ -808,132 +1012,25 @@ const generateTerritoryReport = (territory) => {
       };
       
       
-      const blocksContainerRef = useRef(null);
-      const [isOnline, setIsOnline] = useState(navigator.onLine);
+      
+      
 
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      useEffect(() => {
-        const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-        // Curățăm ascultătorii când închidem aplicația
-        return () => {
-          window.removeEventListener('online', updateOnlineStatus);
-          window.removeEventListener('offline', updateOnlineStatus);
-        };
-      }, []);
+     
 
-      useEffect(() => {
-        const root = window.document.documentElement;
-        const applyTheme = (t) => {
-          if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            root.classList.add('dark');
-          } else {
-            root.classList.remove('dark');
-          }
-        };
-        applyTheme(theme);
-      }, [theme]);
+     
 
-      useEffect(() => {
-        const unsubAuth = auth.onAuthStateChanged(firebaseUser => {
-          if (firebaseUser && firebaseUser.email === ADMIN_EMAIL) {
-              setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'Admin', email: firebaseUser.email });
-              setUserDocId(firebaseUser.uid);
-              setActiveGroupView('Grupa 5');
-              setActiveTab('personal');
-          } else {
-              const customUserStr = localStorage.getItem('custom_user');
-              if (customUserStr) {
-                  try {
-                      const cu = JSON.parse(customUserStr);
-                      setUser(cu);
-                      setUserDocId(cu.id);
-                      setActiveGroupView(cu.group || 'Grupa 5');
-                      setActiveTab('personal');
-                  } catch(e) {}
-              } else {
-                 setUser(null);
-              }
-          }
-          setAuthLoading(false);
-        });
-        return () => unsubAuth();
-      }, []);
+     
 
       const isAdmin = user?.email === ADMIN_EMAIL;
       const isGroupAdmin = user?.isAdminGroup === true;
       const currentUserName = user?.name || (isAdmin ? "Admin" : "Utilizator");
 
-      useEffect(() => {
-        if (!user || isAdmin) return;
-        const unsubscribe = db.collection('app_users').doc(user.id).onSnapshot(doc => {
-            if (!doc.exists) {
-                localStorage.removeItem('custom_user');
-                setUser(null);
-                setUserDocId(null);
-                setModals(prev => ({...prev, auth: false}));
-            } else {
-                const data = doc.data();
-                if (data.name !== user.name || data.password !== user.password || data.group !== user.group || data.isAdminGroup !== user.isAdminGroup) {
-                    const updatedUser = { ...user, name: data.name, password: data.password, group: data.group, isAdminGroup: data.isAdminGroup };
-                    setUser(updatedUser);
-                    localStorage.setItem('custom_user', JSON.stringify(updatedUser));
-                    if(data.group && user.group !== data.group) {
-                        setActiveGroupView(data.group);
-                        //setActiveTab(data.group); ca sa nu apara la deshdiere compartimentu Grupa ci personal
-                    }
-                }
-            }
-        });
-        return () => unsubscribe();
-      }, [user, isAdmin]);
+     
 
-     useEffect(() => {
-  if (authLoading || !user) { setLoading(false); return; }
-  setLoading(true);
-  const unsubs = [];
   
- // 1. [MODIFICAT PENTRU GLOBAL] Codul pentru setări globale
-  unsubs.push(db.collection('config').doc('global_settings').onSnapshot(doc => { 
-    if(doc.exists) {
-       const data = doc.data();
-       setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
-    } else {
-       db.collection('config').doc('global_settings').set({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
-    }
-  }));
-
-  // 2. [OPTIMIZAT] Activăm verificarea offline DOAR pe teritoriile personale (unde se pot face modificări)
-  unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
-    const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    // Pentru teritoriile comune lăsăm onSnapshot simplu, fără includeMetadataChanges (salvăm memorie)
-    unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
-       const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
-       
-       // ==========================================
-       // 🟢 LOGICA SIMPLIFICATĂ PENTRU BULINĂ 🟡
-       // Verificăm doar dacă sunt scrieri în așteptare pentru teritoriile personale
-       setIsSynced(!snap.metadata.hasPendingWrites); 
-       // ==========================================
-
-       setTerritories([...persT, ...sharedT]);
-       setLoading(false);
-    }));
-  }));
-
-  // 3. [NESCHIMBAT] Codul pentru lista de Admin
-  if (isAdmin) {
-     unsubs.push(db.collection('app_users').onSnapshot(snap => {
-         setAdminUsersList(snap.docs.map(d => d.data()));
-     }));
-  }
-  
-  return () => unsubs.forEach(u => u());
-}, [userDocId, authLoading, isAdmin]);
 
       const handleAddGroup = async (newGroupName) => {
         const finalName = newGroupName.trim();
@@ -1049,72 +1146,19 @@ const handleRenameGroup = (oldName, newName) => {
         });
       };
 
-      const selectedTerritory = useMemo(() => {
-        const t = territories.find(t => t.id === selectedTerritoryId);
-        if (t && !t.blocks) t.blocks = t.sections && t.sections.length > 0 ? [{ id: 'legacy_block', name: 'Grupare Veche', type: 'bloc', sections: t.sections }] : [];
-        return t;
-      }, [territories, selectedTerritoryId]);
+     
 
-      useEffect(() => {
-        if (selectedTerritoryId && !loading && !territories.find(t => t.id === selectedTerritoryId)) {
-          setSelectedTerritoryId(null);
-        }
-      }, [territories, selectedTerritoryId, loading]);
+     
 
-      const filteredTerritories = useMemo(() => {
-        let list = territories.filter(t => t.category === activeTab || (!t.category && activeTab === 'Grupa 5')).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
-        if (activeTab !== 'personal' && !isAdmin && !isGroupAdmin) list = list.filter(t => !t.isDone);
-        return list;
-      }, [territories, activeTab, isAdmin, isGroupAdmin]);
+     
 
-      const territoriesListRef = useRef(null);
-      useEffect(() => {
-        if (!territoriesListRef.current || selectedTerritoryId) return;
-        const sortable = Sortable.create(territoriesListRef.current, {
-          animation: 150, delay: 200, delayOnTouchOnly: true, filter: '.no-drag', forceFallback: true, fallbackTolerance: 5,
-          onEnd: (evt) => {
-            if (evt.oldIndex !== evt.newIndex) {
-              const reordered = [...filteredTerritories];
-              const [moved] = reordered.splice(evt.oldIndex, 1);
-              reordered.splice(evt.newIndex, 0, moved);
-              reordered.forEach((t, index) => { 
-                if (t.order !== index) {
-                   if (t.category !== 'personal') db.collection('shared_territories').doc(t.id).update({ order: index });
-                   else db.collection('users').doc(userDocId).collection('territories').doc(t.id).update({ order: index });
-                }
-              });
-            }
-          }
-        });
-        return () => sortable.destroy();
-      }, [filteredTerritories, selectedTerritoryId, activeTab]);
+     
+      
 
       const isReadOnly = !isOnline && selectedTerritory?.category !== 'personal';
       const canEditStructure = (isAdmin || (isGroupAdmin && activeTab !== 'personal') || activeTab === 'personal') && !isReadOnly;
 
-      useEffect(() => {
-          if (!blocksContainerRef.current || !selectedTerritoryId || !canEditStructure) return;
-          const sortable = Sortable.create(blocksContainerRef.current, {
-            animation: 150, delay: 200, delayOnTouchOnly: true, forceFallback: true, fallbackTolerance: 5,
-            handle: '.block-header', filter: '.no-drag',
-            onEnd: (evt) => {
-              if (evt.oldIndex !== evt.newIndex) {
-                const newBlocks = [...(selectedTerritory.blocks || [])];
-                const [movedItem] = newBlocks.splice(evt.oldIndex, 1);
-                newBlocks.splice(evt.newIndex, 0, movedItem);
-
-                const item = evt.item;
-                const from = evt.from;
-                const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
-                if (originalNextSibling) from.insertBefore(item, originalNextSibling);
-                else from.appendChild(item);
-
-                updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: newBlocks });
-              }
-            }
-          });
-          return () => sortable.destroy();
-      }, [selectedTerritoryId, selectedTerritory?.blocks, canEditStructure]);
+      
 
       const handleTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
       const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
@@ -1953,7 +1997,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     return (
                       <div key={t.id} 
   onClick={() => {
-    window.history.pushState({ view: 'territory' }, ''); // 1. Adaugă în istoric
+    window.history.pushState(null, '', window.location.href); // 1. Adaugă în istoric
     setSelectedTerritoryId(t.id);                       // 2. Deschide teritoriul
   }} 
   className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
@@ -2007,7 +2051,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </div>
               )}
               {!selectedTerritoryId && (isAdmin || isGroupAdmin || activeTab === 'personal') && (
-                <button onClick={() => setModals({...modals, territoryAdd: true})} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
+                <button onClick={() => {
+				    window.history.pushState(null, '', window.location.href);
+				    setModals({...modals, territoryAdd: true})} className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] hover:bg-blue-700 hover:scale-105 active:scale-95 transition-all z-40 border-2 border-white dark:border-slate-800">
                   <span className="material-icons text-3xl">add</span>
                 </button>
               )}
