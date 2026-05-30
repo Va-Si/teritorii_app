@@ -646,20 +646,14 @@ const [isSynced, setIsSynced] = React.useState(true);
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
 	
+// --- ACEST EFECT GESTIONEAZĂ TOTUL: BUTONUL BACK ȘI ISTORICUL ---
 useEffect(() => {
-  const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
-
-  // Dacă deschidem ceva (modal sau teritoriu), adăugăm în istoric
-  if (isAnyModalOpen || selectedTerritoryId !== null) {
-    window.history.pushState(null, '', window.location.href);
-  }
-
   const handleBackButton = (event) => {
     const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
 
+    // 1. Dacă e un modal deschis, închide-l
     if (isAnyModalOpen) {
-      event.preventDefault(); // Oprim acțiunea implicită
-      // Închidem toate modalele
+      event.preventDefault();
       setModals({ 
         territoryAdd: false, territoryEdit: false, blockAdd: false, 
         sectionAdd: null, locationAppend: null, locationEdit: null, 
@@ -671,27 +665,27 @@ useEffect(() => {
       setPromptBox(prev => ({...prev, isOpen: false}));
       setAlertBox(prev => ({...prev, isOpen: false}));
     } 
-    // 2. Verificăm dacă avem un teritoriu deschis
+    // 2. Dacă e un teritoriu deschis (fără modal), închide teritoriul
     else if (selectedTerritoryId !== null) {
-      event.preventDefault(); // Oprim ieșirea din aplicație
-      setSelectedTerritoryId(null); // Ne întoarcem la lista principală
+      event.preventDefault();
+      setSelectedTerritoryId(null);
     }
   };
 
   window.addEventListener('popstate', handleBackButton);
   return () => window.removeEventListener('popstate', handleBackButton);
-}, [modals, selectedTerritoryId]); // Atenție: am adăugat selectedTerritoryId
+}, [modals, selectedTerritoryId]); // Dependențele sunt esențiale aici
 
-  // Când un modal se deschide, adăugăm o stare în istoric pentru a "prinde" butonul back
+
+// --- ACEST EFECT GESTIONEAZĂ ISTORICUL (Când deschizi ceva, adaugă în istoric) ---
+useEffect(() => {
   const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
   
-  if (isAnyModalOpen) {
+  if (isAnyModalOpen || selectedTerritoryId !== null) {
     window.history.pushState(null, '', window.location.href);
   }
-
-  window.addEventListener('popstate', handleBackButton);
-  return () => window.removeEventListener('popstate', handleBackButton);
-}, [modals]); // Se re-execută de fiecare dată când starea modalelor se schimbă
+}, [modals, selectedTerritoryId]);
+		// Se re-execută de fiecare dată când starea modalelor se schimbă
       // Acest efect închide toast-ul automat după 2 secunde
       useEffect(() => {
         if (toast) {
