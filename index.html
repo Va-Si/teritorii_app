@@ -1912,25 +1912,25 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     
                     <input type="file" id="importData" style={{display: 'none'}} accept=".json" onChange={handleImport} />
                     <button onClick={() => document.getElementById('importData').click()} className="w-12 h-12 sm:w-12 sm:h-12 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Importă Date">
-                        <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">upload</span>
+                        <span className="material-icons text-[32px] sm:text-[32px] md:text-[32px]">upload</span>
                     </button>
                     <button onClick={() => {
                         setExportConfig({ category: activeTab === 'personal' ? 'personal' : activeGroupView, mode: 'full' });
                         setModals({...modals, export: true});
                     }} className="w-12 h-12 sm:w-12 sm:h-12 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Exportă Date">
-                        <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">download</span>
+                        <span className="material-icons text-[32px] sm:text-[32px] md:text-[32px]">download</span>
                     </button>
                     <button onClick={() => setModals({...modals, theme: true})} className="w-12 h-12 sm:w-12 sm:h-12 md:w-12 md:h-12 flex items-center justify-center bg-blue-500 rounded-full hover:bg-blue-400 transition shadow-inner shrink-0" title="Schimbă Tema">
-                        <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">palette</span>
+                        <span className="material-icons text-[32px] sm:text-[32px] md:text-[32px]">palette</span>
                     </button>
 					  {isAdmin && (
                       <button onClick={() => setModals({...modals, adminPanel: true})} className="w-12 h-12 sm:w-12 sm:h-12 md:w-12 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Panou Administrare">
-                          <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">admin_panel_settings</span>
+                          <span className="material-icons text-[32px] sm:text-[32px] md:text-[32px]">admin_panel_settings</span>
                       </button>
                     )}
                     {isAdmin && (
                       <button onClick={() => setModals({...modals, settings: true})} className="w-12 h-12 sm:w-12 sm:h-12 md:w-12 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Setări Culori">
-                          <span className="material-icons text-[18px] sm:text-[20px] md:text-[24px]">settings</span>
+                          <span className="material-icons text-[32px] sm:text-[32px] md:text-[32px]">settings</span>
                       </button>
                     )}
                   </div>
