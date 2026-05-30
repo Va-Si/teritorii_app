@@ -2140,11 +2140,18 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   ))}
                 </div>
                 
-                {canEditStructure && (
-                  <button onClick={() => setModals({...modals, blockAdd: true})} className="no-drag w-full py-8 bg-blue-100/50 dark:bg-blue-900/20 border-4 border-dashed border-blue-200 dark:border-blue-900 rounded-[2rem] text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all flex flex-col items-center gap-2 shadow-sm mb-20">
-                    <span className="material-icons text-4xl">domain_add</span>
-                    <span className="font-black text-xs uppercase tracking-widest">Adaugă Bloc / Stradă</span>
-                  </button>
+               <button 
+  onClick={() => {
+    // 1. Înregistrăm starea în istoric (obligatoriu pentru back/swipe)
+    window.history.pushState(null, '', window.location.href); 
+    // 2. Deschidem modalul
+    setModals({...modals, blockAdd: true});
+  }} 
+  className="no-drag w-full py-8 bg-blue-100/50 dark:bg-blue-900/20 border-4 border-dashed border-blue-200 dark:border-blue-900 rounded-[2rem] text-blue-500 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-slate-700/50 transition-all flex flex-col items-center gap-2 shadow-sm mb-20"
+>
+  <span className="material-icons text-4xl">domain_add</span>
+  <span className="font-black text-xs uppercase tracking-widest">Adaugă Bloc / Stradă</span>
+</button>
                 )}
               </div>
             </main>
