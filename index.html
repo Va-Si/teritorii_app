@@ -645,33 +645,39 @@ const [isSynced, setIsSynced] = React.useState(true);
 
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
+		   // Adaugă asta sub celelalte state-uri din App:
+      const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
+      //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
+      const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
+		  const [exportConfig, setExportConfig] = useState({ category: 'personal', mode: 'full' });
+      const [editLocNumber, setEditLocNumber] = useState('');
+      const [collapsedBlocks, setCollapsedBlocks] = useState({});
+      const [collapsedSections, setCollapsedSections] = useState({});
 	
 // --- ACEST EFECT GESTIONEAZĂ TOTUL: BUTONUL BACK ȘI ISTORICUL ---
 useEffect(() => {
   const handleBackButton = (event) => {
-    event.preventDefault(); // Oprim comportamentul implicit al browserului
+    event.preventDefault();
 
-    // --- 1. PRIORITATEA DE SUS (Alert/Prompt) ---
-    if (alertBox.isOpen) { setAlertBox(prev => ({...prev, isOpen: false})); return; }
-    if (promptBox.isOpen) { setPromptBox(prev => ({...prev, isOpen: false})); return; }
+    // Verificăm dacă există și dacă sunt deschise (folosind ?. pentru siguranță)
+    if (alertBox?.isOpen) { setAlertBox(prev => ({...prev, isOpen: false})); return; }
+    if (promptBox?.isOpen) { setPromptBox(prev => ({...prev, isOpen: false})); return; }
 
-    // --- 2. PRIORITATEA DE MIJLOC (Sub-modale și Editări - Închiderea lor te întoarce la meniul părinte) ---
-    if (modals.adminEditUser) { setModals(prev => ({...prev, adminEditUser: null})); return; }
-    if (modals.renameItem) { setModals(prev => ({...prev, renameItem: null})); return; }
-    if (modals.stradaAddHouse) { setModals(prev => ({...prev, stradaAddHouse: null})); return; }
-    if (modals.sectionAdd) { setModals(prev => ({...prev, sectionAdd: null})); return; }
-    if (modals.locationAppend) { setModals(prev => ({...prev, locationAppend: null})); return; }
-    if (modals.locationEdit) { setModals(prev => ({...prev, locationEdit: null})); return; }
-    if (modals.report) { setModals(prev => ({...prev, report: null})); return; }
+    // Prioritățile de modale
+    if (modals?.adminEditUser) { setModals(prev => ({...prev, adminEditUser: null})); return; }
+    if (modals?.renameItem) { setModals(prev => ({...prev, renameItem: null})); return; }
+    if (modals?.stradaAddHouse) { setModals(prev => ({...prev, stradaAddHouse: null})); return; }
+    if (modals?.sectionAdd) { setModals(prev => ({...prev, sectionAdd: null})); return; }
+    if (modals?.locationAppend) { setModals(prev => ({...prev, locationAppend: null})); return; }
+    if (modals?.locationEdit) { setModals(prev => ({...prev, locationEdit: null})); return; }
+    if (modals?.report) { setModals(prev => ({...prev, report: null})); return; }
+    if (modals?.settings) { setModals(prev => ({...prev, settings: false})); return; }
+    if (modals?.adminPanel) { setModals(prev => ({...prev, adminPanel: false})); return; }
+    if (modals?.profileEdit) { setModals(prev => ({...prev, profileEdit: false})); return; }
+    if (modals?.territoryAdd) { setModals(prev => ({...prev, territoryAdd: false})); return; }
+    if (modals?.territoryEdit) { setModals(prev => ({...prev, territoryEdit: false})); return; }
 
-    // --- 3. PRIORITATEA DE BAZĂ (Meniuri principale) ---
-    if (modals.settings) { setModals(prev => ({...prev, settings: false})); return; }
-    if (modals.adminPanel) { setModals(prev => ({...prev, adminPanel: false})); return; }
-    if (modals.profileEdit) { setModals(prev => ({...prev, profileEdit: false})); return; }
-    if (modals.territoryAdd) { setModals(prev => ({...prev, territoryAdd: false})); return; }
-    if (modals.territoryEdit) { setModals(prev => ({...prev, territoryEdit: false})); return; }
-
-    // --- 4. ULTIMUL NIVEL (Teritoriul deschis) ---
+    // Ultimul nivel: Teritoriul
     if (selectedTerritoryId !== null) {
       setSelectedTerritoryId(null);
       return;
@@ -680,16 +686,18 @@ useEffect(() => {
 
   window.addEventListener('popstate', handleBackButton);
 
-  // Adăugăm în istoric doar dacă e ceva deschis
-  const isAnyOpen = Object.values(modals).some(v => v !== null && v !== false) 
-                    || alertBox.isOpen || promptBox.isOpen || selectedTerritoryId !== null;
+  // Verificăm siguranța și la pushState
+  const isAnyOpen = Object.values(modals || {}).some(v => v !== null && v !== false) 
+                    || alertBox?.isOpen 
+                    || promptBox?.isOpen 
+                    || selectedTerritoryId !== null;
   
   if (isAnyOpen) {
     window.history.pushState(null, '', window.location.href);
   }
 
   return () => window.removeEventListener('popstate', handleBackButton);
-}, [modals, selectedTerritoryId, alertBox.isOpen, promptBox.isOpen]);
+}, [modals, selectedTerritoryId, alertBox?.isOpen, promptBox?.isOpen]);
 
 
 // --- ACEST EFECT GESTIONEAZĂ ISTORICUL (Când deschizi ceva, adaugă în istoric) ---
@@ -708,10 +716,7 @@ useEffect(() => {
           return () => clearTimeout(timer);
           }
         }, [toast]);
-      const [exportConfig, setExportConfig] = useState({ category: 'personal', mode: 'full' });
-      const [editLocNumber, setEditLocNumber] = useState('');
-      const [collapsedBlocks, setCollapsedBlocks] = useState({});
-      const [collapsedSections, setCollapsedSections] = useState({});
+    
       const handleCancelCompletion = (t) => {
     // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
     const updateData = { 
@@ -776,10 +781,7 @@ const generateTerritoryReport = (territory) => {
 };
      
 
-      // Adaugă asta sub celelalte state-uri din App:
-      const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
-      //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
-      const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
+     
       // tab la useri
       const [adminUserTab, setAdminUserTab] = useState('All');
       const getFilteredAndSortedUsers = () => {
