@@ -661,48 +661,14 @@ const [progressTags, setProgressTags] = useState(() => {
 	
 					// --- ACEST EFECT GESTIONEAZĂ TOTUL: BUTONUL BACK ȘI ISTORICUL ---
 												useEffect(() => {
-							  const handleBackButton = (event) => {
-							    // 1. Verificăm dacă există ceva deschis (Modale, Alert, etc.)
-							    const isAnyModalOpen = Object.values(modals || {}).some(v => v !== null && v !== false);
-							    
-							    if (alertBox?.isOpen) { 
-							      event.preventDefault(); 
-							      setAlertBox(prev => ({...prev, isOpen: false})); 
-							      return; 
-							    }
-							    
-							    if (promptBox?.isOpen) { 
-							      event.preventDefault(); 
-							      setPromptBox(prev => ({...prev, isOpen: false})); 
-							      return; 
-							    }
-							
-							    if (isAnyModalOpen) {
-							      event.preventDefault(); // Oprim browserul să iasă din aplicație
-							      // Închidem toate modalele dacă vreunul e deschis
-							      setModals({ 
-							        territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, 
-							        locationAppend: null, locationEdit: null, settings: false, theme: false, 
-							        stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, 
-							        profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, 
-							        report: null, import: false 
-							      });
-							      return;
-							    }
-							
-							    // 2. Dacă nu e niciun modal deschis, dar avem un teritoriu selectat, închide teritoriul
-							    if (selectedTerritoryId !== null) {
-							      event.preventDefault();
-							      setSelectedTerritoryId(null);
-							      return;
-							    }
-							    
-							    // Dacă am ajuns aici, butonul Back își face treaba nativ (închide aplicația)
-							  };
-							
-							  window.addEventListener('popstate', handleBackButton);
-							  return () => window.removeEventListener('popstate', handleBackButton);
-							}, [modals, selectedTerritoryId, alertBox?.isOpen, promptBox?.isOpen]);
+  const handleBackButton = (event) => {
+    if (closeTopLayer()) {
+      event.preventDefault(); // Oprim aplicația să se închidă dacă am închis un modal
+    }
+  };
+  window.addEventListener('popstate', handleBackButton);
+  return () => window.removeEventListener('popstate', handleBackButton);
+}, [modals, selectedTerritoryId, alertBox?.isOpen, promptBox?.isOpen]);
 					
 					
 					// --- ACEST EFECT GESTIONEAZĂ ISTORICUL (Când deschizi ceva, adaugă în istoric) ---
@@ -919,6 +885,55 @@ const [progressTags, setProgressTags] = useState(() => {
 						      }, [selectedTerritoryId, selectedTerritory?.blocks, canEditStructure]);
 
 				//Toate funcțiile (const handle..., const
+
+				const closeTopLayer = () => {
+  // 1. Verificăm alertele și prompturile (Acestea sunt mereu primele)
+  if (alertBox?.isOpen) { 
+    setAlertBox(prev => ({...prev, isOpen: false})); 
+    return true; 
+  }
+  if (promptBox?.isOpen) { 
+    setPromptBox(prev => ({...prev, isOpen: false})); 
+    return true; 
+  }
+
+  // 2. Verificăm dacă avem modale deschise
+  // Dacă vreun modal are o valoare diferită de null sau false, înseamnă că e deschis
+  const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+
+  if (isAnyModalOpen) {
+    // Închidem toate modalele (resetăm starea lor la null/false)
+    setModals({ 
+      territoryAdd: false, 
+      territoryEdit: false, 
+      blockAdd: false, 
+      sectionAdd: null, 
+      locationAppend: null, 
+      locationEdit: null, 
+      settings: false, 
+      theme: false, 
+      stradaAddHouse: null, 
+      renameItem: null, 
+      auth: false, 
+      adminPanel: false, 
+      profileEdit: false, 
+      adminEditUser: null, 
+      isStradaGroup: false, 
+      export: false, 
+      report: null, 
+      import: false 
+    });
+    return true; // Am închis un modal
+  }
+
+  // 3. Dacă nu e niciun modal deschis, închide teritoriul
+  if (selectedTerritoryId !== null) {
+    setSelectedTerritoryId(null);
+    return true; // Am închis teritoriul
+  }
+
+  return false; // Nimic nu a fost închis, putem trece la tab-ul următor (prin swipe)
+};
 		
 		
 				  const handleCancelCompletion = (t) => {
@@ -1162,33 +1177,23 @@ const handleRenameGroup = (oldName, newName) => {
 
       const handleTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
       const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-      const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const dist = touchStart - touchEnd;
-    
-    // Verificăm dacă vreun modal este deschis (dacă valoarea din state nu e null sau false)
-    const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+    const handleTouchEnd = () => {
+  if (!touchStart || !touchEnd) return;
+  const dist = touchStart - touchEnd;
 
-    if (Math.abs(dist) > 50) { // Prag de 50px pentru swipe
-        if (isAnyModalOpen) {
-            // Dacă e ceva deschis, închidem ferestrele (fără history.back!)
-            setModals({ 
-                territoryAdd: false, territoryEdit: false, blockAdd: false, 
-                sectionAdd: null, locationAppend: null, locationEdit: null, 
-                settings: false, theme: false, stradaAddHouse: null, 
-                renameItem: null, auth: false, adminPanel: false, 
-                profileEdit: false, adminEditUser: null, isStradaGroup: false, 
-                export: false, report: null, import: false 
-            });
-        } else {
-            // Dacă e totul închis, facem swipe la tab-uri (logica ta originală)
-            if (dist > 50) setActiveTab(activeGroupView); 
-            if (dist < -50) setActiveTab('personal');
-        }
-    }
+  if (Math.abs(dist) > 50) { 
+    // Încercăm să închidem un strat
+    const amInchisCeva = closeTopLayer();
     
-    setTouchStart(null);
-    setTouchEnd(null);
+    // Doar dacă closeTopLayer a returnat FALSE (n-a închis nimic), atunci navigăm
+    if (!amInchisCeva) {
+      if (dist > 50) setActiveTab(activeGroupView); 
+      if (dist < -50) setActiveTab('personal');
+    }
+  }
+  
+  setTouchStart(null);
+  setTouchEnd(null);
 };
       
       const toggleBlock = (id) => setCollapsedBlocks(prev => ({...prev, [id]: !prev[id]}));
