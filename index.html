@@ -2736,7 +2736,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             const { blockId, sectionId, loc } = modals.locationEdit;
                             const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.filter(l => l.id !== loc.id) } : s) } : b);
                             updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-                            window.history.back()};
+                           window.history.back();
                           }
                         });
                       }} className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
