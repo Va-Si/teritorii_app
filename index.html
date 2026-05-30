@@ -662,15 +662,18 @@ const [progressTags, setProgressTags] = useState(() => {
 					// --- ACEST EFECT GESTIONEAZĂ TOTUL: BUTONUL BACK ȘI ISTORICUL ---
 												useEffect(() => {
   const handleBackButton = (event) => {
-    // 1. Verificăm dacă există ceva de închis
-    if (closeTopLayer()) {
-      // 2. Prevenim comportamentul default (dacă browserul permite)
-      event.preventDefault();
-      // 3. IMPORTANT: Nu lăsăm codul să continue dacă am închis ceva.
-      return; 
+    // 1. Oprim imediat acțiunea nativă a browserului
+    event.preventDefault(); 
+    event.stopPropagation(); 
+    
+    // 2. Încercăm să închidem ceva din React
+    const didClose = closeTopLayer();
+    
+    // 3. Dacă nu am închis nimic, înseamnă că suntem la ecranul principal
+    // Aici poți alege să nu faci nimic sau să ceri confirmare de ieșire
+    if (!didClose) {
+      console.log("Suntem la ecranul principal, nu avem ce închide.");
     }
-    // Dacă closeTopLayer a returnat false, înseamnă că nu era nimic deschis,
-    // deci lăsăm browserul să execute acțiunea "Back" nativă (ex: închide aplicația).
   };
 
   window.addEventListener('popstate', handleBackButton);
