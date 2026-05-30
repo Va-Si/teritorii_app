@@ -1902,7 +1902,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <div className="flex flex-row items-center justify-between gap-2 px-1 w-full">
                   <div className="flex items-center gap-2 sm:gap-3 font-black text-xl sm:text-2xl tracking-tighter shrink-0">
                     <button onClick={() => setModals({...modals, auth: true})} className="w-14 h-12 sm:w-14 sm:h-12 md:w-14 md:h-12 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-slate-100 transition shadow-inner overflow-hidden shrink-0" title="Profil">
-                        <span className="text-base sm:text-xl font-black uppercase">
+                        <span className="text-2xl sm:text-2xl font-black uppercase">
                           {currentUserName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)} {/* Codul care il am pana acum arata 2 initiale la nume dar Acesta arata doar un initial //{currentUserName.charAt(0)} */}
                         </span>
                     </button>
