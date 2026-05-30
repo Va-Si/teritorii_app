@@ -662,10 +662,17 @@ const [progressTags, setProgressTags] = useState(() => {
 					// --- ACEST EFECT GESTIONEAZĂ TOTUL: BUTONUL BACK ȘI ISTORICUL ---
 												useEffect(() => {
   const handleBackButton = (event) => {
+    // 1. Verificăm dacă există ceva de închis
     if (closeTopLayer()) {
-      event.preventDefault(); // Oprim aplicația să se închidă dacă am închis un modal
+      // 2. Prevenim comportamentul default (dacă browserul permite)
+      event.preventDefault();
+      // 3. IMPORTANT: Nu lăsăm codul să continue dacă am închis ceva.
+      return; 
     }
+    // Dacă closeTopLayer a returnat false, înseamnă că nu era nimic deschis,
+    // deci lăsăm browserul să execute acțiunea "Back" nativă (ex: închide aplicația).
   };
+
   window.addEventListener('popstate', handleBackButton);
   return () => window.removeEventListener('popstate', handleBackButton);
 }, [modals, selectedTerritoryId, alertBox?.isOpen, promptBox?.isOpen]);
@@ -886,55 +893,38 @@ const [progressTags, setProgressTags] = useState(() => {
 
 				//Toate funcțiile (const handle..., const
 
-				const closeTopLayer = () => {
-  // 1. Verificăm alertele și prompturile (Acestea sunt mereu primele)
-  if (alertBox?.isOpen) { 
-    setAlertBox(prev => ({...prev, isOpen: false})); 
-    return true; 
-  }
-  if (promptBox?.isOpen) { 
-    setPromptBox(prev => ({...prev, isOpen: false})); 
-    return true; 
-  }
+		const closeTopLayer = () => {
+  // 1. Alerte/Prompturi
+  if (alertBox?.isOpen) { setAlertBox(prev => ({...prev, isOpen: false})); return "closed"; }
+  if (promptBox?.isOpen) { setPromptBox(prev => ({...prev, isOpen: false})); return "closed"; }
 
-  // 2. Verificăm dacă avem modale deschise
-  // Dacă vreun modal are o valoare diferită de null sau false, înseamnă că e deschis
-  const isAnyModalOpen = Object.values(modals).some(v => v !== null && v !== false);
+  // 2. Modalele (VERIFICĂ SĂ LE AI PE TOATE)
+  if (modals?.adminEditUser) { setModals(prev => ({...prev, adminEditUser: null})); return "closed"; }
+  if (modals?.renameItem) { setModals(prev => ({...prev, renameItem: null})); return "closed"; }
+  if (modals?.stradaAddHouse) { setModals(prev => ({...prev, stradaAddHouse: null})); return "closed"; }
+  if (modals?.sectionAdd) { setModals(prev => ({...prev, sectionAdd: null})); return "closed"; }
+  if (modals?.locationAppend) { setModals(prev => ({...prev, locationAppend: null})); return "closed"; }
+  if (modals?.locationEdit) { setModals(prev => ({...prev, locationEdit: null})); return "closed"; }
+  if (modals?.report) { setModals(prev => ({...prev, report: null})); return "closed"; }
+  if (modals?.settings) { setModals(prev => ({...prev, settings: false})); return "closed"; }
+  if (modals?.adminPanel) { setModals(prev => ({...prev, adminPanel: false})); return "closed"; }
+  if (modals?.profileEdit) { setModals(prev => ({...prev, profileEdit: false})); return "closed"; }
+  if (modals?.territoryAdd) { setModals(prev => ({...prev, territoryAdd: false})); return "closed"; }
+  if (modals?.territoryEdit) { setModals(prev => ({...prev, territoryEdit: false})); return "closed"; }
+  if (modals?.theme) { setModals(prev => ({...prev, theme: false})); return "closed"; }
+  if (modals?.export) { setModals(prev => ({...prev, export: false})); return "closed"; }
+  if (modals?.import) { setModals(prev => ({...prev, import: false})); return "closed"; }
+  if (modals?.auth) { setModals(prev => ({...prev, auth: false})); return "closed"; }
+  if (modals?.isStradaGroup) { setModals(prev => ({...prev, isStradaGroup: false})); return "closed"; }
 
-  if (isAnyModalOpen) {
-    // Închidem toate modalele (resetăm starea lor la null/false)
-    setModals({ 
-      territoryAdd: false, 
-      territoryEdit: false, 
-      blockAdd: false, 
-      sectionAdd: null, 
-      locationAppend: null, 
-      locationEdit: null, 
-      settings: false, 
-      theme: false, 
-      stradaAddHouse: null, 
-      renameItem: null, 
-      auth: false, 
-      adminPanel: false, 
-      profileEdit: false, 
-      adminEditUser: null, 
-      isStradaGroup: false, 
-      export: false, 
-      report: null, 
-      import: false 
-    });
-    return true; // Am închis un modal
-  }
-
-  // 3. Dacă nu e niciun modal deschis, închide teritoriul
+  // 3. Teritoriul (Ultimul nivel de închidere)
   if (selectedTerritoryId !== null) {
     setSelectedTerritoryId(null);
-    return true; // Am închis teritoriul
+    return "closed";
   }
 
-  return false; // Nimic nu a fost închis, putem trece la tab-ul următor (prin swipe)
+  return "nothing"; // Dacă ajunge aici, înseamnă că nu mai e nimic deschis
 };
-		
 		
 				  const handleCancelCompletion = (t) => {
 							    // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
@@ -1177,19 +1167,24 @@ const handleRenameGroup = (oldName, newName) => {
 
       const handleTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
       const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-    const handleTouchEnd = () => {
+   const handleTouchEnd = () => {
   if (!touchStart || !touchEnd) return;
   const dist = touchStart - touchEnd;
 
   if (Math.abs(dist) > 50) { 
-    // Încercăm să închidem un strat
-    const amInchisCeva = closeTopLayer();
+    // 1. Încercăm să închidem un strat
+    const result = closeTopLayer();
     
-    // Doar dacă closeTopLayer a returnat FALSE (n-a închis nimic), atunci navigăm
-    if (!amInchisCeva) {
-      if (dist > 50) setActiveTab(activeGroupView); 
-      if (dist < -50) setActiveTab('personal');
+    // 2. Dacă am închis ceva, NU mai facem nimic altceva
+    if (result === "closed") {
+      setTouchStart(null);
+      setTouchEnd(null);
+      return; // Oprim aici! Nu mai schimba tab-urile
     }
+
+    // 3. Dacă NU am închis nimic, atunci facem swipe la tab-uri
+    if (dist > 50) setActiveTab(activeGroupView); 
+    if (dist < -50) setActiveTab('personal');
   }
   
   setTouchStart(null);
@@ -2415,18 +2410,41 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             
                             {/* Butoanele tale originale de editare și ștergere (Rămase Neschimbate) */}
                             <div className="flex gap-2">
-                              <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
-                              <button onClick={() => {
-                                  setAlertBox({
-                                      isOpen: true,
-                                      title: 'Ștergere Utilizator',
-                                      message: `Ești sigur că vrei să ștergi utilizatorul "${u.name}"? Acesta va fi deconectat instantaneu din aplicație.`,
-                                      isDanger: true,
-                                      onConfirm: () => {
-                                        db.collection('app_users').doc(u.id).delete();
-                                      }
-                                    });
-                              }} className="material-icons text-slate-400 hover:text-red-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">delete</button>
+                            <button 
+  onClick={() => {
+    // 1. Înregistrăm în istoric: "am deschis ceva"
+    window.history.pushState(null, '', window.location.href); 
+    // 2. Setăm starea
+    setModals({
+      ...modals, 
+      adminPanel: false, 
+      adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }
+    });
+  }} 
+  className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
+>
+  edit
+</button>
+                              <button 
+  onClick={() => {
+    // 1. Înregistrăm în istoric: "am deschis o alertă"
+    window.history.pushState(null, '', window.location.href); 
+    
+    // 2. Setăm starea
+    setAlertBox({
+      isOpen: true,
+      title: 'Ștergere Utilizator',
+      message: `Ești sigur că vrei să ștergi utilizatorul "${u.name}"? Acesta va fi deconectat instantaneu din aplicație.`,
+      isDanger: true,
+      onConfirm: () => {
+        db.collection('app_users').doc(u.id).delete();
+      }
+    });
+  }} 
+  className="material-icons text-slate-400 hover:text-red-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm"
+>
+  delete
+</button>
                             </div>
                           </div>
                         ))
@@ -2490,7 +2508,17 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </label>
                   {/* --- ÎNLOCUIEȘTE DOAR ACEST BLOC DIN MODALUL ADMIN --- */}
               <div className="flex gap-2 pt-2">
-                <button type="button" onClick={() => setModals({...modals, adminEditUser: null, adminPanel: true})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
+            <button 
+  type="button" 
+  onClick={() => {
+    // În loc să setăm noi state-ul manual, spunem browserului să se întoarcă
+    // Asta va declanșa useEffect-ul cu handleBackButton
+    window.history.back(); 
+  }} 
+  className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs"
+>
+  Anulează
+</button>
                 <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm active:scale-95 transition-all">Salvează</button>
               </div>
                 </form>
