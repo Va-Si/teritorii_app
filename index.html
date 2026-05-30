@@ -2165,7 +2165,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </div>
                   
                   {isAdmin && (
-                    <button onClick={() => setModals({...modals, auth: false, profileEdit: true})} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
+                    <button onClick={() => setModals({...modals, auth: true, profileEdit: true})} className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
                       <span className="material-icons">edit</span> Editează Nume/Parolă
                     </button>
                   )}
@@ -2217,8 +2217,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                      <label className="text-[10px] font-black uppercase text-slate-400 ml-2">Parolă Nouă (Opțional)</label>
                      <input name="password" type="password" placeholder="Minim 6 caractere" className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mt-1" />
                   </div>
+					
                   <div className="flex gap-2 pt-2">
-                    <button type="button" onClick={() => setModals({...modals, profileEdit: false})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition">Anulează</button>
+                    <button type="button" onClick={() => setModals({...modals, profileEdit: false, auth: true})} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition">Anulează</button>
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm transition">Salvează</button>
                   </div>
                 </form>
@@ -2389,7 +2390,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                             
                             {/* Butoanele tale originale de editare și ștergere (Rămase Neschimbate) */}
                             <div className="flex gap-2">
-                              <button onClick={() => setModals({...modals, adminPanel: false, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
+                              <button onClick={() => setModals({...modals, adminPanel: true, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-1 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
                               <button onClick={() => {
                                   setAlertBox({
                                       isOpen: true,
