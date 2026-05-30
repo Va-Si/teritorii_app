@@ -1170,26 +1170,26 @@ const handleRenameGroup = (oldName, newName) => {
 
       const handleTouchStart = (e) => { setTouchEnd(null); setTouchStart(e.targetTouches[0].clientX); };
       const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
-   const handleTouchEnd = () => {
+  const handleTouchEnd = () => {
   if (!touchStart || !touchEnd) return;
   const dist = touchStart - touchEnd;
 
   if (Math.abs(dist) > 50) { 
-    // 1. Încercăm să închidem un strat
-    const result = closeTopLayer();
+    // Dacă am făcut un swipe, în loc să setăm stări manuale, 
+    // simulăm un "Back" al browserului.
+    // Asta va declanșa automat handleBackButton de mai sus.
+    window.history.back();
     
-    // 2. Dacă am închis ceva, NU mai facem nimic altceva
-    if (result === "closed") {
-      setTouchStart(null);
-      setTouchEnd(null);
-      return; // Oprim aici! Nu mai schimba tab-urile
-    }
-
-    // 3. Dacă NU am închis nimic, atunci facem swipe la tab-uri
-    if (dist > 50) setActiveTab(activeGroupView); 
-    if (dist < -50) setActiveTab('personal');
+    // Oprim aici execuția ca să nu schimbe tab-ul
+    setTouchStart(null);
+    setTouchEnd(null);
+    return;
   }
   
+  // Dacă nu am făcut swipe (sau e mic), facem navigarea între tab-uri
+  if (dist > 50) setActiveTab(activeGroupView); 
+  if (dist < -50) setActiveTab('personal');
+
   setTouchStart(null);
   setTouchEnd(null);
 };
