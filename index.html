@@ -59,17 +59,11 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     ::-webkit-scrollbar-track { margin: 4px; }
-  body {
-  /* Blochează refresh-ul, dar păstrează scroll-ul */
-  overscroll-behavior-y: contain;
-  
-  /* Se asigură că elementul nu trece peste limite */
-  touch-action: pan-y; 
-  
-  /* Asigură-te că înălțimea este corectă pentru mobil */
-  height: 100%;
-  overflow-y: auto;
-}
+  body { 
+        -webkit-tap-highlight-color: transparent; 
+        scrollbar-gutter: stable;
+		
+    }
 
 
     
@@ -80,10 +74,8 @@
   </style>
 </head>
 </head>
-<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 overscroll-y-contain overflow-y-scroll">
-  <div id="root" class="overscroll-y-contain">
-      </div>
-</body>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 overscroll-none overflow-y-scroll !overflow-y-scroll">
+  <div id="root"></div>
   
 
   <script type="text/babel">
