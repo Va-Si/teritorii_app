@@ -1901,7 +1901,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <div className="bg-blue-600 text-white shadow-xl p-3 sm:p-4 md:p-5 rounded-[2rem] flex flex-col gap-4">
                 <div className="flex flex-row items-center justify-between gap-2 px-1 w-full">
                   <div className="flex items-center gap-2 sm:gap-3 font-black text-xl sm:text-2xl tracking-tighter shrink-0">
-                    <button onClick={() => setModals({...modals, auth: true})} className="w-14 h-11 sm:w-14 sm:h-11 md:w-14 md:h-11 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-slate-100 transition shadow-inner overflow-hidden shrink-0" title="Profil">
+                    <button onClick={() => setModals({...modals, auth: true})} className="w-14 h-12 sm:w-14 sm:h-12 md:w-14 md:h-12 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-slate-100 transition shadow-inner overflow-hidden shrink-0" title="Profil">
                         <span className="text-2xl sm:text-2xl font-black uppercase">
                           {currentUserName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)} {/* Codul care il am pana acum arata 2 initiale la nume dar Acesta arata doar un initial //{currentUserName.charAt(0)} */}
                         </span>
@@ -1924,12 +1924,12 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         <span className="material-icons text-[32px] sm:text-[32px] md:text-[32px]">palette</span>
                     </button>
 					  {isAdmin && (
-                      <button onClick={() => setModals({...modals, adminPanel: true})} className="w-14 h-12 sm:w-14 sm:h-12 md:w-14 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Panou Administrare">
+                      <button onClick={() => setModals({...modals, adminPanel: true})} className="w-20 h-12 sm:w-20 sm:h-12 md:w-20 md:h-12 flex items-center justify-center bg-blue-800 rounded-3xl hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Panou Administrare">
                           <span className="material-icons text-[32px] sm:text-[32px] md:text-[32px]">admin_panel_settings</span>
                       </button>
                     )}
                     {isAdmin && (
-                      <button onClick={() => setModals({...modals, settings: true})} className="w-14 h-12 sm:w-14 sm:h-12 md:w-14 md:h-12 flex items-center justify-center bg-blue-800 rounded-full hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Setări Culori">
+                      <button onClick={() => setModals({...modals, settings: true})} className="w-20 h-12 sm:w-20 sm:h-12 md:w-20 md:h-12 flex items-center justify-center bg-blue-800 rounded-3xl hover:bg-blue-900 transition shadow-inner text-yellow-400 shrink-0" title="Setări Culori">
                           <span className="material-icons text-[32px] sm:text-[32px] md:text-[32px]">settings</span>
                       </button>
                     )}
