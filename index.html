@@ -1187,6 +1187,13 @@ const handleRenameGroup = (oldName, newName) => {
         }
     }
 }, [territories, selectedTerritoryId, loading]);
+		// Acest useEffect forțează tab-ul să fie corect când se încarcă teritoriul
+useEffect(() => {
+  if (selectedTerritory && selectedTerritory.category && activeTab !== selectedTerritory.category) {
+    console.log("DEBUG: Sincronizez tab-ul cu teritoriul:", selectedTerritory.category);
+    setActiveTab(selectedTerritory.category);
+  }
+}, [selectedTerritory]);
 
       const filteredTerritories = useMemo(() => {
         let list = territories.filter(t => t.category === activeTab || (!t.category && activeTab === 'Grupa 5')).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
