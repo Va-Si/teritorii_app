@@ -959,18 +959,28 @@ useEffect(() => {
 
 // 2. Aici ai useEffect-ul de ascultare de ecran (MODIFICAT)
 useEffect(() => {
-  const handleVisibilityChange = () => {
+  const handleVisibilityChange = async () => {
     if (document.visibilityState === 'visible') {
-      console.log("Telefonul a fost deblocat, forțăm reîncărcarea...");
+      console.log("Utilizatorul s-a întors. Forțăm resincronizarea datelor...");
       
-      // FORȚĂM REFRESH-UL (Asta resetează conexiunea la Firebase 100%)
-      window.location.reload(); 
+      try {
+        // 1. Forțăm preluarea datelor personale
+        // Acest .get() obligă Firebase să se conecteze la server și să actualizeze cache-ul
+        await db.collection('users').doc(userDocId).collection('territories').get();
+        
+        // 2. Forțăm preluarea datelor comune
+        await db.collection('shared_territories').get();
+        
+        console.log("Datele au fost resincronizate fără reload!");
+      } catch (err) {
+        console.error("Eroare la resincronizarea forțată:", err);
+      }
     }
   };
 
   document.addEventListener("visibilitychange", handleVisibilityChange);
   return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-}, []);
+}, [userDocId]); // Depinde de userDocId ca să știe ce să încarce
 
    useEffect(() => {
   if (authLoading || !user) { setLoading(false); return; }
