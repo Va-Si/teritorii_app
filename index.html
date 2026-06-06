@@ -957,13 +957,26 @@ useEffect(() => {
       }, [user, isAdmin]);
 
 		// Restaurare teritoriu la deschidere
+// Înlocuiește vechiul useEffect de restaurare cu acesta:
 useEffect(() => {
-  const savedId = localStorage.getItem('saved_territory_id');
-  if (savedId) {
-    console.log("Restaurăm teritoriul salvat:", savedId);
-    setSelectedTerritoryId(savedId); 
-  }
-}, []); // Se execută doar o dată la pornire
+    // Dacă aplicația încă încarcă datele (loading este true), nu facem nimic
+    if (loading) return; 
+
+    const savedId = localStorage.getItem('saved_territory_id');
+
+    if (savedId) {
+        // Verificăm dacă teritoriul salvat chiar există în lista descărcată
+        const territoryExists = territories.some(t => t.id === savedId);
+        
+        if (territoryExists) {
+            console.log("Restaurăm teritoriul:", savedId);
+            setSelectedTerritoryId(savedId);
+        } else {
+            // Dacă ID-ul nu mai e valid (a fost șters), curățăm localStorage
+            localStorage.removeItem('saved_territory_id');
+        }
+    }
+}, [loading]); // <--- FOARTE IMPORTANT: Se va rula imediat ce loading devine false
 
 // 2. Aici ai useEffect-ul de ascultare de ecran (MODIFICAT)
 useEffect(() => {
