@@ -634,10 +634,10 @@ const [progressTags, setProgressTags] = useState(() => {
 });
       const [territories, setTerritories] = useState([]);
       const [settings, setSettings] = useState({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
-      const [activeTab, setActiveTab] = useState('personal');
-      const [activeGroupView, setActiveGroupView] = useState('Grupa 5'); 
+      const [activeTab, setActiveTab] = useState(() => localStorage.getItem('ui.activeTab') || 'personal');
+      const [activeGroupView, setActiveGroupView] = useState(() => localStorage.getItem('ui.activeGroupView') || 'Grupa 5'); 
       
-      const [selectedTerritoryId, setSelectedTerritoryId] = useState(null);
+      const [selectedTerritoryId, setSelectedTerritoryId] = useState(() => sessionStorage.getItem('ui.selectedTerritoryId') || null);
       const [loading, setLoading] = useState(true);
       const [touchStart, setTouchStart] = useState(null);
       const [touchEnd, setTouchEnd] = useState(null);
@@ -665,6 +665,7 @@ const [isSynced, setIsSynced] = React.useState(true);
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
       const [collapsedSections, setCollapsedSections] = useState({});
+      const [syncTick, setSyncTick] = useState(0);
       const handleCancelCompletion = (t) => {
     // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
     const updateData = { 
@@ -776,8 +777,7 @@ const closeTopLayer = () => {
   }
 
   // 4) Dacă ești în interiorul unui teritoriu, ieși la listă
-if (selectedTerritoryId) {
-    localStorage.removeItem('saved_territory_id'); // <--- ADAUGĂ ASTA AICI
+  if (selectedTerritoryId) {
     setSelectedTerritoryId(null);
     return true;
   }
@@ -890,6 +890,19 @@ useEffect(() => {
       }, []);
 
       useEffect(() => {
+        if (selectedTerritoryId) sessionStorage.setItem('ui.selectedTerritoryId', selectedTerritoryId);
+        else sessionStorage.removeItem('ui.selectedTerritoryId');
+      }, [selectedTerritoryId]);
+
+      useEffect(() => {
+        localStorage.setItem('ui.activeTab', activeTab);
+      }, [activeTab]);
+
+      useEffect(() => {
+        localStorage.setItem('ui.activeGroupView', activeGroupView);
+      }, [activeGroupView]);
+
+      useEffect(() => {
         const root = window.document.documentElement;
         const applyTheme = (t) => {
           if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -956,39 +969,29 @@ useEffect(() => {
         return () => unsubscribe();
       }, [user, isAdmin]);
 
-		// Restaurare teritoriu la deschidere
-// Înlocuiește vechiul useEffect de restaurare cu acesta:
-useEffect(() => {
-    // Dacă aplicația încă încarcă datele (loading este true), nu facem nimic
-    if (loading) return; 
-
-    const savedId = localStorage.getItem('saved_territory_id');
-
-    if (savedId) {
-        // Verificăm dacă teritoriul salvat chiar există în lista descărcată
-        const territoryExists = territories.some(t => t.id === savedId);
-        
-        if (territoryExists) {
-            console.log("Restaurăm teritoriul:", savedId);
-            setSelectedTerritoryId(savedId);
-        } else {
-            // Dacă ID-ul nu mai e valid (a fost șters), curățăm localStorage
-            localStorage.removeItem('saved_territory_id');
-        }
-    }
-}, [loading]); // <--- FOARTE IMPORTANT: Se va rula imediat ce loading devine false
+		
 
 // 2. Aici ai useEffect-ul de ascultare de ecran (MODIFICAT)
 useEffect(() => {
   const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
-		  // Refresh complet pentru a repara Firebase
-      window.location.reload(); 
+      setIsOnline(navigator.onLine);
+      setSyncTick(v => v + 1);
     }
   };
 
+  const handleFocus = () => {
+    setIsOnline(navigator.onLine);
+    setSyncTick(v => v + 1);
+  };
+
   document.addEventListener("visibilitychange", handleVisibilityChange);
-  return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  window.addEventListener("focus", handleFocus);
+
+  return () => {
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    window.removeEventListener("focus", handleFocus);
+  };
 }, []);
 
    useEffect(() => {
@@ -1050,7 +1053,7 @@ useEffect(() => {
     unsubShared();
     unsubAdmin();
   };
-}, [userDocId, authLoading, isAdmin]);
+}, [userDocId, authLoading, isAdmin, syncTick]);
 
       const handleAddGroup = async (newGroupName) => {
         const finalName = newGroupName.trim();
@@ -2082,11 +2085,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     const prog = calculateProgress(t);
                     const isOverdue = !t.isDone && t.endDate < todayStr;
                     return (
-                      <div key={t.id} onClick={() => {
-								  localStorage.setItem('saved_territory_id', t.id); // Salvăm teritoriul
-								  setSelectedTerritoryId(t.id); // Îl deschidem
-								}}
-						  className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
+                      <div key={t.id} onClick={() => setSelectedTerritoryId(t.id)} className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
                         <div className="flex justify-between items-start mb-2 pr-[110px]">
                           <div className="min-w-0 flex-1">
                             <h3 className={`font-black text-lg leading-tight uppercase truncate min-w-0 ${t.isDone ? 'text-green-900 dark:text-green-400' : isOverdue ? 'text-red-900 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>{t.name}</h3>
