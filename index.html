@@ -5,13 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Teritorii</title>
   
-  <!-- PWA Meta Tags -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2563eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   
-  <!-- Favicon Colorat -->
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/854/854878.png">
 
@@ -23,7 +21,6 @@
   </script>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   
-  <!-- Firebase & Libraries -->
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -64,7 +61,7 @@
   overflow: hidden;              /* NU mai lăsăm body să scrolleze */
   overscroll-behavior-y: none;   /* taie “bounce/refresh” */
 }
-	  #root {
+    #root {
   height: 100vh;
   overflow-y: auto;              /* scroll aici */
   -webkit-overflow-scrolling: touch;
@@ -102,7 +99,7 @@
       firebase.firestore().enablePersistence({ synchronizeTabs: true })
         .catch((err) => {
           console.warn("Modul offline nu s-a putut activa:", err.code);
-        });             
+        });              
     }
     const db = firebase.firestore();
     const auth = firebase.auth();
@@ -129,15 +126,14 @@
       return dateStr;
     };
 
-    // <--- ADAUGĂ HELPER-UL AICI, ÎNAINTE DE COMPONENTELE UI
     const valideazaCampul = (input, mesaj) => {
-      input.setCustomValidity(""); // Resetăm eroarea veche
+      input.setCustomValidity(""); 
       if (!input.value.trim()) {
         input.setCustomValidity(mesaj);
         input.reportValidity();
-        return false; // E eroare, returnează false
+        return false; 
       }
-      return true; // E totul bine, returnează true
+      return true; 
     };
 
     const ResizableTextarea = ({ defaultValue, onBlur, placeholder, disabled }) => {
@@ -232,7 +228,6 @@
       const deleteLabel = (id) => {
         if(settings.labels.length <= 1) return;
 
-        // Găsim numele etichetei pe care vrem să o ștergem pentru a-l afișa în mesaj
         const targetLabel = settings.labels.find(l => l.id === id);
         const labelName = targetLabel ? targetLabel.label : 'această etichetă';
 
@@ -254,13 +249,11 @@
             {settings.labels.map(l => (
   <div key={l.id} className="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm max-w-[700px] w-full mx-auto flex flex-col md:flex-row gap-3">
     
-    {/* Chenar etihete si culori RÂNDUL 1: Drag + Nume */}
     <div className="flex flex-row items-center gap-3 w-full">
         <div className="drag-handle flex items-center justify-center cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 shrink-0 h-[44px]">
              <span className="material-icons">drag_indicator</span>
         </div>
         <div className="flex-1 min-w-0">
-             {/* Am șters overflow-hidden și am pus h-auto, min-h-12 pentru a permite scroll-ul */}
              <textarea 
                 rows="1" 
                 value={l.label} 
@@ -271,42 +264,35 @@
         </div>
     </div>
 
-    {/* RÂNDUL 2: Controale */}
     <div className="flex flex-row items-center justify-between gap-3 w-full border-t border-slate-200 dark:border-slate-700 pt-3 md:border-none md:pt-0 md:w-auto md:justify-end">
         
-        {/* Progres - Aici am pus "Checkbox-ul fals" care răspunde instant la click */}
         <div className="flex flex-row items-center gap-1">
           <div 
             onClick={(e) => {
                 e.preventDefault();
-                e.stopPropagation(); // Oprește librăria de sortare să intervină
+                e.stopPropagation(); 
                 const newLabels = settings.labels.map(item => 
                     item.id === l.id ? { ...item, isCampaignTarget: !item.isCampaignTarget } : item
                 );
                 updateSettingsLabels(newLabels);
             }}
-            /* AICI SUNT CLASELE DE DIMENSIUNE */
             className={`w-9 h-9 rounded-lg border flex items-center justify-center cursor-pointer transition-colors ${l.isCampaignTarget ? 'bg-blue-500 border-blue-500' : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600'}`}
           >
-            {/* AICI ESTE ICONIȚA */}
             {l.isCampaignTarget && <span className="material-icons text-white">check</span>}
           </div>
           <span className="[writing-mode:vertical-rl] rotate-180 text-[8px] font-black uppercase text-slate-400 whitespace-nowrap select-none">Prog.</span>
         </div>
 
-        {/* Fundal */}
         <div className="flex flex-row items-center gap-1">
           <input type="color" value={l.color} onChange={(e) => handleColorChange(l.id, 'color', e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border-0 shadow-sm block" />
           <span className="[writing-mode:vertical-rl] rotate-180 text-[8px] font-black uppercase text-slate-400 whitespace-nowrap select-none">Fund.</span>
         </div>
 
-        {/* Text */}
         <div className="flex flex-row items-center gap-1">
           <input type="color" value={l.textColor} onChange={(e) => handleColorChange(l.id, 'textColor', e.target.value)} className="w-10 h-10 rounded-lg cursor-pointer border-0 shadow-sm block" />
           <span className="[writing-mode:vertical-rl] rotate-180 text-[8px] font-black uppercase text-slate-400 whitespace-nowrap select-none">Text</span>
         </div>
         
-        {/* Ștergere */}
         <div className="flex items-center justify-center">
           {settings.labels.length > 1 ? (
             <button onClick={() => deleteLabel(l.id)} className="w-10 h-10 bg-red-100 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-200 shadow-sm">
@@ -319,15 +305,6 @@
     </div>
   </div>
 ))}
-
-          
-
-          
-
-
-
-
-            
           </div>
           <button onClick={addLabel} className="w-full max-w-[700px] mx-auto p-4 border-2 border-dashed border-blue-300 text-blue-500 font-black uppercase text-xs rounded-2xl flex items-center justify-center gap-2 hover:bg-blue-50 shadow-sm">
              <span className="material-icons">add</span> Adaugă Etichetă
@@ -372,10 +349,9 @@
 
       return (
         <div ref={gridRef} data-block-id={blockId} data-section-id={sec.id} className={gridClasses}>
-          {sec.locations.map((loc, lIdx) => (
+          {(sec.locations || []).map((loc, lIdx) => (
             <button key={loc.id} 
               onClick={() => {
-                // 1. Verificăm dacă suntem Offline și pe o Grupă
                 if (!navigator.onLine && territory?.category !== 'personal') {
                     setAlertBox({ 
                       isOpen: true, 
@@ -387,7 +363,6 @@
                     });
                     return;
                 }
-                // 2. Verificăm permisiunea (isReadOnly - care oricum se aplică online)
                 if (isReadOnly) {
                   setAlertBox({
                     isOpen: true,
@@ -399,11 +374,10 @@
                 });
                 return;
             }
-                // 3. Dacă totul e ok, deschidem
                 openEditModal(blockId, sec.id, loc, lIdx);
               }} 
               style={getLabelStyle(loc.status)}
-              className="square-btn rounded-lg shadow-sm" // <--- AM ȘTERS cursor-not-allowed DE
+              className="square-btn rounded-lg shadow-sm" 
           >
               <span className="btn-text-truncate">{loc.number}</span>
               {loc.notes && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white"></div>}
@@ -420,15 +394,14 @@
 
       const unGroupedLocationsSections = (block.sections || []).filter(sec => !sec.name || sec.name === 'Case');
       const groupedSections = (block.sections || []).filter(sec => sec.name && sec.name !== 'Case');
-      // <--- AICI O PUI conditia logica care verifica si calculeaza daca exista case :
-  const hasHouses = (block.sections || []).some(s => s.locations && s.locations.length > 0);
+      const hasHouses = (block.sections || []).some(s => s.locations && s.locations.length > 0);
 
 useEffect(() => {
     if (!sectionsGridRef.current || !canEditStructure) return;
     
     const sortable = Sortable.create(sectionsGridRef.current, {
         group: 'shared-sections', 
-        animation: 250, // Am crescut animația la 250ms pentru a fi mai fluidă
+        animation: 250, 
         delay: 200, 
         delayOnTouchOnly: true, 
         forceFallback: true, 
@@ -436,14 +409,12 @@ useEffect(() => {
         handle: '.section-header', 
         filter: '.no-drag',
         onEnd: (evt) => {
-            // 1. Vizual: Fixăm elementul la locul lui după ce drumul (drag) s-a terminat
             const item = evt.item;
             const from = evt.from;
             const originalNextSibling = from.children[evt.oldIndex > evt.newIndex ? evt.oldIndex + 1 : evt.oldIndex];
             if (originalNextSibling) from.insertBefore(item, originalNextSibling);
             else from.appendChild(item);
 
-            // 2. Logica: Trimitem indicii exacti către baza de date
             const destBlockId = evt.to.dataset.blockId;
             if (destBlockId && (block.id !== destBlockId || evt.oldIndex !== evt.newIndex)) {
                 handleReorderSections(block.id, destBlockId, evt.oldIndex, evt.newIndex);
@@ -452,23 +423,19 @@ useEffect(() => {
     });
     
     return () => sortable.destroy();
-}, [block.sections, canEditStructure, block.id]); // Am adăugat block.id în dependențe pentru siguranță
+}, [block.sections, canEditStructure, block.id]);
 
 return (
   <div className="bg-slate-200/50 dark:bg-slate-800/50 p-3 md:p-5 rounded-[2rem] border-2 border-slate-200/60 dark:border-slate-700/60 relative block-item" data-block-id={block.id}>
-    {/* block-header: Am schimbat items-center în items-start pentru cazul în care numele trece pe rândul 2 */}
     <div className="block-header flex justify-between items-start mb-4 px-2 cursor-pointer select-none gap-3" onClick={() => toggleBlock(block.id)}>
       
-      {/* Zona din stânga: Săgeată + Iconiță + Nume + Buton Editare */}
       <div className="flex items-start gap-2 flex-1 min-w-0">
         <span className="material-icons text-slate-500 text-2xl transition-transform duration-200 shrink-0 mt-0.5" style={{ transform: isBlockCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
         <span className="material-icons text-slate-400 text-xl shrink-0 mt-1">{isBlockStrada ? 'signpost' : 'domain'}</span>
         
-        {/* REPARAT: Am eliminat 'truncate' și 'flex', permițând textului să se extindă flexibil pe mobil */}
         <h2 className="font-black text-sm md:text-base text-slate-800 dark:text-slate-200 uppercase tracking-widest whitespace-normal break-words flex-1 min-w-0 pr-1">
           {isBlockStrada ? 'STRADĂ:' : 'BLOC:'} {block.name}
           
-          {/* Micul buton de editare integrat sigur ca să nu mai fie împins sub chenar */}
           {canEditStructure && (
             <button 
               onClick={(e) => { e.stopPropagation(); openRenameModal('block', block.id, null, block.name); }} 
@@ -480,22 +447,23 @@ return (
         </h2>
       </div>
 
-    {/* Zona din dreapta: Butoanele de Acțiune */}
       {canEditStructure && (
         <div className="flex items-center shrink-0 no-drag gap-2" onClick={e => e.stopPropagation()}>
-          {/* BUTON NOU: Adaugă Casă (apare doar la străzi) */}
           {isBlockStrada && (
              <button onClick={() => setModals({...modals, stradaAddHouse: block.id})} className="material-icons text-blue-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm">add</button>
           )}
-          {/* BUTON EXISTENT: Ștergere */}
           <button onClick={() => { 
               setAlertBox({
                   isOpen: true,
                   title: isBlockStrada ? 'Ștergere Stradă' : 'Ștergere Bloc',
-                  message: `Ești sigur că vrei să ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'} "${block.name}"? Toate datele din interior se vor perde.`,
+                  message: `Ești sigur că vrei să ștergi definitiv ${isBlockStrada ? 'această Stradă' : 'acest Bloc'} "${block.name}"? Toate datele din interior se vor pierde.`,
                   isDanger: true,
                   onConfirm: () => {
-                    updateTerritory(territory.id, territory.category, { blocks: territory.blocks.filter(x => x.id !== block.id) });
+                    const updates = { blocks: territory.blocks.filter(x => x.id !== block.id) };
+                    Object.values(territory.locationsMap || {}).forEach(l => {
+                        if (l.blockId === block.id) updates[`locationsMap.${l.id}`] = firebase.firestore.FieldValue.delete();
+                    });
+                    updateTerritory(territory.id, territory.category, updates);
                   }
                });
           }} className="material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
@@ -511,7 +479,7 @@ return (
                     <SectionLocations 
                       blockId={block.id} 
                       sec={sec} 
-                      territory={territory} // ADĂUGAT
+                      territory={territory} 
                       getLabelStyle={getLabelStyle} 
                       openEditModal={openEditModal} 
                       handleReorderLocations={handleReorderLocations} 
@@ -530,16 +498,12 @@ return (
   <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-3xl border-2 border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col section-item w-full">
     <div className="section-header bg-slate-50 dark:bg-slate-800/50 p-4 flex justify-between items-start gap-3 border-b-2 border-slate-100 dark:border-slate-700 cursor-pointer select-none" onClick={() => toggleSection(sec.id)}>
       
-      {/* Zona din stânga: Săgeată + Nume + Buton Editare */}
-      {/* Am schimbat items-center în items-start pentru cazul în care textul trece pe rândul 2 */}
       <div className="flex items-start gap-2 flex-1 min-w-0">
         <span className="material-icons text-slate-400 text-xl transition-transform duration-200 shrink-0 mt-0.5" style={{ transform: isSecCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}>keyboard_arrow_down</span>
         
-        {/* Am eliminat 'truncate' și 'flex', transformând h3 într-un bloc flexibil care permite text pe mai multe rânduri */}
         <h3 className="font-black text-xs text-slate-700 dark:text-slate-300 uppercase tracking-wider whitespace-normal break-words flex-1 min-w-0 pr-1">
           {sec.name}
           
-          {/* Butonul de editare integrat cu shrink-0 ca să nu mai fie împins în afară sau ascuns */}
           {canEditStructure && (
             <button 
               onClick={(e) => { e.stopPropagation(); openRenameModal('section', block.id, sec.id, sec.name); }} 
@@ -551,8 +515,6 @@ return (
         </h3>
       </div>
 
-      {/* Zona din dreapta: Butoanele mari (+ Adaugă și Șterge) */}
-      {/* Cu shrink-0, aceste butoane rămân sigure pe poziție indiferent de lungimea textului din stânga */}
       <div className="flex items-center gap-2 shrink-0 no-drag" onClick={e => e.stopPropagation()}>
         {!isReadOnly && (
           <button onClick={() => setModals({...modals, locationAppend: {blockId: block.id, sectionId: sec.id}})} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl hover:bg-blue-200 transition shadow-inner">
@@ -568,7 +530,11 @@ return (
                isDanger: true,
                onConfirm: () => {
                   const upd = territory.blocks.map(b => b.id === block.id ? { ...b, sections: b.sections.filter(x => x.id !== sec.id) } : b);
-                  updateTerritory(territory.id, territory.category, { blocks: upd });
+                  const updates = { blocks: upd };
+                  Object.values(territory.locationsMap || {}).forEach(l => {
+                      if (l.sectionId === sec.id) updates[`locationsMap.${l.id}`] = firebase.firestore.FieldValue.delete();
+                  });
+                  updateTerritory(territory.id, territory.category, updates);
                }
              });
           }} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-200 transition shadow-inner">
@@ -595,10 +561,8 @@ return (
                 </div>
               )})}
 
-              {/* Containerul pentru butoanele de jos */}
 <div className={`no-drag w-full mt-2 flex flex-col gap-2`}>
     
-    {/* BUTONUL MARE DE ADĂUGARE CASĂ - Apare doar dacă NU există case */}
     {isBlockStrada && !isReadOnly && !hasHouses && (
         <button 
             onClick={() => setModals({...modals, stradaAddHouse: block.id})} 
@@ -609,7 +573,6 @@ return (
         </button>
     )}
 
-    {/* BUTONUL MARE DE ADĂUGARE GRUPĂ - Apare mereu (dacă ai permisiuni) */}
     {canEditStructure && (
         <button 
             onClick={() => setModals({...modals, sectionAdd: block.id, isStradaGroup: isBlockStrada})} 
@@ -627,10 +590,9 @@ return (
     }
 
     function App() {
-      // Încarcă setările din localStorage sau pune un default
-const [progressTags, setProgressTags] = useState(() => {
+      const [progressTags, setProgressTags] = useState(() => {
     const saved = localStorage.getItem('progressTags');
-    return saved ? JSON.parse(saved) : ['rusa', 'refuz-categoric']; // Default-ul tău
+    return saved ? JSON.parse(saved) : ['rusa', 'refuz-categoric']; 
 });
       const [territories, setTerritories] = useState([]);
       const [settings, setSettings] = useState({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
@@ -649,12 +611,11 @@ const [progressTags, setProgressTags] = useState(() => {
       const [authError, setAuthError] = useState(null);
       const [authForm, setAuthForm] = useState({ name: '', password: '' });
       const [adminUsersList, setAdminUsersList] = useState([]);
-      // Pasul 1: Starea pentru buline de sincronizare (implicit considerăm că e sincronizat)
-const [isSynced, setIsSynced] = React.useState(true);
+      const [isSynced, setIsSynced] = React.useState(true);
 
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
-      // Acest efect închide toast-ul automat după 2 secunde
+      
       useEffect(() => {
         if (toast) {
           const timer = setTimeout(() => setToast(null), 2000);
@@ -665,45 +626,34 @@ const [isSynced, setIsSynced] = React.useState(true);
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
       const [collapsedSections, setCollapsedSections] = useState({});
+
       const handleCancelCompletion = (t) => {
-    // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
     const updateData = { 
         isDone: false,
         endDate: t.originalEndDate || t.endDate 
     };
 
-    // 2. Actualizăm starea locală pentru UI
     setTerritories(prev => prev.map(item => 
         item.id === t.id ? { ...item, isDone: false, endDate: updateData.endDate } : item
     ));
 
-    if (typeof setSelectedTerritory !== 'undefined') {
-        setSelectedTerritory(prev => ({ ...prev, isDone: false, endDate: updateData.endDate }));
-    }
-
-    // 3. Salvăm în Firebase
     updateTerritory(t.id, t.category, updateData);
 
-    // 4. Închidem modalul și afișăm toast
     setModals(prev => ({ ...prev, report: null }));
     setToast("❌ Teritoriu debifat!");
 };
 
-     //genereaza raport de trimitere notite
 const generateTerritoryReport = (territory) => {
     let report = `Salutare! Îți întorc teritoriul "${territory.name}".\n\n`;
     
     (territory.blocks || []).forEach(block => {
-        // 1. Inițializăm un string gol pentru tot ce se întâmplă în interiorul acestui bloc
         let blockContent = "";
 
         (block.sections || []).forEach(sec => {
-            const rus = sec.locations.filter(l => l.status === 'rusa').map(l => l.number).join(', ');
-            const refuz = sec.locations.filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
+            const rus = (sec.locations||[]).filter(l => l.status === 'rusa').map(l => l.number).join(', ');
+            const refuz = (sec.locations||[]).filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
             
-            // Dacă există date, adăugăm la conținutul blocului (fără header încă)
             if (rus || refuz) {
-                // Dacă e bloc, punem "Scara X", dacă e stradă, putem pune "Grupare X" sau doar "Case"
                 const sectionName = sec.name ? sec.name : 'Case';
                 
                 blockContent += `  🔸 ${sectionName}:\n`;
@@ -712,7 +662,6 @@ const generateTerritoryReport = (territory) => {
             }
         });
 
-        // 2. Doar dacă am găsit ceva date în interiorul blocului, afișăm Header-ul O SINGURĂ DATĂ
         if (blockContent !== "") {
             const isStrada = block.type === 'strada';
             const grup = block.group ? ` (${block.group})` : '';
@@ -727,14 +676,10 @@ const generateTerritoryReport = (territory) => {
     
     return report;
 };
-     
-
-      // Adaugă asta sub celelalte state-uri din App:
+      
       const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
-      //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
       const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
 
-	// Cheile care sunt modale reale (nu flag-uri gen isStradaGroup)
 const MODAL_KEYS = [
   'territoryAdd', 'territoryEdit', 'blockAdd', 'sectionAdd',
   'locationAppend', 'locationEdit', 'settings', 'theme',
@@ -743,20 +688,16 @@ const MODAL_KEYS = [
 ];
 
 const closeTopLayer = () => {
-  // 1) AlertBox (cel mai sus)
   if (alertBox?.isOpen) {
     setAlertBox(prev => ({ ...prev, isOpen: false }));
     return true;
   }
 
-  // 2) PromptBox
   if (promptBox?.isOpen) {
     setPromptBox(prev => ({ ...prev, isOpen: false }));
     return true;
   }
 
-  // 3) Modale (închidem un singur modal "cel mai important")
-  // Prioritate: cele "de editare" peste cele "de meniu"
   const modalPriority = [
     'locationEdit', 'locationAppend',
     'renameItem', 'stradaAddHouse', 'sectionAdd', 'blockAdd',
@@ -775,13 +716,11 @@ const closeTopLayer = () => {
     }
   }
 
-  // 4) Dacă ești în interiorul unui teritoriu, ieși la listă
   if (selectedTerritoryId) {
     setSelectedTerritoryId(null);
     return true;
   }
 
-  // Nimic de închis -> lăsăm back-ul să închidă aplicația / pagina
   return false;
 };
 
@@ -803,7 +742,6 @@ const getUiDepth = () => {
   return d;
 };
 
-// Inițializare: ne asigurăm că avem un state de bază
 useEffect(() => {
   history.replaceState({ appDepth: 0 }, document.title);
 }, []);
@@ -811,14 +749,12 @@ useEffect(() => {
 useEffect(() => {
   const depth = getUiDepth();
 
-  // Dacă tocmai am venit din back (popstate), nu mai împingem imediat iar state
   if (popLockRef.current) {
     uiDepthRef.current = depth;
     popLockRef.current = false;
     return;
   }
 
-  // Când se deschide ceva nou (depth crește), împingem un state
   if (depth > uiDepthRef.current) {
     history.pushState({ appDepth: depth }, document.title);
   }
@@ -833,43 +769,31 @@ useEffect(() => {
 
 useEffect(() => {
   const onPopState = () => {
-    popLockRef.current = true; // ca să nu re-push imediat
+    popLockRef.current = true; 
     const closed = closeTopLayer();
-
-    // Dacă n-a fost nimic de închis, atunci lăsăm comportamentul normal (poate închide PWA)
-    // (Nu facem nimic aici.)
   };
 
   window.addEventListener('popstate', onPopState);
   return () => window.removeEventListener('popstate', onPopState);
 }, [selectedTerritoryId, modals, alertBox?.isOpen, promptBox?.isOpen]);
 
-
-      // tab la useri
       const [adminUserTab, setAdminUserTab] = useState('All');
       const getFilteredAndSortedUsers = () => {
-        // 1. Filtrăm utilizatorii în funcție de tab-ul ales
-        let filtered = [...(adminUsersList || [])]; // Dacă variabila ta are alt nume (ex: usersList), schimbă appUsers cu numele ei
-        // 1. Filtrare după tab-ul selectat
+        let filtered = [...(adminUsersList || [])]; 
         if (adminUserTab !== 'All') {
           filtered = filtered.filter(u => u.group === adminUserTab || (!u.group && adminUserTab === 'Grupa 5'));
         }
 
-        // 2. Sortăm: Super Adminii și Adminii de Grupă primii, apoi ordonăm alfabetic numele
         return filtered.sort((a, b) => {
           const aIsAdmin = a.isAdminGroup === true;
           const bIsAdmin = b.isAdminGroup === true;
 
-          // Dacă 'a' este admin și 'b' nu este, 'a' urcă mai sus (-1)
           if (aIsAdmin && !bIsAdmin) return -1;
-          // Dacă 'b' este admin și 'a' nu este, 'b' urcă mai sus (1)
           if (!aIsAdmin && bIsAdmin) return 1;
 
-          // Dacă ambii au același rang (ambii admini sau ambii utilizatori de rând), îi sortăm alfabetic
           return (a.name || '').localeCompare(b.name || '');
         });
       };
-      
       
       const blocksContainerRef = useRef(null);
       const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -881,7 +805,6 @@ useEffect(() => {
         const updateOnlineStatus = () => setIsOnline(navigator.onLine);
         window.addEventListener('online', updateOnlineStatus);
         window.addEventListener('offline', updateOnlineStatus);
-        // Curățăm ascultătorii când închidem aplicația
         return () => {
           window.removeEventListener('online', updateOnlineStatus);
           window.removeEventListener('offline', updateOnlineStatus);
@@ -900,7 +823,7 @@ useEffect(() => {
         applyTheme(theme);
       }, [theme]);
 
-		
+        
       useEffect(() => {
         const unsubAuth = auth.onAuthStateChanged(firebaseUser => {
           if (firebaseUser && firebaseUser.email === ADMIN_EMAIL) {
@@ -947,7 +870,6 @@ useEffect(() => {
                     localStorage.setItem('custom_user', JSON.stringify(updatedUser));
                     if(data.group && user.group !== data.group) {
                         setActiveGroupView(data.group);
-                        //setActiveTab(data.group); ca sa nu apara la deshdiere compartimentu Grupa ci personal
                     }
                 }
             }
@@ -960,7 +882,6 @@ useEffect(() => {
   setLoading(true);
   const unsubs = [];
   
- // 1. [MODIFICAT PENTRU GLOBAL] Codul pentru setări globale
   unsubs.push(db.collection('config').doc('global_settings').onSnapshot(doc => { 
     if(doc.exists) {
        const data = doc.data();
@@ -970,26 +891,19 @@ useEffect(() => {
     }
   }));
 
-  // 2. [OPTIMIZAT] Activăm verificarea offline DOAR pe teritoriile personale (unde se pot face modificări)
   unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
     const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Pentru teritoriile comune lăsăm onSnapshot simplu, fără includeMetadataChanges (salvăm memorie)
     unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
        const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
        
-       // ==========================================
-       // 🟢 LOGICA SIMPLIFICATĂ PENTRU BULINĂ 🟡
-       // Verificăm doar dacă sunt scrieri în așteptare pentru teritoriile personale
        setIsSynced(!snap.metadata.hasPendingWrites); 
-       // ==========================================
 
        setTerritories([...persT, ...sharedT]);
        setLoading(false);
     }));
   }));
 
-  // 3. [NESCHIMBAT] Codul pentru lista de Admin
   if (isAdmin) {
      unsubs.push(db.collection('app_users').onSnapshot(snap => {
          setAdminUsersList(snap.docs.map(d => d.data()));
@@ -1003,7 +917,6 @@ useEffect(() => {
         const finalName = newGroupName.trim();
         if(!finalName) return;
 
-        // Verificăm dacă grupa există deja
         if ((settings.groups || DEFAULT_GROUPS).includes(finalName)) {
           setAlertBox({
             isOpen: true,
@@ -1019,13 +932,13 @@ useEffect(() => {
        const updatedGroups = [...(settings.groups || DEFAULT_GROUPS), finalName];
         await db.collection('config').doc('global_settings').set({ ...settings, groups: updatedGroups });
       };
+
       const handleToggleTag = (tag, isChecked) => {
   const currentTags = settings.progressTags || ['rusa', 'refuz-categoric'];
   const newTags = isChecked 
     ? [...currentTags, tag] 
     : currentTags.filter(t => t !== tag);
   
-  // Actualizezi starea settings (presupunând că ai o funcție updateSettings/setSettings)
   updateSettings({ ...settings, progressTags: newTags });
 };
 
@@ -1033,7 +946,6 @@ const handleRenameGroup = (oldName, newName) => {
   const finalName = newName.trim();
   if(!finalName || oldName === finalName) return;
 
-  // Verificăm dacă noul nume există deja în lista de grupe
   if ((settings.groups || DEFAULT_GROUPS).includes(finalName)) {
       setAlertBox({
           isOpen: true,
@@ -1043,16 +955,14 @@ const handleRenameGroup = (oldName, newName) => {
           showCancel: false,
           onConfirm: () => {}
       });
-      return; // Oprim procesul de redenumire
+      return; 
   }
   
-  
-  // Dezactivăm confirm-ul din browser și activăm alertBox-ul tău modern
   setAlertBox({
     isOpen: true,
     title: 'Confirmare Modificare',
     message: `Schimbi denumirea din "${oldName}" în "${finalName}"? Aceasta va actualiza automat toți utilizatorii și teritoriile asociate.`,
-    isDanger: false, // Albastru, fiindcă e o modificare de structură, nu o ștergere definitivă
+    isDanger: false, 
     onConfirm: async () => {
       try {
        const updatedGroups = (settings.groups || DEFAULT_GROUPS).map(g => g === oldName ? finalName : g);
@@ -1087,7 +997,6 @@ const handleRenameGroup = (oldName, newName) => {
             localStorage.setItem('custom_user', JSON.stringify(updatedUser));
         }
       } catch(err) {
-          // Am înlocuit și alerta de eroare cu alertBox roșu de siguranță
           setAlertBox({
             isOpen: true,
             title: 'Eroare server',
@@ -1100,24 +1009,41 @@ const handleRenameGroup = (oldName, newName) => {
   });
 };
 
-      const handleDeleteGroup = (groupName) => { // Am scos async de aici
+      const handleDeleteGroup = (groupName) => { 
         setAlertBox({
           isOpen: true,
           title: 'Ștergere Grupă',
           message: `Sigur ștergi definitiv "${groupName}" din listă? (Notă: teritoriile și utilizatorii existenți nu vor fi șterși, doar ascunși)`,
           isDanger: true,
-          onConfirm: async () => { // Am mutat async-ul aici pentru Firebase
+          onConfirm: async () => { 
           const updatedGroups = (settings.groups || DEFAULT_GROUPS).filter(g => g !== groupName);
             await db.collection('config').doc('global_settings').set({ ...settings, groups: updatedGroups });
           }
         });
       };
 
-      const selectedTerritory = useMemo(() => {
+      // ==== MAGIA NOII ARHITECTURI - Reconstruirea Copacului Local ====
+      const selectedTerritoryData = useMemo(() => {
         const t = territories.find(t => t.id === selectedTerritoryId);
-        if (t && !t.blocks) t.blocks = t.sections && t.sections.length > 0 ? [{ id: 'legacy_block', name: 'Grupare Veche', type: 'bloc', sections: t.sections }] : [];
-        return t;
+        if (!t) return null;
+
+        const cloned = JSON.parse(JSON.stringify(t));
+        const locsArray = Object.values(cloned.locationsMap || {});
+        
+        if (!cloned.blocks) {
+            cloned.blocks = cloned.sections && cloned.sections.length > 0 ? [{ id: 'legacy_block', name: 'Grupare Veche', type: 'bloc', sections: cloned.sections }] : [];
+        }
+
+        cloned.blocks.forEach(b => {
+            b.sections?.forEach(s => {
+                s.locations = locsArray.filter(l => l.blockId === b.id && l.sectionId === s.id).sort((a, b) => a.order - b.order);
+            });
+        });
+        
+        return cloned;
       }, [territories, selectedTerritoryId]);
+
+      const selectedTerritory = selectedTerritoryData;
 
       useEffect(() => {
         if (selectedTerritoryId && !loading && !territories.find(t => t.id === selectedTerritoryId)) {
@@ -1199,30 +1125,31 @@ const handleRenameGroup = (oldName, newName) => {
       
       const calculateProgress = (territory) => {
         if (!territory) return 0;
+        if (territory.locationsMap) {
+            const locs = Object.values(territory.locationsMap);
+            const total = locs.length;
+            const targets = locs.filter(l => settings.labels.find(lab => lab.id === l.status)?.isCampaignTarget).length;
+            return total === 0 ? 0 : Math.round((targets / total) * 100);
+        }
         let total = 0, targets = 0;
         const blocks = territory.blocks || (territory.sections ? [{sections: territory.sections}] : []);
         blocks.forEach(b => b.sections?.forEach(s => {
-          total += s.locations.length;
-          targets += s.locations.filter(l => settings.labels.find(lab => lab.id === l.status)?.isCampaignTarget).length;
+          total += (s.locations || []).length;
+          targets += (s.locations || []).filter(l => settings.labels.find(lab => lab.id === l.status)?.isCampaignTarget).length;
         }));
         return total === 0 ? 0 : Math.round((targets / total) * 100);
       };
 
-     const updateTerritory = async (id, category, data) => {
+      const updateTerritory = async (id, category, data) => {
     try {
-        
-        
         if (category !== 'personal') {
-            
             return await db.collection('shared_territories').doc(id).update(data);
         } else {
-            
-           
             return await db.collection('users').doc(userDocId).collection('territories').doc(id).update(data);
         }
     } catch (e) {
-        console.error("Eroare la salvare:", e); // Poți lăsa doar eroarea, asta e utilă dacă pică netul
-        throw e; // Aruncăm eroarea mai departe ca să o vadă handleToggleDone
+        console.error("Eroare la salvare:", e); 
+        throw e; 
     }
 };
 
@@ -1260,22 +1187,40 @@ const handleRenameGroup = (oldName, newName) => {
               snap.docs.forEach(doc => {
                   const data = doc.data();
                   let updated = false;
-                  if(!data.blocks) return;
-                  const newBlocks = data.blocks.map(b => ({
-                      ...b,
-                      sections: b.sections?.map(s => ({
-                          ...s,
-                          locations: s.locations?.map(l => {
-                              let locUpd = false;
-                              const newHist = l.history?.map(h => {
-                                  if(h.name === oldName) { locUpd = true; updated = true; return {...h, name: newName}; }
-                                  return h;
-                              });
-                              return locUpd ? { ...l, history: newHist } : l;
-                          })
-                      }))
-                  }));
-                  if(updated) { batch.update(doc.ref, { blocks: newBlocks }); count++; }
+                  const updates = {};
+                  
+                  if (data.locationsMap) {
+                      Object.values(data.locationsMap).forEach(l => {
+                          let locUpd = false;
+                          const newHist = l.history?.map(h => {
+                              if(h.name === oldName) { locUpd = true; updated = true; return {...h, name: newName}; }
+                              return h;
+                          });
+                          if(locUpd) updates[`locationsMap.${l.id}.history`] = newHist;
+                      });
+                  }
+                  
+                  // Dacă mai ai blocuri vechi
+                  if(data.blocks && !data.locationsMap) {
+                      const newBlocks = data.blocks.map(b => ({
+                          ...b,
+                          sections: b.sections?.map(s => ({
+                              ...s,
+                              locations: s.locations?.map(l => {
+                                  let locUpd = false;
+                                  const newHist = l.history?.map(h => {
+                                      if(h.name === oldName) { locUpd = true; updated = true; return {...h, name: newName}; }
+                                      return h;
+                                  });
+                                  return locUpd ? { ...l, history: newHist } : l;
+                              })
+                          }))
+                      }));
+                      updates.blocks = newBlocks;
+                      updated = true;
+                  }
+
+                  if(updated && Object.keys(updates).length > 0) { batch.update(doc.ref, updates); count++; }
               });
               if(count > 0) await batch.commit();
           };
@@ -1285,11 +1230,9 @@ const handleRenameGroup = (oldName, newName) => {
           } catch(err) {}
       };
 
-const handleToggleDone = async (t) => { // Am adăugat 'async'
+const handleToggleDone = async (t) => { 
     const isNowDone = !t.isDone;
     
-
-    // 1. Logica pentru date
     const updateData = { isDone: isNowDone };
     if (isNowDone) {
         updateData.originalEndDate = t.endDate;
@@ -1299,23 +1242,11 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     }
 
     try {
-        // 2. Așteptăm salvarea în Firebase
-        
         await updateTerritory(t.id, t.category, updateData);
         
-
-        // 3. Dacă totul e OK, actualizăm și interfața
-        setTerritories(prev => prev.map(item => 
-            item.id === t.id ? { ...item, ...updateData } : item
-        ));
-
-        if (typeof setSelectedTerritory !== 'undefined') {
-            setSelectedTerritory(prev => ({ ...prev, ...updateData }));
-        }
-
-        // 4. Notificări
         if (isNowDone) {
-            const reportText = generateTerritoryReport(t);
+            // Trimitem selectedTerritoryData dacă este teritoriul curent selectat pentru a avea locatiile array
+            const reportText = generateTerritoryReport(t.id === selectedTerritoryId ? selectedTerritoryData : t);
             setModals(prev => ({ ...prev, report: { text: reportText, territory: t } }));
         } else {
             setToast("❌ Teritoriu debifat!");
@@ -1327,7 +1258,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     }
 };
 
-     const handleCreateTerritory = async (e) => {
+      const handleCreateTerritory = async (e) => {
         e.preventDefault();
         const form = e.target;
         if (!valideazaCampul(form.elements.name, "Introdu o denumire pentru teritoriu!")) return;
@@ -1341,7 +1272,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         const newTerritory = {
           name: fd.get('name'), category: category, type: fd.get('type'),
           startDate: start.toISOString().split('T')[0], endDate: end.toISOString().split('T')[0],
-          isDone: false, notes: '', blocks: [], order: territories.length
+          isDone: false, notes: '', blocks: [], locationsMap: {}, order: territories.length
         };
 
         setModals({...modals, territoryAdd: false});
@@ -1376,6 +1307,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             if(newCategory !== 'personal') updateData.group = newCategory;
             
             const fullTerritoryData = { ...selectedTerritory, ...updateData };
+            // Păstrăm map-ul pe loc
             if (newCategory !== 'personal') {
                await db.collection('shared_territories').doc(selectedTerritory.id).set(fullTerritoryData);
                await db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id).delete();
@@ -1392,28 +1324,24 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
   e.preventDefault();
   const form = e.target;
 
-  // Aceasta este „plasa de siguranță”. Nu strică nimic, doar se asigură că nu plecăm cu erori vechi.
   form.elements.blocName.setCustomValidity("");
   form.elements.stradaName.setCustomValidity("");
 
   const bName = form.elements.blocName.value.trim();
   const sName = form.elements.stradaName.value.trim();
 
-  // Cazul A: Nimic completat
   if (!bName && !sName) {
     form.elements.blocName.setCustomValidity("Te rugăm să introduci numele Blocului sau al Străzii pentru a continua.");
     form.elements.blocName.reportValidity();
     return;
   }
 
-  // Cazul B: Ambele completate
   if (bName && sName) {
     form.elements.blocName.setCustomValidity("Te rugăm să completezi doar una dintre rubrici, nu ambele!");
     form.elements.blocName.reportValidity();
     return;
   }
 
-  // Dacă ajunge aici, înseamnă că datele sunt perfecte
   const type = bName ? 'bloc' : 'strada';
   const name = bName || sName;
   const upd = [...(selectedTerritory.blocks || []), { id: Date.now().toString(), name, type, sections: [] }];
@@ -1426,7 +1354,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         e.preventDefault();
         const form = e.target;
 
-        // Dacă modals.isStradaGroup e TRUE, cerem și nume, altfel validăm doar numerele
         if (modals.isStradaGroup && !valideazaCampul(form.elements.name, "Introdu numele grupei de case!")) return;
         
         if (!valideazaCampul(form.elements.nums, "Introdu numerele caselor!")) return;
@@ -1435,20 +1362,27 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         const filterType = fd.get('filterType');
         const nums = parseNumbers(fd.get('nums'), filterType === 'even', filterType === 'odd');
 
-        const upd = selectedTerritory.blocks.map(b => {
-          if (b.id === modals.stradaAddHouse) {
-            const defaultSectionIndex = b.sections ? b.sections.findIndex(s => !s.name || s.name === 'Case') : -1;
-            if (defaultSectionIndex >= 0) {
-              const newSections = [...b.sections];
-              newSections[defaultSectionIndex] = { ...newSections[defaultSectionIndex], locations: [...newSections[defaultSectionIndex].locations, ...nums] };
-              return { ...b, sections: newSections };
-            } else {
-               return { ...b, sections: [{ id: Date.now().toString(), name: '', locations: nums }, ...(b.sections || [])] };
-            }
-          }
-          return b;
+        let targetBlock = selectedTerritory.blocks.find(b => b.id === modals.stradaAddHouse);
+        let targetSecId;
+        let updBlocks = selectedTerritory.blocks;
+        
+        const defaultSectionIndex = targetBlock.sections ? targetBlock.sections.findIndex(s => !s.name || s.name === 'Case') : -1;
+        
+        if (defaultSectionIndex >= 0) {
+            targetSecId = targetBlock.sections[defaultSectionIndex].id;
+        } else {
+            targetSecId = Date.now().toString();
+            updBlocks = selectedTerritory.blocks.map(b => b.id === modals.stradaAddHouse ? { ...b, sections: [{ id: targetSecId, name: modals.isStradaGroup ? fd.get('name') : '' }, ...(b.sections || [])] } : b);
+        }
+
+        const startOrder = Object.values(selectedTerritory.locationsMap || {}).filter(l => l.blockId === modals.stradaAddHouse && l.sectionId === targetSecId).length;
+
+        const updates = { blocks: updBlocks };
+        nums.forEach((loc, idx) => {
+            updates[`locationsMap.${loc.id}`] = { ...loc, blockId: modals.stradaAddHouse, sectionId: targetSecId, order: startOrder + idx };
         });
-        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, updates);
         setModals({...modals, stradaAddHouse: null});
       };
 
@@ -1463,8 +1397,15 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         const filterType = fd.get('filterType');
         const nums = parseNumbers(fd.get('nums'), filterType === 'even', filterType === 'odd');
 
-        const upd = selectedTerritory.blocks.map(b => b.id === modals.sectionAdd ? { ...b, sections: [...(b.sections||[]), { id: Date.now().toString(), name: fd.get('name'), locations: nums }] } : b);
-        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        const newSecId = Date.now().toString();
+        const updBlocks = selectedTerritory.blocks.map(b => b.id === modals.sectionAdd ? { ...b, sections: [...(b.sections||[]), { id: newSecId, name: fd.get('name') }] } : b);
+        
+        const updates = { blocks: updBlocks };
+        nums.forEach((loc, idx) => {
+            updates[`locationsMap.${loc.id}`] = { ...loc, blockId: modals.sectionAdd, sectionId: newSecId, order: idx };
+        });
+
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, updates);
         setCollapsedBlocks(prev => ({...prev, [modals.sectionAdd]: false}));
         setModals({...modals, sectionAdd: null});
       };
@@ -1500,13 +1441,17 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
         const nums = parseNumbers(fd.get('nums'), filterType === 'even', filterType === 'odd');
 
         const { blockId, sectionId } = modals.locationAppend;
-        const upd = selectedTerritory.blocks.map(b => b.id === blockId ? {
-          ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: [...s.locations, ...nums] } : s)
-        } : b);
-        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+        
+        const startOrder = Object.values(selectedTerritory.locationsMap || {}).filter(l => l.blockId === blockId && l.sectionId === sectionId).length;
+        
+        const updates = {};
+        nums.forEach((loc, idx) => {
+            updates[`locationsMap.${loc.id}`] = { ...loc, blockId, sectionId, order: startOrder + idx };
+        });
+
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, updates);
         setCollapsedSections(prev => ({...prev, [sectionId]: false}));
-       // Numarul la ultimele istoric editari Schimbă cifra 5 cu 10, 20 sau cât ai nevoie! 
-       setModals({...modals, locationAppend: null});
+        setModals({...modals, locationAppend: null});
       };
 
       const recordHistory = (loc, actiuneStr, labelId = null) => {
@@ -1518,7 +1463,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
      const handleReorderSections = (srcBlockId, destBlockId, oldIdx, newIdx) => {
     if (srcBlockId === destBlockId && oldIdx === newIdx) return;
 
-    // Creăm copia „surdă” și curată
     const newBlocks = JSON.parse(JSON.stringify(selectedTerritory.blocks));
 
     let srcBlock = newBlocks.find(b => b.id === srcBlockId);
@@ -1533,43 +1477,33 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 };
 
       const handleReorderLocations = (srcBlockId, srcSecId, destBlockId, destSecId, oldIdx, newIdx) => {
-        if (srcBlockId === destBlockId && srcSecId === destSecId) {
-            const upd = selectedTerritory.blocks.map(b => {
-              if (b.id !== srcBlockId) return b;
-              return { ...b, sections: b.sections.map(s => {
-                  if (s.id !== srcSecId) return s;
-                  const newLocs = [...s.locations];
-                  const [moved] = newLocs.splice(oldIdx, 1);
-                  newLocs.splice(newIdx, 0, moved);
-                  return { ...s, locations: newLocs };
-              })};
-            });
-            updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        } else {
-            let movedItem = null;
-            let upd = selectedTerritory.blocks.map(b => ({
-              ...b, sections: b.sections.map(s => {
-                if (b.id === srcBlockId && s.id === srcSecId) {
-                  const newLocs = [...s.locations];
-                  movedItem = newLocs.splice(oldIdx, 1)[0];
-                  return { ...s, locations: newLocs };
-                }
-                return s;
-            })}));
-            if (movedItem) {
-              upd = upd.map(b => ({
-                ...b, sections: b.sections.map(s => {
-                  if (b.id === destBlockId && s.id === destSecId) {
-                    const newLocs = [...s.locations];
-                    newLocs.splice(newIdx, 0, movedItem);
-                    return { ...s, locations: newLocs };
-                  }
-                  return s;
-                })
-              }));
-              updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-            }
-        }
+          const locsMap = { ...(selectedTerritory.locationsMap || {}) };
+          const srcLocs = Object.values(locsMap).filter(l => l.blockId === srcBlockId && l.sectionId === srcSecId).sort((a,b) => a.order - b.order);
+          const movedItem = srcLocs[oldIdx];
+          
+          const updates = {};
+          
+          if (srcBlockId === destBlockId && srcSecId === destSecId) {
+              srcLocs.splice(oldIdx, 1);
+              srcLocs.splice(newIdx, 0, movedItem);
+              srcLocs.forEach((loc, index) => {
+                  if(loc.order !== index) updates[`locationsMap.${loc.id}.order`] = index;
+              });
+          } else {
+              const destLocs = Object.values(locsMap).filter(l => l.blockId === destBlockId && l.sectionId === destSecId).sort((a,b) => a.order - b.order);
+              destLocs.splice(newIdx, 0, movedItem);
+              
+              updates[`locationsMap.${movedItem.id}.blockId`] = destBlockId;
+              updates[`locationsMap.${movedItem.id}.sectionId`] = destSecId;
+              
+              destLocs.forEach((loc, index) => {
+                  updates[`locationsMap.${loc.id}.order`] = index;
+              });
+          }
+          
+          if(Object.keys(updates).length > 0) {
+              updateTerritory(selectedTerritory.id, selectedTerritory.category, updates);
+          }
       };
 
       const openEditModal = (blockId, sectionId, loc, locIdx) => {
@@ -1635,13 +1569,11 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             const targetCategory = catType === 'personal' ? 'personal' : activeGroupView;
 
            if (data.settings && isAdmin) {
-                await db.collection('config').doc('global_settings').set(data.settings);
+               await db.collection('config').doc('global_settings').set(data.settings);
             }
 
-            // Funcția internă care execută scrierea în Firebase
             const runFirebaseTransaction = async () => {
                 if (data.territories && Array.isArray(data.territories)) {
-                    // Dacă e mod complet, ștergem mai întâi datele vechi
                     if (mode === 'full') {
                         if (targetCategory === 'personal') {
                             const snap = await db.collection('users').doc(userDocId).collection('territories').get();
@@ -1656,7 +1588,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         }
                     }
 
-                    // Adăugarea noilor teritorii din fișier
                     let batch1 = db.batch();
                     let count = 0;
                     for (const t of data.territories) {
@@ -1678,18 +1609,15 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     if (count > 0) await batch1.commit();
 
                     if (mode === 'full') {
-                        // REPARAT 1: La importul COMPLET, închidem direct modalul și NU mai afișăm nicio altă alertă
                         setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
                         setModals({ ...modals, import: false });
-                    // --- ÎNLOCUIEȘTE DOAR NOTIFICAREA DE LA IMPORTUL PARȚIAL ---
                       } else {
-                          // Trimitem o configurare care obligă AlertBox să nu afișeze text sau acțiune de anulare
                           setAlertBox({
                                   isOpen: true,
                                   title: 'Import Reușit',
                                   message: 'Teritoriile au fost adăugate cu succes!',
                                   isDanger: false,
-                                  showCancel: false, // <--- CORECT
+                                  showCancel: false, 
                                   onConfirm: () => {
                                       setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
                                       setModals({ ...modals, import: false });
@@ -1699,17 +1627,14 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 }
             };
 
-            // Verificăm modul de import ales pentru a ști cum pornim procesul
             if (data.territories && Array.isArray(data.territories)) {
                 if (mode === 'full') {
-                    // Dacă e FULL, cerem confirmarea cu AlertBox-ul tău ÎNAINTE de import
                     setAlertBox({
                         isOpen: true,
                         title: 'Atenție! Înlocuire Date',
                         message: `Vei ȘTERGE DEFINITIV toate teritoriile actuale din secțiunea "${targetCategory}" și le vei înlocui cu cele din fișierul de backup. Continui?`,
                         isDanger: true,
                         onConfirm: async () => {
-                            // Resetăm mai întâi starea alertei pentru a preveni păstrarea butoanelor vechi
                             setAlertBox({ isOpen: false, title: '', message: '', isDanger: false });
                             await runFirebaseTransaction(); 
                         },
@@ -1719,7 +1644,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         }
                     });
                 } else {
-                    // Dacă e PARTIAL, nu ștergem nimic și nu cerem confirmare la început, ci scriem direct
                     await runFirebaseTransaction();
                 }
             }
@@ -1746,7 +1670,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
       if (!user) {
         return ( 
-          //Return Princioal pentru logare
           <div className="min-h-screen flex items-center justify-center bg-slate-100 dark:bg-slate-900 p-4 transition-colors">
             <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-8 shadow-2xl border-4 border-blue-500/20 text-center">
               <div className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl"><span className="material-icons text-4xl">map</span></div>
@@ -1762,27 +1685,21 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 if (!valideazaCampul(form.elements.password, "Introdu parola!")) return;
 
                 try {
-                  //Logare useri
                   if (authForm.name.includes('@')) { 
-                    // Logarea ta ca Admin (rămâne exact așa cum este acum)
                     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                     await auth.signInWithEmailAndPassword(authForm.name.trim(), authForm.password.trim());
                   } else {
-                    // PENTRU UTILIZATORII SIMPLI:
-                    // Folosim coduri Unicode (\u...) ca să fim siguri că ștergem diacriticele corect
                     const numeCurat = authForm.name.trim().toLowerCase()
-                      .replace(/[\u0103\u00e2]/g, 'a') // înlocuiește ă, â
-                      .replace(/[\u00ee]/g, 'i')       // înlocuiește î
-                      .replace(/[\u0219\u015f]/g, 's') // înlocuiește ș, ş (ambele variante de ș)
-                      .replace(/[\u021b\u0163]/g, 't') // înlocuiește ț, ţ (ambele variante de ț)
+                      .replace(/[\u0103\u00e2]/g, 'a') 
+                      .replace(/[\u00ee]/g, 'i')       
+                      .replace(/[\u0219\u015f]/g, 's') 
+                      .replace(/[\u021b\u0163]/g, 't') 
                       .replace(/\s+/g, '.');
                     const emailFictiv = numeCurat + '@ter.com';
                     await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
                     
-                    // 1. Îl logăm oficial la Google și îi aflăm ID-ul unic (UID)
                     const userCredential = await auth.signInWithEmailAndPassword(emailFictiv, authForm.password.trim());
                     const userId = userCredential.user.uid;
-                    // 2. Deschidem direct sertarul lui prin ID. Regulile Firebase vor permite asta!
                     const doc = await db.collection('app_users').doc(userId).get();
                     if (doc.exists) {
                       const customUser = doc.data();
@@ -1796,11 +1713,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     }
                   }
                 } catch(err) { 
-                  // Verificăm dacă eroarea este din cauza numelui sau parolei greșite
                   if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
                     setAuthError('Nume sau parolă incorectă!');
                   } else {
-                    // Dacă apare vreo altă eroare neașteptată (ex: lipsă internet), o lăsăm pe cea originală
                     setAuthError('Eroare la conectare: ' + err.message);
                   }
                 }
@@ -1831,11 +1746,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
       const isSelectedOverdue = selectedTerritory && !selectedTerritory.isDone && selectedTerritory.endDate < todayStr;
 
       return (
-        //retur principal pentru modale
         <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
 
 
-          {/* Toast-ul de notificare (îl pui undeva în interiorul return-ului principal) */}
             {toast && (
                 <div className="fixed top-5 inset-x-0 mx-auto w-max z-[9999] bg-slate-800 text-white px-6 py-3 rounded-full shadow-lg font-black text-sm animate-bounce text-center">
     {toast}
@@ -1848,10 +1761,8 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
           
     {modals.report && (
-          //Modalul de Raport
        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
          <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm p-6 shadow-2xl border-4 border-green-500 relative animate-in zoom-in-95">
-           {/* Buton X personalizat: mai mare, dreptunghiular */}
            <button 
              onClick={() => setModals({...modals, report: null})} 
              className="absolute top-4 right-4 w-12 h-10 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 transition-all active:scale-90">
@@ -1866,7 +1777,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
            <div className="flex gap-2 mb-2">
               <button onClick={() => {
                   navigator.clipboard.writeText(modals.report.text);
-                  setToast("📋Copiat în clipboard!"); // Fără emoji aici
+                  setToast("📋Copiat în clipboard!"); 
                }} className="flex-1 p-3 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs transition-all hover:bg-blue-700 active:scale-95 shadow-lg">
                 Copiază
                 </button>
@@ -1881,7 +1792,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                  Trimite
                  </button>
                </div>
-              {/* Buton Anulează (modificat) */}
 <button 
   onClick={() => {
       handleCancelCompletion(modals.report.territory); 
@@ -1903,7 +1813,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   <div className="flex items-center gap-2 sm:gap-3 font-black text-xl sm:text-2xl tracking-tighter shrink-0">
                     <button onClick={() => setModals({...modals, auth: true})} className="w-14 h-11 sm:w-14 sm:h-11 md:w-14 md:h-11 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-slate-100 transition shadow-inner overflow-hidden shrink-0" title="Profil">
                         <span className="text-2xl sm:text-2xl font-black uppercase">
-                          {currentUserName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)} {/* Codul care il am pana acum arata 2 initiale la nume dar Acesta arata doar un initial //{currentUserName.charAt(0)} */}
+                          {currentUserName.split(' ').filter(Boolean).map(n => n[0]).join('').toUpperCase().slice(0, 2)} 
                         </span>
                     </button>
                     <span className="truncate text-2xl sm:text-3xl font-black">Teritorii</span>
@@ -1946,18 +1856,14 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             </header>
           ) : (
             <header className="sticky top-0 z-30 p-4 pb-0">
-              {/* 1. Div-ul tău colorat (Titlul Teritoriului) */}
               <div className={`${selectedTerritory.category !== 'personal' ? 'bg-orange-600' : 'bg-green-600'} text-white p-3 md:p-4 rounded-[2rem] shadow-xl transition-colors flex items-center justify-between gap-3`}>
-                {/* AICI ESTE CONTAINERUL TEXTULUI */}
                 <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0 w-full overflow-hidden">
                   <button onClick={() => setSelectedTerritoryId(null)} className="material-icons text-white p-2 bg-black/10 hover:bg-black/20 rounded-full transition shrink-0">arrow_back</button>
-                  {/* ADĂUGĂM min-w-0 ȘI PE h1 */}
                   <h1 className="font-black text-white uppercase text-base md:text-xl truncate block w-full">{selectedTerritory.name}</h1>
                   {canEditStructure && (
                     <button onClick={() => setModals({...modals, territoryEdit: true})} className="material-icons text-white/90 hover:text-white text-[16px] md:text-[20px] shrink-0 active:scale-90 transition-transform">edit</button>
                   )}
                 </div>
-                {/* AICI ESTE CONTAINERUL BUTOANELOR DE DREAPTA */}
                 {((isAdmin || isGroupAdmin || selectedTerritory.category === 'personal') && !isReadOnly) && (
                   <div className="shrink-0 flex items-center">
                     <button onClick={() => handleToggleDone(selectedTerritory)} className={`material-icons p-3 rounded-full transition shadow-sm ${selectedTerritory.isDone ? 'bg-white text-green-600 shadow-xl' : 'bg-black/10 hover:bg-black/20 text-white/80'}`}>
@@ -1967,7 +1873,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 )}
               </div>
 
-              {/* 2. Bannerul Offline - Acum este ÎN header, deci se mișcă împreună cu el */}
                   {!isOnline && selectedTerritoryId && (
                     <div className={`mt-2 mx-auto w-[70%] max-w-[300px] py-1 px-3 rounded-[2rem] shadow-sm text-[10px] font-black uppercase tracking-widest text-white text-center flex items-center justify-center gap-2 ${selectedTerritory?.category !== 'personal' ? 'bg-red-500' : 'bg-orange-500'}`}>
                       <span className="material-icons text-[12px]">wifi_off</span>
@@ -2271,33 +2176,27 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                               setAlertBox({ isOpen: true, title: 'Parolă slabă', message: 'Parola trebuie să aibă minim 4 caractere!', isDanger: true, showCancel: false, onConfirm: () => {} });
                               return;
                             }
-                            // La fel și pentru eroarea "Acest nume există deja!" -> adaugă showCancel: false
 
                       try { 
-                        //Creare usere
                         const check = await db.collection('app_users').where('name', '==', nume).get();
                         if(!check.empty) {
                           setAlertBox({ isOpen: true, title: 'Atenție', message: 'Acest nume există deja!', isDanger: true, showCancel: false, onConfirm: () => {} });
                           return;
                         }
-                        // TRUC TEHNIC: Deschidem o conexiune secundară ca să NU te deconecteze pe tine (Adminul)
                         const secondaryApp = firebase.initializeApp(firebase.app().options, "SecondaryApp");
-                        // Folosim aceleași coduri Unicode universale și la creare
                         const numeCurat = nume.trim().toLowerCase()
-                          .replace(/[\u0103\u00e2]/g, 'a') // ă, â
-                          .replace(/[\u00ee]/g, 'i')       // î
-                          .replace(/[\u0219\u015f]/g, 's') // ș, ş
-                          .replace(/[\u021b\u0163]/g, 't') // ț, ţ
+                          .replace(/[\u0103\u00e2]/g, 'a')
+                          .replace(/[\u00ee]/g, 'i')       
+                          .replace(/[\u0219\u015f]/g, 's') 
+                          .replace(/[\u021b\u0163]/g, 't') 
                           .replace(/\s+/g, '.');
                         
-                        const emailFictiv = numeCurat + '@ter.com'; // Va rezulta: ion.popescu@ter.com
+                        const emailFictiv = numeCurat + '@ter.com'; 
                         
-                        // Creăm contul la Google și îi extragem ID-ul unic (UID)
                         const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(emailFictiv, parola.trim());
                         const userId = userCredential.user.uid;
                         
                         await secondaryApp.delete();
-                        // Salvăm în Firestore folosind ID-ul unic primit de la Google ca nume de document
                         await db.collection('app_users').doc(userId).set({
                           id: userId, 
                           name: nume, 
@@ -2307,24 +2206,22 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         });
 
                         e.target.reset();
-                        // REPARAT: Alerta albastră pentru succes, integrată în design
                         setAlertBox({
                           isOpen: true,
                           title: 'Succes',
                           message: 'Utilizator creat cu succes și securizat!',
                           isDanger: false,
-                          showCancel: false, // <--- ADAUGĂ ASTA PENTRU A ASCUNDE BUTONUL
+                          showCancel: false, 
                           onConfirm: () => {}
                         });
                         
                       } catch(err) {
-                       // REPARAT: Alerta roșie în caz că Firebase dă vreo eroare
                        setAlertBox({
                          isOpen: true,
                          title: 'Eroare',
                          message: 'Eroare la creare: ' + err.message,
                          isDanger: true,
-                         showCancel: false, // <--- ADAUGĂ LINIA ASTA CA SĂ ASCUNZI BUTONUL
+                         showCancel: false, 
                          onConfirm: () => setAlertBox({ isOpen: false, title: '', message: '', isDanger: false })
                        });
                       }
@@ -2357,7 +2254,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
                   <div>
                     <h4 className="text-xs font-black uppercase text-slate-500 mb-3">Utilizatori Existenți</h4>
-                    {/* ================= BARĂ TAB-URI DINAMICE (ADĂUGATĂ ACUM) ================= */}
                     <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-none border-b border-slate-100 dark:border-slate-700/50">
                       <button 
                         onClick={() => setAdminUserTab('All')}
@@ -2376,13 +2272,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       ))}
                     </div>
 
-                    {/* Lista ta redesenată cu noul motor de filtrare și sortare */}
                     <div className="space-y-2">
-                      {/* MODIFICAT: Verificăm lungimea listei filtrate, nu a celei generale */}
                       {getFilteredAndSortedUsers().length === 0 ? (
                         <p className="text-xs font-bold text-slate-400 text-center py-4">Niciun utilizator în această secțiune.</p>
                       ) : (
-                        // MODIFICAT: Folosim funcția getFilteredAndSortedUsers() în loc de adminUsersList
                         getFilteredAndSortedUsers().map(u => (
                           <div key={u.id} className="flex justify-between items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-3 rounded-xl shadow-sm">
                             <div>
@@ -2399,7 +2292,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                               <div className="text-[10px] text-slate-400 font-bold">{u.group || 'Grupa 5'} • Parolă: {u.password}</div>
                             </div>
                             
-                            {/* Butoanele tale originale de editare și ștergere (Rămase Neschimbate) */}
                             <div className="flex gap-2">
                               <button onClick={() => setModals({...modals, adminPanel: true, adminEditUser: { id: u.id, name: u.name, password: u.password, group: u.group, isAdminGroup: u.isAdminGroup }})} className="material-icons text-slate-400 hover:text-blue-500 text-lg p-2 bg-slate-50 dark:bg-slate-900 rounded-lg transition-colors shadow-sm">edit</button>
                               <button onClick={() => {
@@ -2474,7 +2366,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     <input type="checkbox" name="isAdminGroup" defaultChecked={modals.adminEditUser.isAdminGroup} className="w-5 h-5 text-blue-600 rounded-md border-slate-300 focus:ring-blue-500" />
                     <span className="text-xs font-black uppercase text-slate-600 dark:text-slate-300">Este Administrator de Grupă</span>
                   </label>
-                  {/* --- ÎNLOCUIEȘTE DOAR ACEST BLOC DIN MODALUL ADMIN --- */}
               <div className="flex gap-2 pt-2">
                 <button type="button" onClick={() => setModals({...modals, adminEditUser: null, adminPanel: true})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
                 <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase text-xs shadow-sm active:scale-95 transition-all">Salvează</button>
@@ -2532,7 +2423,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                         </div>
                     )}
                   </div>
-                 {/* --- ÎNLOCUIEȘTE DOAR ACEST BLOC DIN MODALUL TERITORIU --- */}
           <div className="flex gap-2 pt-4">
             <button type="button" onClick={() => setModals({...modals, territoryAdd: false, territoryEdit: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
             <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
@@ -2542,7 +2432,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             </div>
           )}
 
-{/* 1. MODAL: Bloc / Stradă Nouă */}
           {modals.blockAdd && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
@@ -2570,9 +2459,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       />
                   </div>
                   <div className="flex gap-2 pt-4">
-                    {/* Anulează + Efect de micșorare la apăsare */}
                     <button type="button" onClick={() => setModals({...modals, blockAdd: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
-                    {/* Salvează + Efect de micșorare la apăsare */}
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
                   </div>
                 </form>
@@ -2580,7 +2467,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             </div>
           )}
 
-          {/* 2. MODAL: Adăugare Scară / Case */}
           {(modals.sectionAdd || modals.locationAppend || modals.stradaAddHouse) && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl">
@@ -2588,8 +2474,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   {modals.stradaAddHouse ? 'Adaugă Case' : (modals.isStradaGroup ? 'Adaugă Grupă de Case' : (modals.locationAppend ? 'Adaugă Apartamente' : 'Adăugare Scară'))}
                 </h3>
                 <form onSubmit={modals.stradaAddHouse ? handleAddStradaHouses : (modals.locationAppend ? handleAppendLocations : handleAddSection)} className="space-y-4">
-                {/* Afișăm câmpul 'name' DOAR dacă adăugăm o secțiune (Scară) SAU o Grupă de case */}
-{(modals.sectionAdd || (modals.stradaAddHouse && modals.isStradaGroup)) && (
+                {(modals.sectionAdd || (modals.stradaAddHouse && modals.isStradaGroup)) && (
     <input 
         name="name" 
         placeholder={modals.isStradaGroup ? "Nume (ex: Numere Pare sau Impare)" : "Nume scara (ex: Scara 1)"} 
@@ -2618,9 +2503,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   </div>
 
                   <div className="flex gap-2 pt-2">
-                    {/* Anulează + Efect de micșorare la apăsare */}
                     <button type="button" onClick={() => setModals({...modals, sectionAdd: null, locationAppend: null, stradaAddHouse: null, isStradaGroup: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
-                    {/* Salvează + Efect de micșorare la apăsare */}
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
                   </div>
                 </form>
@@ -2628,7 +2511,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             </div>
           )}
 
-          {/* 3. MODAL: Redenumește */}
           {modals.renameItem && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
               <div className="bg-white dark:bg-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
@@ -2640,9 +2522,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       onInput={(e) => e.target.setCustomValidity("")}
                       className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100" />
                   <div className="flex gap-2 pt-2">
-                    {/* Anulează + Efect de micșorare la apăsare */}
                     <button type="button" onClick={() => setModals({...modals, renameItem: null})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
-                    {/* Salvează + Efect de micșorare la apăsare */}
                     <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black shadow-sm active:scale-95 transition-all">SALVEAZĂ</button>
                   </div>
                 </form>
@@ -2684,11 +2564,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       </div>
                    </div>
 
-                                       {/* --- INLOCUIESTE DOAR ACEST BLOC PENTRU FILTRAREA SECURIZATA --- */}
                     {exportConfig.mode === 'partial' && (
                        <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-700 max-h-[180px] overflow-y-auto shadow-inner">
                           {territories.filter(t => {
-                              // Utilizatorii simpli pot vedea doar categoria personal, chiar dacă state-ul cere altceva
                               const allowedCategory = (isAdmin || isGroupAdmin) ? exportConfig.category : 'personal';
                               return t.category === allowedCategory;
                           }).length === 0 ? (
@@ -2705,7 +2583,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                        </div>
                     )}
 
-                               {/* --- INLOCUIESTE DOAR ACEST DIV PENTRU ANIMAȚIILE BUTOANELOR --- */}
             <div className="flex gap-2 pt-4 shrink-0">
              <button type="button" onClick={() => setModals({...modals, export: false})} className="flex-1 p-4 font-black text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-2xl active:scale-95 transition-all uppercase text-xs">Anulează</button>
              <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-2xl font-black uppercase shadow-sm active:scale-95 transition-all">EXPORTĂ ACUM</button>
@@ -2729,9 +2606,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       onBlur={() => {
                         const val = editLocNumber.trim();
                         if(val) {
-                          const { blockId, sectionId, loc } = modals.locationEdit;
-                          const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, number: val } : x) } : s) } : b);
-                          updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+                          const { loc } = modals.locationEdit;
+                          updateTerritory(selectedTerritory.id, selectedTerritory.category, {
+                             [`locationsMap.${loc.id}.number`]: val
+                          });
                           setModals(m => ({ ...m, locationEdit: { ...m.locationEdit, loc: { ...m.locationEdit.loc, number: val } } }));
                         }
                       }}
@@ -2747,9 +2625,10 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                           message: `Sigur dorești să ștergi definitiv numărul/apartamentul ${editLocNumber}?`,
                           isDanger: true,
                           onConfirm: () => {
-                            const { blockId, sectionId, loc } = modals.locationEdit;
-                            const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.filter(l => l.id !== loc.id) } : s) } : b);
-                            updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+                            const { loc } = modals.locationEdit;
+                            updateTerritory(selectedTerritory.id, selectedTerritory.category, {
+                                [`locationsMap.${loc.id}`]: firebase.firestore.FieldValue.delete()
+                            });
                             setModals({...modals, locationEdit: null});
                           }
                         });
@@ -2762,34 +2641,29 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <div className="p-5 flex-1 overflow-y-scroll space-y-6">
                   <div className="grid grid-cols-3 gap-2">
                    {settings.labels.map(l => {
-  // Verificăm dacă aceasta este eticheta selectată pentru acest apartament
   const isSelected = l.id === modals.locationEdit.loc.status;
 
   return (
     <button key={l.id} 
       onClick={() => {
-        const { blockId, sectionId, loc } = modals.locationEdit;
-        // 1. Calculăm noul istoric (această funcție o ai deja)
+        const { loc } = modals.locationEdit;
         const newHistory = recordHistory(loc, 'status_change', l.id);
-        // 2. Facem update în Firebase
-        const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, status: l.id, history: newHistory } : x) } : s) } : b);
-        // 1. Trimitem la baza de date
-        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        // Fereastra nu se mai închide automat
-        // 2. ACTUALIZARE IMEDIATĂ (Asta lipsea)
-        // Actualizăm starea locală a modalului pentru ca React să aplice conturul instantaneu
-        // Aici adăugăm și "history: newHistory" în obiectul `loc`
+        
+        updateTerritory(selectedTerritory.id, selectedTerritory.category, {
+            [`locationsMap.${loc.id}.status`]: l.id,
+            [`locationsMap.${loc.id}.history`]: newHistory,
+            [`locationsMap.${loc.id}.updatedAt`]: new Date().toISOString()
+        });
+        
         setModals(prev => ({
            ...prev,
            locationEdit: {
              ...prev.locationEdit,
-             loc: { ...prev.locationEdit.loc, status: l.id,history: newHistory // <--- Această linie face magia! 
-                   }
+             loc: { ...prev.locationEdit.loc, status: l.id, history: newHistory }
            }
         }));
       }}
       style={{ backgroundColor: l.color, color: l.textColor }}
-      // Adăugăm ring-4 pentru un contur gros și vizibil dacă este selectat
       className={`p-2 rounded-xl text-[9px] font-black uppercase border border-black/5 flex items-center justify-center text-center leading-tight min-h-[44px] shadow-sm active:scale-90 transition-all ${isSelected ? 'ring-4 ring-black dark:ring-white' : ''}`}
     >
       {l.label}
@@ -2807,11 +2681,14 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                       defaultValue={modals.locationEdit.loc.notes}
                       onBlur={(e) => {
                          const val = e.target.value.trim();
-                         const { blockId, sectionId, loc } = modals.locationEdit;
+                         const { loc } = modals.locationEdit;
                          if (val !== loc.notes) {
                              const newHistory = recordHistory(loc, 'A modificat Notița');
-                             const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, notes: val, history: newHistory } : x) } : s) } : b);
-                             updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
+                             updateTerritory(selectedTerritory.id, selectedTerritory.category, {
+                                 [`locationsMap.${loc.id}.notes`]: val,
+                                 [`locationsMap.${loc.id}.history`]: newHistory,
+                                 [`locationsMap.${loc.id}.updatedAt`]: new Date().toISOString()
+                             });
                          }
                       }}
                       placeholder="Scrie o notiță (Ex: Revin mâine)..."
@@ -2873,7 +2750,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 </h2>
                 <button onClick={() => setModals({...modals, settings: false})} className="material-icons bg-slate-100 dark:bg-slate-800 p-3 rounded-full dark:text-slate-100 transition-colors">close</button>
               </div>
-              {/* 2. SECȚIUNE GRUPE (Codul vechi) */}
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 rounded-[2rem] mb-8 border-2 border-slate-100 dark:border-slate-700 w-full max-w-[700px] mx-auto shadow-sm">
                  <h3 className="font-black text-sm uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2"><span className="material-icons">groups</span> Gestionare Grupe</h3>
                  <div className="space-y-3 mb-5">
@@ -2881,13 +2757,12 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                          <div key={g} className="flex justify-between items-center bg-white dark:bg-slate-800 p-3 pl-5 rounded-2xl border border-slate-200 dark:border-slate-600 shadow-sm">
                              <span className="font-black text-sm uppercase text-slate-700 dark:text-slate-200">{g}</span>
                              <div className="flex gap-2">
-                               {/* AJUSTAT: Am înlocuit vechiul prompt cu activarea promptBox-ului nostru */}
                                 <button onClick={() => {
                                  setPromptBox({
                                      isOpen: true,
                                      title: 'Redenumește Grupa',
                                      placeholder: 'Introdu numele nou al grupei...',
-                                     value: g, // Trimite numele actual al grupei ca valoare inițială în căsuță
+                                     value: g, 
                                      onConfirm: (newName) => handleRenameGroup(g, newName)
                                  });
                                  }} className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-500 material-icons bg-slate-50 dark:bg-slate-900 rounded-xl transition-colors shadow-sm">edit</button>
@@ -2917,7 +2792,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               </div>
             </div>
           )}
-          {/* 1. ACESTA ESTE CODUL NOU PENTRU PROMPTBOX (ADĂUGAT ACUM)    */}
          {promptBox.isOpen && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[250]">
               <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700">
@@ -2930,7 +2804,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   placeholder={promptBox.placeholder}
                   value={promptBox.value}
                   onChange={(e) => {
-                    e.target.setCustomValidity(""); // Ștergem eroarea când utilizatorul începe să scrie
+                    e.target.setCustomValidity(""); 
                     setPromptBox({ ...promptBox, value: e.target.value });
                   }}
                   className="w-full bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-black border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 mb-6"
@@ -2939,7 +2813,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   <button onClick={() => setPromptBox({ ...promptBox, isOpen: false })} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors">Anulează</button>
                   <button onClick={() => { 
                     const inputEl = document.getElementById('promptBoxInput');
-                    if (!valideazaCampul(inputEl, "Introdu o denumire!")) return; // Oprește și arată bula dacă e gol
+                    if (!valideazaCampul(inputEl, "Introdu o denumire!")) return; 
 
                     promptBox.onConfirm(promptBox.value.trim()); 
                     setPromptBox({ ...promptBox, isOpen: false }); 
@@ -2948,27 +2822,21 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               </div>
             </div>
           )}
-          {/* 2. ACESTA ESTE CODUL TĂU PENTRU ALERTBOX (RĂMÂNE NESCHIMBAT) */}
           {alertBox.isOpen && (
             <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[300]">
               <div className="bg-white dark:bg-slate-800 rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl border-4 border-slate-100 dark:border-slate-700 text-center scale-up-animation">
-                {/* Iconița */}
                 <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md ${alertBox.isDanger ? 'bg-red-50 text-red-500 border border-red-200' : 'bg-blue-50 text-blue-500 border border-blue-200'}`}>
                   <span className="material-icons text-3xl">{alertBox.isDanger ? 'warning' : 'info'}</span>
                  </div> 
-                {/* Titlul */}
                 <h3 className="font-black text-base text-slate-800 dark:text-slate-100 uppercase tracking-widest mb-2">{alertBox.title}</h3>
-                {/* AICI ESTE REZOLVAREA - ne asigurăm că mesajul se afișează */}
                 <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mb-6 px-2 leading-relaxed">
                   {alertBox.message}
                 </p>
                 <div className="flex gap-2">
-                  {/* Butonul de Anulare (apare doar dacă showCancel nu este false) */}
                   {alertBox.showCancel !== false && (
-      
+        
                     <button onClick={() => setAlertBox({ ...alertBox, isOpen: false })} className="flex-1 p-4 font-black text-slate-400 uppercase text-xs hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors">Anulează</button>
                   )}
-                  {/* Butonul de Confirmare (acum scrie "Confirm" când este notificare simplă) */}
                   <button onClick={() => { alertBox.onConfirm(); setAlertBox({ ...alertBox, isOpen: false }); }} className={`flex-1 p-4 text-white rounded-2xl font-black uppercase text-xs shadow-sm transition-all active:scale-95 ${alertBox.isDanger ? 'bg-red-600 hover:bg-red-700 shadow-red-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'}`}>
                      {alertBox.showCancel === false ? 'Confirm' : 'Confirmă'}
                   </button>
@@ -3004,9 +2872,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             </div>
           )}
 
-          {/* =================================================== */}
-          {/* BULINA FILTRATĂ ȘI SECURIZATĂ PENTRU INLINE BABEL */}
-          {/* 🟢 BULINA VERDE (Sincronizat)🟡 BULINA GALBENĂ (Se sincronizează) */}
           {isSynced ? (
             <div className="fixed bottom-4 left-4 z-[150] flex items-center gap-2 bg-slate-900/90 text-white px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm border border-slate-700 pointer-events-none select-none text-xs font-semibold">
               <span className="relative flex h-2 w-2">
@@ -3024,7 +2889,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
               <span>Sincronizare...</span>
             </div>
           )}
-          {/* =================================================== */}
 
         </div> 
       );
@@ -3035,7 +2899,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
   </script>
   
   <script>
-    // Această bucată spune telefonului să instaleze aplicația în fundal (Service Worker)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
