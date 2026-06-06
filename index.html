@@ -776,7 +776,8 @@ const closeTopLayer = () => {
   }
 
   // 4) Dacă ești în interiorul unui teritoriu, ieși la listă
-  if (selectedTerritoryId) {
+if (selectedTerritoryId) {
+    localStorage.removeItem('saved_territory_id'); // <--- ADAUGĂ ASTA AICI
     setSelectedTerritoryId(null);
     return true;
   }
@@ -955,32 +956,27 @@ useEffect(() => {
         return () => unsubscribe();
       }, [user, isAdmin]);
 
-		
+		// Restaurare teritoriu la deschidere
+useEffect(() => {
+  const savedId = localStorage.getItem('saved_territory_id');
+  if (savedId) {
+    console.log("Restaurăm teritoriul salvat:", savedId);
+    setSelectedTerritoryId(savedId); 
+  }
+}, []); // Se execută doar o dată la pornire
 
 // 2. Aici ai useEffect-ul de ascultare de ecran (MODIFICAT)
 useEffect(() => {
-  const handleVisibilityChange = async () => {
+  const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
-      console.log("Utilizatorul s-a întors. Forțăm resincronizarea datelor...");
-      
-      try {
-        // 1. Forțăm preluarea datelor personale
-        // Acest .get() obligă Firebase să se conecteze la server și să actualizeze cache-ul
-        await db.collection('users').doc(userDocId).collection('territories').get();
-        
-        // 2. Forțăm preluarea datelor comune
-        await db.collection('shared_territories').get();
-        
-        console.log("Datele au fost resincronizate fără reload!");
-      } catch (err) {
-        console.error("Eroare la resincronizarea forțată:", err);
-      }
+		  // Refresh complet pentru a repara Firebase
+      window.location.reload(); 
     }
   };
 
   document.addEventListener("visibilitychange", handleVisibilityChange);
   return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-}, [userDocId]); // Depinde de userDocId ca să știe ce să încarce
+}, []);
 
    useEffect(() => {
   if (authLoading || !user) { setLoading(false); return; }
@@ -2073,7 +2069,11 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     const prog = calculateProgress(t);
                     const isOverdue = !t.isDone && t.endDate < todayStr;
                     return (
-                      <div key={t.id} onClick={() => setSelectedTerritoryId(t.id)} className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
+                      <div key={t.id} onClick={() => {
+								  localStorage.setItem('saved_territory_id', t.id); // Salvăm teritoriul
+								  setSelectedTerritoryId(t.id); // Îl deschidem
+								}}
+						  className={`relative flex flex-col justify-center overflow-hidden p-4 rounded-3xl border-2 transition-all cursor-pointer shadow-md hover:shadow-lg ${t.isDone ? 'bg-green-100/80 dark:bg-green-900/30 border-green-400' : isOverdue ? 'bg-red-50 dark:bg-red-900/30 border-red-400' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'}`}>
                         <div className="flex justify-between items-start mb-2 pr-[110px]">
                           <div className="min-w-0 flex-1">
                             <h3 className={`font-black text-lg leading-tight uppercase truncate min-w-0 ${t.isDone ? 'text-green-900 dark:text-green-400' : isOverdue ? 'text-red-900 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>{t.name}</h3>
