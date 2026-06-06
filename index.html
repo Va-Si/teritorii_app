@@ -2779,52 +2779,59 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 							  disabled={isReadOnly}
 							/>
                   </div>
-                  <div className="flex gap-3">
-                   {canEditStructure && (
-                    <button onClick={() => {
-						   setAlertBox({
-						     isOpen: true,
-						     title: 'Ștergere Apartament',
-						     message: `Sigur dorești să ștergi definitiv numărul/apartamentul ${editLocNumber}?`,
-						     isDanger: true,
-						     onConfirm: () => {
-						       const { blockId, sectionId, loc } = modals.locationEdit;
-						       
-						       // Creăm o tranzacție dedicată pentru ștergere direct pe server
-						       const docRef = selectedTerritory.category !== 'personal'
-						           ? db.collection('shared_territories').doc(selectedTerritory.id)
-						           : db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id);
-						
-						       db.runTransaction(async (transaction) => {
-						           const doc = await transaction.get(docRef);
-						           if (!doc.exists) return;
-						           
-						           const data = doc.data();
-						           const newBlocks = data.blocks.map(b => {
-						               if (b.id !== blockId) return b;
-						               return { ...b, sections: b.sections.map(s => {
-						                   if (s.id !== sectionId) return s;
-						                   // Filtrăm locația ștearsă fără să atingem restul structurii
-						                   return { ...s, locations: s.locations.filter(l => l.id !== loc.id) };
-						               })};
-						           });
-						           transaction.update(docRef, { blocks: newBlocks });
-						       }).then(() => {
-						           setModals({...modals, locationEdit: null});
-						       }).catch(err => console.error("Eroare la ștergere:", err));
-						     }
-						   });
-						}} className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
-						                )}
-								  {/* Am adăugat și butonul de închidere (X) înapoi, ca să nu rămână spațiu gol */}
-								  <button 
-								    onClick={() => setModals({...modals, locationEdit: null})} 
-								    className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600"
-								  >
-								    close
-								  </button>
-								</div>
+                 <div className="flex gap-3">
+  {canEditStructure && (
+    <button 
+      onClick={() => {
+        setAlertBox({
+          isOpen: true,
+          title: 'Ștergere Apartament',
+          message: `Sigur dorești să ștergi definitiv numărul/apartamentul ${editLocNumber}?`,
+          isDanger: true,
+          onConfirm: () => {
+            const { blockId, sectionId, loc } = modals.locationEdit;
 
+            // Creăm o tranzacție dedicată pentru ștergere direct pe server
+            const docRef = selectedTerritory.category !== 'personal'
+              ? db.collection('shared_territories').doc(selectedTerritory.id)
+              : db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id);
+
+            db.runTransaction(async (transaction) => {
+              const doc = await transaction.get(docRef);
+              if (!doc.exists) return;
+
+              const data = doc.data();
+              const newBlocks = data.blocks.map(b => {
+                if (b.id !== blockId) return b;
+                return { 
+                  ...b, 
+                  sections: b.sections.map(s => {
+                    if (s.id !== sectionId) return s;
+                    // Filtrăm locația ștearsă fără să atingem restul structurii
+                    return { ...s, locations: s.locations.filter(l => l.id !== loc.id) };
+                  })
+                };
+              });
+              transaction.update(docRef, { blocks: newBlocks });
+            }).then(() => {
+              setModals({...modals, locationEdit: null});
+            }).catch(err => console.error("Eroare la ștergere:", err));
+          }
+        });
+      }} 
+      className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
+    >
+      delete
+    </button>
+  )}
+  {/* Am adăugat și butonul de închidere (X) înapoi, ca să nu rămână spațiu gol */}
+  <button 
+    onClick={() => setModals({...modals, locationEdit: null})} 
+    className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600"
+  >
+    close
+  </button>
+</div>
                 <div className="p-5 flex-1 overflow-y-scroll space-y-6">
                   <div className="grid grid-cols-3 gap-2">
                    {settings.labels.map(l => {
