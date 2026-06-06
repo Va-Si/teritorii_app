@@ -955,48 +955,65 @@ useEffect(() => {
         return () => unsubscribe();
       }, [user, isAdmin]);
 
-     useEffect(() => {
+   useEffect(() => {
   if (authLoading || !user) { setLoading(false); return; }
   setLoading(true);
-  const unsubs = [];
-  
- // 1. [MODIFICAT PENTRU GLOBAL] Codul pentru setări globale
-  unsubs.push(db.collection('config').doc('global_settings').onSnapshot(doc => { 
+
+  // Variabile pentru a păstra datele necesare combinării
+  let latestPersT = [];
+  let latestSharedT = [];
+
+  const updateTerritories = () => {
+    setTerritories([...latestPersT, ...latestSharedT]);
+    setLoading(false);
+  };
+
+  // 1. [MODIFICAT PENTRU GLOBAL] Codul pentru setări globale
+  const unsubSettings = db.collection('config').doc('global_settings').onSnapshot(doc => { 
     if(doc.exists) {
        const data = doc.data();
        setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
     } else {
        db.collection('config').doc('global_settings').set({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
     }
-  }));
+  });
 
-  // 2. [OPTIMIZAT] Activăm verificarea offline DOAR pe teritoriile personale (unde se pot face modificări)
-  unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
-    const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  // 2. [OPTIMIZAT] Teritorii Personale
+  const unsubPersonal = db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
+    latestPersT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
-    // Pentru teritoriile comune lăsăm onSnapshot simplu, fără includeMetadataChanges (salvăm memorie)
-    unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
-       const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
-       
-       // ==========================================
-       // 🟢 LOGICA SIMPLIFICATĂ PENTRU BULINĂ 🟡
-       // Verificăm doar dacă sunt scrieri în așteptare pentru teritoriile personale
-       setIsSynced(!snap.metadata.hasPendingWrites); 
-       // ==========================================
+    // 🟢 Logica ta pentru bulina de sincronizare
+    setIsSynced(!snap.metadata.hasPendingWrites); 
+    
+    updateTerritories();
+  });
 
-       setTerritories([...persT, ...sharedT]);
-       setLoading(false);
+  // 3. [SHARED] Teritorii comune (ACUM INDEPENDENT)
+  const unsubShared = db.collection('shared_territories').onSnapshot(snapShared => {
+    latestSharedT = snapShared.docs.map(doc => ({ 
+        id: doc.id, 
+        ...doc.data(), 
+        category: doc.data().category || doc.data().group || 'Grupa 5' 
     }));
-  }));
+    
+    updateTerritories();
+  });
 
-  // 3. [NESCHIMBAT] Codul pentru lista de Admin
+  // 4. [ADMIN] Lista de Admin
+  let unsubAdmin = () => {};
   if (isAdmin) {
-     unsubs.push(db.collection('app_users').onSnapshot(snap => {
+     unsubAdmin = db.collection('app_users').onSnapshot(snap => {
          setAdminUsersList(snap.docs.map(d => d.data()));
-     }));
+     });
   }
   
-  return () => unsubs.forEach(u => u());
+  // Cleanup total (o singură dată, la demontare)
+  return () => {
+    unsubSettings();
+    unsubPersonal();
+    unsubShared();
+    unsubAdmin();
+  };
 }, [userDocId, authLoading, isAdmin]);
 
       const handleAddGroup = async (newGroupName) => {
