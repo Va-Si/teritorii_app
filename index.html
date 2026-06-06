@@ -106,38 +106,6 @@
     }
     const db = firebase.firestore();
     const auth = firebase.auth();
-
-    const APP_VIEW_STATE_KEY = 'teritorii_view_state_v1';
-
-    const loadViewState = () => {
-      try {
-        const saved = JSON.parse(localStorage.getItem(APP_VIEW_STATE_KEY) || '{}');
-        const maxAge = 12 * 60 * 60 * 1000;
-        if (!saved.savedAt || Date.now() - saved.savedAt > maxAge) return {};
-        return saved;
-      } catch (err) {
-        return {};
-      }
-    };
-
-    const saveViewState = (patch) => {
-      try {
-        const current = loadViewState();
-        localStorage.setItem(APP_VIEW_STATE_KEY, JSON.stringify({
-          ...current,
-          ...patch,
-          savedAt: Date.now()
-        }));
-      } catch (err) {
-        console.warn('Nu am putut salva ecranul curent:', err);
-      }
-    };
-
-    const clearViewState = () => {
-      try {
-        localStorage.removeItem(APP_VIEW_STATE_KEY);
-      } catch (err) {}
-    };
     
     const ADMIN_EMAIL = 'valeriu.siminitchi@gmail.com';
     const DEFAULT_GROUPS = ['Grupa 1', 'Grupa 2', 'Grupa 3', 'Grupa 4', 'Grupa 5'];
@@ -659,7 +627,6 @@ return (
     }
 
     function App() {
-      const initialViewStateRef = useRef(loadViewState());
       // Încarcă setările din localStorage sau pune un default
 const [progressTags, setProgressTags] = useState(() => {
     const saved = localStorage.getItem('progressTags');
@@ -667,10 +634,10 @@ const [progressTags, setProgressTags] = useState(() => {
 });
       const [territories, setTerritories] = useState([]);
       const [settings, setSettings] = useState({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
-      const [activeTab, setActiveTab] = useState(() => initialViewStateRef.current.activeTab || 'personal');
-      const [activeGroupView, setActiveGroupView] = useState(() => initialViewStateRef.current.activeGroupView || 'Grupa 5'); 
+      const [activeTab, setActiveTab] = useState(() => localStorage.getItem('ui.activeTab') || 'personal');
+      const [activeGroupView, setActiveGroupView] = useState(() => localStorage.getItem('ui.activeGroupView') || 'Grupa 5'); 
       
-      const [selectedTerritoryId, setSelectedTerritoryId] = useState(() => initialViewStateRef.current.selectedTerritoryId || null);
+      const [selectedTerritoryId, setSelectedTerritoryId] = useState(() => sessionStorage.getItem('ui.selectedTerritoryId') || null);
       const [loading, setLoading] = useState(true);
       const [touchStart, setTouchStart] = useState(null);
       const [touchEnd, setTouchEnd] = useState(null);
@@ -684,11 +651,6 @@ const [progressTags, setProgressTags] = useState(() => {
       const [adminUsersList, setAdminUsersList] = useState([]);
       // Pasul 1: Starea pentru buline de sincronizare (implicit considerăm că e sincronizat)
 const [isSynced, setIsSynced] = React.useState(true);
-      const [resumeTick, setResumeTick] = useState(0);
-      const reconnectInProgressRef = useRef(false);
-      const lastResumeRefreshRef = useRef(0);
-      const restoredScrollForTerritoryRef = useRef(null);
-      const hasLoadedTerritoriesRef = useRef(false);
 
       const [modals, setModals] = useState({ territoryAdd: false, territoryEdit: false, blockAdd: false, sectionAdd: null, locationAppend: null, locationEdit: null, settings: false, theme: false, stradaAddHouse: null, renameItem: null, auth: false, adminPanel: false, profileEdit: false, adminEditUser: null, isStradaGroup: false, export: false, report: null });
       const [toast, setToast] = useState(null);
@@ -703,6 +665,7 @@ const [isSynced, setIsSynced] = React.useState(true);
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
       const [collapsedSections, setCollapsedSections] = useState({});
+      const [syncTick, setSyncTick] = useState(0);
       const handleCancelCompletion = (t) => {
     // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
     const updateData = { 
@@ -771,48 +734,6 @@ const generateTerritoryReport = (territory) => {
       const [alertBox, setAlertBox] = useState({ isOpen: false, title: '', message: '', onConfirm: null, isDanger: false });
       //Pentru a înlocui acele căsuțe de scriere native ale browserului cand adaugi grupe noi si le editezi
       const [promptBox, setPromptBox] = useState({ isOpen: false, title: '', placeholder: '', value: '', onConfirm: null });
-
-useEffect(() => {
-  if (authLoading || !userDocId) return;
-  saveViewState({ selectedTerritoryId, activeTab, activeGroupView, userDocId });
-}, [selectedTerritoryId, activeTab, activeGroupView, userDocId, authLoading]);
-
-useEffect(() => {
-  const rootEl = document.getElementById('root');
-  if (!rootEl) return;
-  let rafId = null;
-
-  const handleScroll = () => {
-    if (rafId) return;
-    rafId = requestAnimationFrame(() => {
-      rafId = null;
-      saveViewState({ scrollTop: rootEl.scrollTop });
-    });
-  };
-
-  rootEl.addEventListener('scroll', handleScroll, { passive: true });
-  return () => {
-    if (rafId) cancelAnimationFrame(rafId);
-    rootEl.removeEventListener('scroll', handleScroll);
-  };
-}, []);
-
-useEffect(() => {
-  if (!selectedTerritoryId) {
-    restoredScrollForTerritoryRef.current = null;
-    return;
-  }
-  if (loading || restoredScrollForTerritoryRef.current === selectedTerritoryId) return;
-
-  const saved = loadViewState();
-  if (saved.selectedTerritoryId !== selectedTerritoryId || typeof saved.scrollTop !== 'number') return;
-
-  restoredScrollForTerritoryRef.current = selectedTerritoryId;
-  setTimeout(() => {
-    const rootEl = document.getElementById('root');
-    if (rootEl) rootEl.scrollTop = saved.scrollTop;
-  }, 0);
-}, [selectedTerritoryId, loading]);
 
 	// Cheile care sunt modale reale (nu flag-uri gen isStradaGroup)
 const MODAL_KEYS = [
@@ -969,6 +890,19 @@ useEffect(() => {
       }, []);
 
       useEffect(() => {
+        if (selectedTerritoryId) sessionStorage.setItem('ui.selectedTerritoryId', selectedTerritoryId);
+        else sessionStorage.removeItem('ui.selectedTerritoryId');
+      }, [selectedTerritoryId]);
+
+      useEffect(() => {
+        localStorage.setItem('ui.activeTab', activeTab);
+      }, [activeTab]);
+
+      useEffect(() => {
+        localStorage.setItem('ui.activeGroupView', activeGroupView);
+      }, [activeGroupView]);
+
+      useEffect(() => {
         const root = window.document.documentElement;
         const applyTheme = (t) => {
           if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -983,45 +917,23 @@ useEffect(() => {
 		
       useEffect(() => {
         const unsubAuth = auth.onAuthStateChanged(firebaseUser => {
-          let savedView = loadViewState();
-
-          const resetSavedViewForAnotherUser = (currentUserId) => {
-            if (savedView.userDocId && savedView.userDocId !== currentUserId) {
-              clearViewState();
-              savedView = {};
-              setSelectedTerritoryId(null);
-            }
-          };
-
           if (firebaseUser && firebaseUser.email === ADMIN_EMAIL) {
-              resetSavedViewForAnotherUser(firebaseUser.uid);
               setUser({ id: firebaseUser.uid, name: firebaseUser.displayName || 'Admin', email: firebaseUser.email });
               setUserDocId(firebaseUser.uid);
-              setActiveGroupView(savedView.activeGroupView || 'Grupa 5');
-              setActiveTab(savedView.activeTab || 'personal');
-              setSelectedTerritoryId(savedView.selectedTerritoryId || null);
+              setActiveGroupView('Grupa 5');
+              setActiveTab('personal');
           } else {
               const customUserStr = localStorage.getItem('custom_user');
               if (customUserStr) {
                   try {
                       const cu = JSON.parse(customUserStr);
-                      resetSavedViewForAnotherUser(cu.id);
                       setUser(cu);
                       setUserDocId(cu.id);
-                      setActiveGroupView(savedView.activeGroupView || cu.group || 'Grupa 5');
-                      setActiveTab(savedView.activeTab || 'personal');
-                      setSelectedTerritoryId(savedView.selectedTerritoryId || null);
-                  } catch(e) {
-                      clearViewState();
-                      setUser(null);
-                      setUserDocId(null);
-                      setSelectedTerritoryId(null);
-                  }
+                      setActiveGroupView(cu.group || 'Grupa 5');
+                      setActiveTab('personal');
+                  } catch(e) {}
               } else {
-                 clearViewState();
                  setUser(null);
-                 setUserDocId(null);
-                 setSelectedTerritoryId(null);
               }
           }
           setAuthLoading(false);
@@ -1038,10 +950,8 @@ useEffect(() => {
         const unsubscribe = db.collection('app_users').doc(user.id).onSnapshot(doc => {
             if (!doc.exists) {
                 localStorage.removeItem('custom_user');
-                clearViewState();
                 setUser(null);
                 setUserDocId(null);
-                setSelectedTerritoryId(null);
                 setModals(prev => ({...prev, auth: false}));
             } else {
                 const data = doc.data();
@@ -1061,91 +971,44 @@ useEffect(() => {
 
 		
 
-// 2. Când telefonul revine din lock, refacem conexiunea Firestore fără reload de pagină.
+// 2. Aici ai useEffect-ul de ascultare de ecran (MODIFICAT)
 useEffect(() => {
-  const handleAppResume = async () => {
-    if (document.visibilityState && document.visibilityState !== 'visible') return;
+  const handleVisibilityChange = async () => {
+    if (document.visibilityState === 'visible') {
+      try {
+        await db.disableNetwork();
+        await db.enableNetwork();
 
-    setIsOnline(navigator.onLine);
-    if (!navigator.onLine) return;
+        // forțează recrearea tuturor listenerelor
+        setSyncTick(prev => prev + 1);
 
-    const now = Date.now();
-    if (reconnectInProgressRef.current || now - lastResumeRefreshRef.current < 1500) return;
-
-    reconnectInProgressRef.current = true;
-    lastResumeRefreshRef.current = now;
-    setIsSynced(false);
-
-    try {
-      await db.disableNetwork();
-    } catch (err) {
-      console.warn('Nu am putut opri temporar conexiunea Firestore:', err);
-    }
-
-    try {
-      await db.enableNetwork();
-    } catch (err) {
-      console.warn('Nu am putut reporni conexiunea Firestore:', err);
-    } finally {
-      reconnectInProgressRef.current = false;
-      setResumeTick(t => t + 1);
+        console.log("Firestore reconnected");
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
-  document.addEventListener("visibilitychange", handleAppResume);
-  window.addEventListener("pageshow", handleAppResume);
-  window.addEventListener("focus", handleAppResume);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  return () => {
-    document.removeEventListener("visibilitychange", handleAppResume);
-    window.removeEventListener("pageshow", handleAppResume);
-    window.removeEventListener("focus", handleAppResume);
-  };
+  return () =>
+    document.removeEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
 }, []);
 
    useEffect(() => {
-  if (authLoading) {
-    setLoading(true);
-    return;
-  }
-
-  if (!user || !userDocId) {
-    hasLoadedTerritoriesRef.current = false;
-    setTerritories([]);
-    setLoading(false);
-    return;
-  }
-
-  if (!hasLoadedTerritoriesRef.current) {
-    setLoading(true);
-  } else {
-    setIsSynced(false);
-  }
+  if (authLoading || !user) { setLoading(false); return; }
+  setLoading(true);
 
   // Variabile pentru a păstra datele necesare combinării
   let latestPersT = [];
   let latestSharedT = [];
-  let personalReady = false;
-  let sharedReady = false;
-  let personalPendingWrites = false;
-  let sharedPendingWrites = false;
-
-  const updateSyncStatus = () => {
-    setIsSynced(!personalPendingWrites && !sharedPendingWrites);
-  };
 
   const updateTerritories = () => {
-    if (!personalReady || !sharedReady) return;
     setTerritories([...latestPersT, ...latestSharedT]);
-    hasLoadedTerritoriesRef.current = true;
     setLoading(false);
-    updateSyncStatus();
-  };
-
-  const handleSnapshotError = (source) => (err) => {
-    console.error(`Eroare la ascultarea Firebase pentru ${source}:`, err);
-    setLoading(false);
-    setIsSynced(false);
   };
 
   // 1. [MODIFICAT PENTRU GLOBAL] Codul pentru setări globale
@@ -1156,21 +1019,20 @@ useEffect(() => {
     } else {
        db.collection('config').doc('global_settings').set({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
     }
-  }, handleSnapshotError('setări'));
+  });
 
   // 2. [OPTIMIZAT] Teritorii Personale
   const unsubPersonal = db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
-    personalReady = true;
-    personalPendingWrites = snap.metadata.hasPendingWrites;
     latestPersT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     
+    // 🟢 Logica ta pentru bulina de sincronizare
+    setIsSynced(!snap.metadata.hasPendingWrites); 
+    
     updateTerritories();
-  }, handleSnapshotError('teritoriile personale'));
+  });
 
   // 3. [SHARED] Teritorii comune (ACUM INDEPENDENT)
-  const unsubShared = db.collection('shared_territories').onSnapshot({ includeMetadataChanges: true }, snapShared => {
-    sharedReady = true;
-    sharedPendingWrites = snapShared.metadata.hasPendingWrites;
+  const unsubShared = db.collection('shared_territories').onSnapshot(snapShared => {
     latestSharedT = snapShared.docs.map(doc => ({ 
         id: doc.id, 
         ...doc.data(), 
@@ -1178,24 +1040,24 @@ useEffect(() => {
     }));
     
     updateTerritories();
-  }, handleSnapshotError('teritoriile de grupă'));
+  });
 
   // 4. [ADMIN] Lista de Admin
   let unsubAdmin = () => {};
   if (isAdmin) {
      unsubAdmin = db.collection('app_users').onSnapshot(snap => {
          setAdminUsersList(snap.docs.map(d => d.data()));
-     }, handleSnapshotError('lista de utilizatori'));
+     });
   }
   
-  // Cleanup total (o singură dată, la demontare sau reconectare)
+  // Cleanup total (o singură dată, la demontare)
   return () => {
     unsubSettings();
     unsubPersonal();
     unsubShared();
     unsubAdmin();
   };
-}, [userDocId, authLoading, isAdmin, resumeTick]);
+}, [userDocId, authLoading, isAdmin, syncTick]);
 
       const handleAddGroup = async (newGroupName) => {
         const finalName = newGroupName.trim();
@@ -1318,12 +1180,10 @@ const handleRenameGroup = (oldName, newName) => {
       }, [territories, selectedTerritoryId]);
 
       useEffect(() => {
-        if (!selectedTerritoryId || loading || authLoading || !user) return;
-        if (!territories.find(t => t.id === selectedTerritoryId)) {
+        if (selectedTerritoryId && !loading && !territories.find(t => t.id === selectedTerritoryId)) {
           setSelectedTerritoryId(null);
-          saveViewState({ selectedTerritoryId: null, scrollTop: 0 });
         }
-      }, [territories, selectedTerritoryId, loading, authLoading, user]);
+      }, [territories, selectedTerritoryId, loading]);
 
       const filteredTerritories = useMemo(() => {
         let list = territories.filter(t => t.category === activeTab || (!t.category && activeTab === 'Grupa 5')).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
@@ -2419,7 +2279,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                   <button onClick={async () => {
                     try { await auth.signOut(); } catch(e) {}
                     localStorage.removeItem('custom_user');
-                    clearViewState();
                     window.location.reload();
                   }} className="w-full bg-red-100 dark:bg-red-900/30 hover:bg-red-200 text-red-600 dark:text-red-400 p-4 rounded-2xl font-black uppercase shadow-sm transition-colors flex items-center justify-center gap-2">
                     <span className="material-icons">logout</span> Deconectare
