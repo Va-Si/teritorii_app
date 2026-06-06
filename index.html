@@ -1759,6 +1759,10 @@ const handleToggleDone = async (t) => {
       }
 
       const isSelectedOverdue = selectedTerritory && !selectedTerritory.isDone && selectedTerritory.endDate < todayStr;
+		// Gardianul pus exact aici:
+if (selectedTerritoryId && !selectedTerritory) {
+    return <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 font-black text-slate-400">Se actualizează...</div>;
+}
 
       return (
         <div className="max-w-[1000px] mx-auto min-h-screen flex flex-col shadow-2xl bg-slate-50 dark:bg-slate-900 pb-10 transition-colors relative">
