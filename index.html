@@ -1179,11 +1179,14 @@ const handleRenameGroup = (oldName, newName) => {
         return t;
       }, [territories, selectedTerritoryId]);
 
-      useEffect(() => {
-        if (selectedTerritoryId && !loading && !territories.find(t => t.id === selectedTerritoryId)) {
-          setSelectedTerritoryId(null);
+    useEffect(() => {
+    // Aplicația nu te mai dă afară dacă lista încă se descarcă (dacă length e 0)
+    if (selectedTerritoryId && !loading && territories.length > 0) {
+        if (!territories.find(t => t.id === selectedTerritoryId)) {
+            setSelectedTerritoryId(null);
         }
-      }, [territories, selectedTerritoryId, loading]);
+    }
+}, [territories, selectedTerritoryId, loading]);
 
       const filteredTerritories = useMemo(() => {
         let list = territories.filter(t => t.category === activeTab || (!t.category && activeTab === 'Grupa 5')).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
@@ -1835,9 +1838,20 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
 
       
-      if (loading || authLoading) {
+     if (loading || authLoading) {
         return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
-        }
+      }
+
+      // --- SCUTUL DE PROTECȚIE ADAUGAT ---
+      if (selectedTerritoryId && !selectedTerritory) {
+          // Dacă avem un ID în memorie, dar teritoriul nu a fost găsit (încă) în lista Firebase, așteptăm!
+          return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se încarcă teritoriul...</div>;
+      }
+      // -----------------------------------
+
+      if (!user) {
+        return ( 
+          //Return Princioal pentru logare
 
       if (!user) {
         return ( 
