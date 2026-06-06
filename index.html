@@ -634,10 +634,10 @@ const [progressTags, setProgressTags] = useState(() => {
 });
       const [territories, setTerritories] = useState([]);
       const [settings, setSettings] = useState({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
-      const [activeTab, setActiveTab] = useState(() => localStorage.getItem('ui.activeTab') || 'personal');
-      const [activeGroupView, setActiveGroupView] = useState(() => localStorage.getItem('ui.activeGroupView') || 'Grupa 5'); 
+      const [activeTab, setActiveTab] = useState('personal');
+      const [activeGroupView, setActiveGroupView] = useState('Grupa 5'); 
       
-      const [selectedTerritoryId, setSelectedTerritoryId] = useState(() => sessionStorage.getItem('ui.selectedTerritoryId') || null);
+      const [selectedTerritoryId, setSelectedTerritoryId] = useState(null);
       const [loading, setLoading] = useState(true);
       const [touchStart, setTouchStart] = useState(null);
       const [touchEnd, setTouchEnd] = useState(null);
@@ -665,7 +665,6 @@ const [isSynced, setIsSynced] = React.useState(true);
       const [editLocNumber, setEditLocNumber] = useState('');
       const [collapsedBlocks, setCollapsedBlocks] = useState({});
       const [collapsedSections, setCollapsedSections] = useState({});
-      const [syncTick, setSyncTick] = useState(0);
       const handleCancelCompletion = (t) => {
     // 1. Actualizăm doar baza de date, fără să deschidem rapoarte!
     const updateData = { 
@@ -890,19 +889,6 @@ useEffect(() => {
       }, []);
 
       useEffect(() => {
-        if (selectedTerritoryId) sessionStorage.setItem('ui.selectedTerritoryId', selectedTerritoryId);
-        else sessionStorage.removeItem('ui.selectedTerritoryId');
-      }, [selectedTerritoryId]);
-
-      useEffect(() => {
-        localStorage.setItem('ui.activeTab', activeTab);
-      }, [activeTab]);
-
-      useEffect(() => {
-        localStorage.setItem('ui.activeGroupView', activeGroupView);
-      }, [activeGroupView]);
-
-      useEffect(() => {
         const root = window.document.documentElement;
         const applyTheme = (t) => {
           if (t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -973,29 +959,17 @@ useEffect(() => {
 
 // 2. Aici ai useEffect-ul de ascultare de ecran (MODIFICAT)
 useEffect(() => {
-  const handleVisibilityChange = async () => {
+  const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
-      try {
-        await db.disableNetwork();
-        await db.enableNetwork();
-
-        // forțează recrearea tuturor listenerelor
-        setSyncTick(prev => prev + 1);
-
-        console.log("Firestore reconnected");
-      } catch (err) {
-        console.error(err);
-      }
+      console.log("Telefonul a fost deblocat, forțăm reîncărcarea...");
+      
+      // FORȚĂM REFRESH-UL (Asta resetează conexiunea la Firebase 100%)
+      window.location.reload(); 
     }
   };
 
   document.addEventListener("visibilitychange", handleVisibilityChange);
-
-  return () =>
-    document.removeEventListener(
-      "visibilitychange",
-      handleVisibilityChange
-    );
+  return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
 }, []);
 
    useEffect(() => {
@@ -1057,7 +1031,7 @@ useEffect(() => {
     unsubShared();
     unsubAdmin();
   };
-}, [userDocId, authLoading, isAdmin, syncTick]);
+}, [userDocId, authLoading, isAdmin]);
 
       const handleAddGroup = async (newGroupName) => {
         const finalName = newGroupName.trim();
@@ -1179,21 +1153,11 @@ const handleRenameGroup = (oldName, newName) => {
         return t;
       }, [territories, selectedTerritoryId]);
 
-    useEffect(() => {
-    // Aplicația nu te mai dă afară dacă lista încă se descarcă (dacă length e 0)
-    if (selectedTerritoryId && !loading && territories.length > 0) {
-        if (!territories.find(t => t.id === selectedTerritoryId)) {
-            setSelectedTerritoryId(null);
+      useEffect(() => {
+        if (selectedTerritoryId && !loading && !territories.find(t => t.id === selectedTerritoryId)) {
+          setSelectedTerritoryId(null);
         }
-    }
-}, [territories, selectedTerritoryId, loading]);
-		// Acest useEffect forțează tab-ul să fie corect când se încarcă teritoriul
-useEffect(() => {
-  if (selectedTerritory && selectedTerritory.category && activeTab !== selectedTerritory.category) {
-    console.log("DEBUG: Sincronizez tab-ul cu teritoriul:", selectedTerritory.category);
-    setActiveTab(selectedTerritory.category);
-  }
-}, [selectedTerritory]);
+      }, [territories, selectedTerritoryId, loading]);
 
       const filteredTerritories = useMemo(() => {
         let list = territories.filter(t => t.category === activeTab || (!t.category && activeTab === 'Grupa 5')).sort((a, b) => (a.order ?? 999999) - (b.order ?? 999999));
@@ -1845,15 +1809,9 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
 
       
-    if (loading || authLoading) {
+      if (loading || authLoading) {
         return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
-      }
-
-      // --- SCUTUL DE PROTECȚIE ADAUGAT ---
-      if (selectedTerritoryId && !selectedTerritory) {
-          // Dacă avem un ID în memorie, dar teritoriul nu a fost găsit (încă) în lista Firebase, așteptăm!
-          return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se încarcă teritoriul...</div>;
-      }
+        }
 
       if (!user) {
         return ( 
