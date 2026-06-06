@@ -955,6 +955,19 @@ useEffect(() => {
         return () => unsubscribe();
       }, [user, isAdmin]);
 
+		const [refreshTrigger, setRefreshTrigger] = useState(0); // <--- NOU
+
+// 2. Aici ai useEffect-ul de ascultare de ecran (NOU)
+useEffect(() => {
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      setRefreshTrigger(prev => prev + 1);
+    }
+  };
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+  return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+}, []);
+
    useEffect(() => {
   if (authLoading || !user) { setLoading(false); return; }
   setLoading(true);
@@ -1014,7 +1027,7 @@ useEffect(() => {
     unsubShared();
     unsubAdmin();
   };
-}, [userDocId, authLoading, isAdmin]);
+}, [userDocId, authLoading, isAdmin, refreshTrigger]);
 
       const handleAddGroup = async (newGroupName) => {
         const finalName = newGroupName.trim();
