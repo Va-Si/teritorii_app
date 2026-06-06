@@ -102,6 +102,21 @@
         });              
     }
     const db = firebase.firestore();
+	  // --- FIX PENTRU RECONECTARE LA SLEEP ---
+// Detectăm când utilizatorul revine în aplicație (după ce telefonul a fost în sleep)
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    console.log("Aplicația a ieșit din sleep. Forțăm resincronizarea Firestore...");
+    
+    // Forțăm o deconectare și reconectare a rețelei Firebase
+    // Acest lucru imită exact ce faci tu când oprești și pornești netul
+    db.disableNetwork().then(() => {
+        return db.enableNetwork();
+    }).catch((e) => {
+        console.error("Eroare la resincronizarea rețelei:", e);
+    });
+  }
+});
     const auth = firebase.auth();
     
     const ADMIN_EMAIL = 'valeriu.siminitchi@gmail.com';
