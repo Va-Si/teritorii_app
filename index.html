@@ -907,41 +907,53 @@ useEffect(() => {
         return () => unsubscribe();
       }, [user, isAdmin]);
 
-     useEffect(() => {
-  if (authLoading || !user) { setLoading(false); return; }
-  setLoading(true);
-  const unsubs = [];
-  
-  unsubs.push(db.collection('config').doc('global_settings').onSnapshot(doc => { 
-    if(doc.exists) {
-       const data = doc.data();
-       setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
-    } else {
-       db.collection('config').doc('global_settings').set({ labels: DEFAULT_LABELS, groups: DEFAULT_GROUPS });
-    }
-  }));
+    useEffect(() => {
+        // SEMAFOR: Așteptăm până când Firebase Auth decide clar cine suntem.
+        // Cât timp e 'true', aplicația stă în ecranul "Se sincronizează..."
+        if (authLoading) return; 
 
-  unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
-    const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    
-    unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
-       const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
-       
-       setIsSynced(!snap.metadata.hasPendingWrites); 
+        // Dacă după încărcare vedem că NU ești logat, 
+        // oprim loading-ul și aplicația te va trimite la ecranul de login
+        if (!user) { 
+           setLoading(false); 
+           return; 
+        }
 
-       setTerritories([...persT, ...sharedT]);
-       setLoading(false);
-    }));
-  }));
+        // Acum știm 100% sigur că ești logat, putem începe să încărcăm datele
+        setLoading(true);
+        const unsubs = [];
+        
+        unsubs.push(db.collection('config').doc('global_settings').onSnapshot(doc => { 
+          if(doc.exists) {
+             const data = doc.data();
+             // Actualizăm setările DOAR dacă ele există în baza de date
+             setSettings({ ...data, groups: data.groups || DEFAULT_GROUPS });
+          }
+          // ATENȚIE: Am șters ramura 'else' de aici! 
+          // Nu mai vrem ca aplicația să bage forțat 'DEFAULT_LABELS' dacă conexiunea s-a întrerupt.
+        }));
 
-  if (isAdmin) {
-     unsubs.push(db.collection('app_users').onSnapshot(snap => {
-         setAdminUsersList(snap.docs.map(d => d.data()));
-     }));
-  }
-  
-  return () => unsubs.forEach(u => u());
-}, [userDocId, authLoading, isAdmin]);
+        unsubs.push(db.collection('users').doc(userDocId).collection('territories').onSnapshot({ includeMetadataChanges: true }, snap => {
+          const persT = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          
+          unsubs.push(db.collection('shared_territories').onSnapshot(snapShared => {
+             const sharedT = snapShared.docs.map(doc => ({ id: doc.id, ...doc.data(), category: doc.data().category || doc.data().group || 'Grupa 5' }));
+             
+             setIsSynced(!snap.metadata.hasPendingWrites); 
+
+             setTerritories([...persT, ...sharedT]);
+             setLoading(false); // Am terminat de încărcat tot
+          }));
+        }));
+
+        if (isAdmin) {
+           unsubs.push(db.collection('app_users').onSnapshot(snap => {
+               setAdminUsersList(snap.docs.map(d => d.data()));
+           }));
+        }
+        
+        return () => unsubs.forEach(u => u());
+      }, [userDocId, authLoading, user, isAdmin]); // IMPORTANT: Am adăugat 'user' aici
 
       const handleAddGroup = async (newGroupName) => {
         const finalName = newGroupName.trim();
