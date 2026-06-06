@@ -2757,40 +2757,64 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                 <div className="bg-slate-50 dark:bg-slate-900 p-5 flex justify-between items-center border-b border-slate-200 dark:border-slate-700 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="font-black text-slate-400 text-sm uppercase">Număr:</span>
-                    <input 
-                      className="font-black text-slate-800 dark:text-slate-100 text-lg uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 w-20 outline-none focus:border-blue-500 shadow-inner"
-                      value={editLocNumber}
-                      onChange={(e) => setEditLocNumber(e.target.value)}
-                      onBlur={() => {
-                        const val = editLocNumber.trim();
-                        if(val) {
-                          const { blockId, sectionId, loc } = modals.locationEdit;
-                          const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, number: val } : x) } : s) } : b);
-                          updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-                          setModals(m => ({ ...m, locationEdit: { ...m.locationEdit, loc: { ...m.locationEdit.loc, number: val } } }));
-                        }
-                      }}
-                      disabled={isReadOnly}
-                    />
+                   <input 
+  className="font-black text-slate-800 dark:text-slate-100 text-lg uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 w-20 outline-none focus:border-blue-500 shadow-inner"
+  value={editLocNumber}
+  onChange={(e) => setEditLocNumber(e.target.value)}
+  onBlur={() => {
+    const val = editLocNumber.trim();
+    const { blockId, sectionId, loc } = modals.locationEdit;
+    
+    // VERIFICAREA CRITICĂ: Salvăm DOAR dacă numărul chiar s-a modificat!
+    if (val && val !== loc.number) {
+      // Folosim TRANZACȚIA (safeUpdateLocation) în loc de vechiul updateTerritory
+      safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
+          const freshHistory = recordHistory(currentLocFromServer, 'A modificat Numărul');
+          return { ...currentLocFromServer, number: val, history: freshHistory };
+      });
+      
+      setModals(m => ({ ...m, locationEdit: { ...m.locationEdit, loc: { ...m.locationEdit.loc, number: val } } }));
+    }
+  }}
+  disabled={isReadOnly}
+/>
                   </div>
                   <div className="flex gap-3">
                    {canEditStructure && (
-                     <button onClick={() => {
-                        setAlertBox({
-                          isOpen: true,
-                          title: 'Ștergere Apartament',
-                          message: `Sigur dorești să ștergi definitiv numărul/apartamentul ${editLocNumber}?`,
-                          isDanger: true,
-                          onConfirm: () => {
-                            const { blockId, sectionId, loc } = modals.locationEdit;
-                            const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.filter(l => l.id !== loc.id) } : s) } : b);
-                            updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-                            setModals({...modals, locationEdit: null});
-                          }
-                        });
-                      }} className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
-                   )}
-                    <button onClick={() => setModals({...modals, locationEdit: null})} className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600">close</button>
+                    <button onClick={() => {
+   setAlertBox({
+     isOpen: true,
+     title: 'Ștergere Apartament',
+     message: `Sigur dorești să ștergi definitiv numărul/apartamentul ${editLocNumber}?`,
+     isDanger: true,
+     onConfirm: () => {
+       const { blockId, sectionId, loc } = modals.locationEdit;
+       
+       // Creăm o tranzacție dedicată pentru ștergere direct pe server
+       const docRef = selectedTerritory.category !== 'personal'
+           ? db.collection('shared_territories').doc(selectedTerritory.id)
+           : db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id);
+
+       db.runTransaction(async (transaction) => {
+           const doc = await transaction.get(docRef);
+           if (!doc.exists) return;
+           
+           const data = doc.data();
+           const newBlocks = data.blocks.map(b => {
+               if (b.id !== blockId) return b;
+               return { ...b, sections: b.sections.map(s => {
+                   if (s.id !== sectionId) return s;
+                   // Filtrăm locația ștearsă fără să atingem restul structurii
+                   return { ...s, locations: s.locations.filter(l => l.id !== loc.id) };
+               })};
+           });
+           transaction.update(docRef, { blocks: newBlocks });
+       }).then(() => {
+           setModals({...modals, locationEdit: null});
+       }).catch(err => console.error("Eroare la ștergere:", err));
+     }
+   });
+}} className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
                   </div>
                 </div>
 
