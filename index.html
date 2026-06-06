@@ -658,15 +658,30 @@ return (
     setToast("❌ Teritoriu debifat!");
 };
 
-const generateTerritoryReport = (territory) => {
+const generateTerritoryReport = (territoryRaw) => {
+    // 1. Facem o copie a teritoriului pentru a nu modifica datele originale
+    let territory = JSON.parse(JSON.stringify(territoryRaw));
+
+    // 2. RECONSTRUCȚIE: Dacă folosim arhitectura cu Map, trebuie să populăm secțiunile
+    if (territory.locationsMap) {
+        const locsArray = Object.values(territory.locationsMap);
+        (territory.blocks || []).forEach(b => {
+            (b.sections || []).forEach(s => {
+                s.locations = locsArray.filter(l => l.sectionId === s.id).sort((a, b) => a.order - b.order);
+            });
+        });
+    }
+
+    // 3. Generare raport (logică neschimbată, acum va găsi datele)
     let report = `Salutare! Îți întorc teritoriul "${territory.name}".\n\n`;
     
     (territory.blocks || []).forEach(block => {
         let blockContent = "";
 
         (block.sections || []).forEach(sec => {
-            const rus = (sec.locations||[]).filter(l => l.status === 'rusa').map(l => l.number).join(', ');
-            const refuz = (sec.locations||[]).filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
+            // Acum 'sec.locations' există și este populat datorită pasului 2
+            const rus = (sec.locations || []).filter(l => l.status === 'rusa').map(l => l.number).join(', ');
+            const refuz = (sec.locations || []).filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
             
             if (rus || refuz) {
                 const sectionName = sec.name ? sec.name : 'Case';
