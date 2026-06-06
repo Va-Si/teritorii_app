@@ -2750,203 +2750,179 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
             </div>
           )}
 
-          {modals.locationEdit && (
-            <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-[110]">
-              <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden border-4 border-slate-100 dark:border-slate-700 flex flex-col max-h-[90vh]">
-                
-                <div className="bg-slate-50 dark:bg-slate-900 p-5 flex justify-between items-center border-b border-slate-200 dark:border-slate-700 shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-slate-400 text-sm uppercase">Număr:</span>
-                   <input 
-							  className="font-black text-slate-800 dark:text-slate-100 text-lg uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 w-20 outline-none focus:border-blue-500 shadow-inner"
-							  value={editLocNumber}
-							  onChange={(e) => setEditLocNumber(e.target.value)}
-							  onBlur={() => {
-							    const val = editLocNumber.trim();
-							    const { blockId, sectionId, loc } = modals.locationEdit;
-							    
-							    // VERIFICAREA CRITICĂ: Salvăm DOAR dacă numărul chiar s-a modificat!
-							    if (val && val !== loc.number) {
-							      // Folosim TRANZACȚIA (safeUpdateLocation) în loc de vechiul updateTerritory
-							      safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
-							          const freshHistory = recordHistory(currentLocFromServer, 'A modificat Numărul');
-							          return { ...currentLocFromServer, number: val, history: freshHistory };
-							      });
-							      
-							      setModals(m => ({ ...m, locationEdit: { ...m.locationEdit, loc: { ...m.locationEdit.loc, number: val } } }));
-							    }
-							  }}
-							  disabled={isReadOnly}
-							/>
-                  </div>
-                 <div className="flex gap-3">
-  {canEditStructure && (
-    <button 
-      onClick={() => {
-        setAlertBox({
-          isOpen: true,
-          title: 'Ștergere Apartament',
-          message: `Sigur dorești să ștergi definitiv numărul/apartamentul ${editLocNumber}?`,
-          isDanger: true,
-          onConfirm: () => {
-            const { blockId, sectionId, loc } = modals.locationEdit;
+        {modals.locationEdit && (
+  <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center p-4 z-[110]">
+    <div className="bg-white dark:bg-slate-800 rounded-[2rem] w-full max-w-sm shadow-2xl overflow-hidden border-4 border-slate-100 dark:border-slate-700 flex flex-col max-h-[90vh]">
+      
+      {/* Header Modal */}
+      <div className="bg-slate-50 dark:bg-slate-900 p-5 flex justify-between items-center border-b border-slate-200 dark:border-slate-700 shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="font-black text-slate-400 text-sm uppercase">Număr:</span>
+          <input 
+            className="font-black text-slate-800 dark:text-slate-100 text-lg uppercase bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1 w-20 outline-none focus:border-blue-500 shadow-inner"
+            value={editLocNumber}
+            onChange={(e) => setEditLocNumber(e.target.value)}
+            onBlur={() => {
+              const val = editLocNumber.trim();
+              const { blockId, sectionId, loc } = modals.locationEdit;
+              if (val && val !== loc.number) {
+                safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
+                  const freshHistory = recordHistory(currentLocFromServer, 'A modificat Numărul');
+                  return { ...currentLocFromServer, number: val, history: freshHistory };
+                });
+                setModals(m => ({ ...m, locationEdit: { ...m.locationEdit, loc: { ...m.locationEdit.loc, number: val } } }));
+              }
+            }}
+            disabled={isReadOnly}
+          />
+        </div>
+        <div className="flex gap-3">
+          {canEditStructure && (
+            <button 
+              onClick={() => {
+                setAlertBox({
+                  isOpen: true,
+                  title: 'Ștergere Apartament',
+                  message: `Sigur dorești să ștergi definitiv numărul/apartamentul ${editLocNumber}?`,
+                  isDanger: true,
+                  onConfirm: () => {
+                    const { blockId, sectionId, loc } = modals.locationEdit;
+                    const docRef = selectedTerritory.category !== 'personal'
+                      ? db.collection('shared_territories').doc(selectedTerritory.id)
+                      : db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id);
 
-            // Creăm o tranzacție dedicată pentru ștergere direct pe server
-            const docRef = selectedTerritory.category !== 'personal'
-              ? db.collection('shared_territories').doc(selectedTerritory.id)
-              : db.collection('users').doc(userDocId).collection('territories').doc(selectedTerritory.id);
-
-            db.runTransaction(async (transaction) => {
-              const doc = await transaction.get(docRef);
-              if (!doc.exists) return;
-
-              const data = doc.data();
-              const newBlocks = data.blocks.map(b => {
-                if (b.id !== blockId) return b;
-                return { 
-                  ...b, 
-                  sections: b.sections.map(s => {
-                    if (s.id !== sectionId) return s;
-                    // Filtrăm locația ștearsă fără să atingem restul structurii
-                    return { ...s, locations: s.locations.filter(l => l.id !== loc.id) };
-                  })
-                };
-              });
-              transaction.update(docRef, { blocks: newBlocks });
-            }).then(() => {
-              setModals({...modals, locationEdit: null});
-            }).catch(err => console.error("Eroare la ștergere:", err));
-          }
-        });
-      }} 
-      className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
-    >
-      delete
-    </button>
-  )}
-  {/* Am adăugat și butonul de închidere (X) înapoi, ca să nu rămână spațiu gol */}
-  <button 
-    onClick={() => setModals({...modals, locationEdit: null})} 
-    className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600"
-  >
-    close
-  </button>
-</div>
-                <div className="p-5 flex-1 overflow-y-scroll space-y-6">
-                  <div className="grid grid-cols-3 gap-2">
-                   {settings.labels.map(l => {
-  // Verificăm dacă aceasta este eticheta selectată pentru acest apartament
-  const isSelected = l.id === modals.locationEdit.loc.status;
-
-  return (
-    <button key={l.id} 
-      onClick={() => {
-        const { blockId, sectionId, loc } = modals.locationEdit;
-        const newHistoryLocal = recordHistory(loc, 'status_change', l.id);
-        
-        // 1. FOLOSIM NOUA FUNCȚIE SAFE PENTRU FIREBASE!
-        safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
-            // Aici Firebase calculează istoricul bazat pe ce e REAL pe server, nu pe memoria ta
-            const freshHistory = recordHistory(currentLocFromServer, 'status_change', l.id);
-            return { ...currentLocFromServer, status: l.id, history: freshHistory };
-        });
-
-        // 2. Actualizăm interfața vizuală INSTANTANEU ca să vezi chenarul negru aplicat
-        setModals(prev => ({
-           ...prev,
-           locationEdit: {
-             ...prev.locationEdit,
-             loc: { ...prev.locationEdit.loc, status: l.id, history: newHistoryLocal }
-           }
-        }));
-      }}
-      style={{ backgroundColor: l.color, color: l.textColor }}
-      // Adăugăm ring-4 pentru un contur gros și vizibil dacă este selectat
-      className={`p-2 rounded-xl text-[9px] font-black uppercase border border-black/5 flex items-center justify-center text-center leading-tight min-h-[44px] shadow-sm active:scale-90 transition-all ${isSelected ? 'ring-4 ring-black dark:ring-white' : ''}`}
-    >
-      {l.label}
-    </button>
-  );
-})}
-                  </div>
-
-                  <div>
-                    <div className="flex items-center gap-2 ml-2 mb-2">
-                      <span className="material-icons text-slate-400 text-sm">edit_note</span>
-                      <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notițe</span>
-                    </div>
-                    <ResizableTextarea 
-                      defaultValue={modals.locationEdit.loc.notes}
-                      onBlur={(e) => {
-         const val = e.target.value.trim();
-         const { blockId, sectionId, loc } = modals.locationEdit;
-         
-         if (val !== loc.notes) {
-             // 1. FOLOSIM NOUA FUNCȚIE SAFE!
-             safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
-                 const freshHistory = recordHistory(currentLocFromServer, 'A modificat Notița');
-                 return { ...currentLocFromServer, notes: val, history: freshHistory };
-             });
-             
-             // 2. Actualizăm starea modalului pentru memorie
-             setModals(prev => ({
-                ...prev,
-                locationEdit: {
-                    ...prev.locationEdit,
-                    loc: { ...prev.locationEdit.loc, notes: val }
-                }
-             }));
-         }
-      }}
-                      placeholder="Scrie o notiță (Ex: Revin mâine)..."
-                      disabled={isReadOnly}
-                    />
-                  </div>
-                  
-                  {modals.locationEdit.loc.history && modals.locationEdit.loc.history.length > 0 && (
-                    <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
-                      <div className="bg-slate-200/50 dark:bg-slate-900/50 p-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 shrink-0">
-                         <span className="material-icons text-slate-400 text-sm">history</span>
-                         <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Istoric Editări</span>
-                      </div>
-                      <div className="overflow-y-auto max-h-[130px] md:max-h-[195px] p-3 space-y-2 relative">
-                        {modals.locationEdit.loc.history.map((h, i) => {
-                          let displayAction = h.actiune || 'A editat';
-                          if (h.labelId) {
-                              const foundLabel = settings.labels.find(lbl => lbl.id === h.labelId);
-                              if (foundLabel) displayAction = foundLabel.label;
-                          } else {
-                              const foundLabel = settings.labels.find(lbl => lbl.label === h.actiune);
-                              if (foundLabel && !h.actiune.includes('Notiț')) displayAction = foundLabel.label;
-                          }
-
-                          return (
-                            <div key={i} className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm shrink-0">
-                              <div className="flex justify-between items-start w-full gap-2 mb-1">
-                                  <span className="text-xs font-black text-slate-700 dark:text-slate-200 leading-tight break-words flex-1">{h.name || 'Utilizator'}</span>
-                                  <div className="flex flex-col items-end shrink-0">
-                                    <span className="text-[9px] font-bold text-slate-400">{h.date}</span>
-                                    <span className="text-[9px] font-bold text-slate-400">{h.time}</span>
-                                  </div>
-                              </div>
-                              <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest">{displayAction}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {canEditStructure && (
-                     <p className="text-[10px] font-bold text-center text-slate-400 bg-slate-100 dark:bg-slate-900 p-2 rounded-xl flex items-center justify-center gap-1 shrink-0">
-                       <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pătrățelul cu nr. apartament/casă pentru a le muta
-                     </p>
-                  )}
-
-                </div>
-              </div>
-            </div>
+                    db.runTransaction(async (transaction) => {
+                      const doc = await transaction.get(docRef);
+                      if (!doc.exists) return;
+                      const data = doc.data();
+                      const newBlocks = data.blocks.map(b => {
+                        if (b.id !== blockId) return b;
+                        return { 
+                          ...b, 
+                          sections: b.sections.map(s => {
+                            if (s.id !== sectionId) return s;
+                            return { ...s, locations: s.locations.filter(l => l.id !== loc.id) };
+                          })
+                        };
+                      });
+                      transaction.update(docRef, { blocks: newBlocks });
+                    }).then(() => {
+                      setModals({...modals, locationEdit: null});
+                    }).catch(err => console.error("Eroare la ștergere:", err));
+                  }
+                });
+              }} 
+              className="w-12 h-12 flex items-center justify-center material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-100 dark:border-slate-700 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm"
+            >
+              delete
+            </button>
           )}
+          <button 
+            onClick={() => setModals({...modals, locationEdit: null})} 
+            className="w-12 h-12 flex items-center justify-center material-icons text-slate-500 dark:text-slate-400 bg-slate-200 dark:bg-slate-700 rounded-xl transition-colors hover:bg-slate-300 dark:hover:bg-slate-600"
+          >
+            close
+          </button>
+        </div>
+      </div>
+
+      {/* Content Modal */}
+      <div className="p-5 flex-1 overflow-y-scroll space-y-6">
+        <div className="grid grid-cols-3 gap-2">
+          {settings.labels.map(l => {
+            const isSelected = l.id === modals.locationEdit.loc.status;
+            return (
+              <button 
+                key={l.id} 
+                onClick={() => {
+                  const { blockId, sectionId, loc } = modals.locationEdit;
+                  const newHistoryLocal = recordHistory(loc, 'status_change', l.id);
+                  safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
+                    const freshHistory = recordHistory(currentLocFromServer, 'status_change', l.id);
+                    return { ...currentLocFromServer, status: l.id, history: freshHistory };
+                  });
+                  setModals(prev => ({
+                    ...prev,
+                    locationEdit: { ...prev.locationEdit, loc: { ...prev.locationEdit.loc, status: l.id, history: newHistoryLocal } }
+                  }));
+                }}
+                style={{ backgroundColor: l.color, color: l.textColor }}
+                className={`p-2 rounded-xl text-[9px] font-black uppercase border border-black/5 flex items-center justify-center text-center leading-tight min-h-[44px] shadow-sm active:scale-90 transition-all ${isSelected ? 'ring-4 ring-black dark:ring-white' : ''}`}
+              >
+                {l.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2 ml-2 mb-2">
+            <span className="material-icons text-slate-400 text-sm">edit_note</span>
+            <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Notițe</span>
+          </div>
+          <ResizableTextarea 
+            defaultValue={modals.locationEdit.loc.notes}
+            onBlur={(e) => {
+              const val = e.target.value.trim();
+              const { blockId, sectionId, loc } = modals.locationEdit;
+              if (val !== loc.notes) {
+                safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
+                  const freshHistory = recordHistory(currentLocFromServer, 'A modificat Notița');
+                  return { ...currentLocFromServer, notes: val, history: freshHistory };
+                });
+                setModals(prev => ({
+                  ...prev,
+                  locationEdit: { ...prev.locationEdit, loc: { ...prev.locationEdit.loc, notes: val } }
+                }));
+              }
+            }}
+            placeholder="Scrie o notiță (Ex: Revin mâine)..."
+            disabled={isReadOnly}
+          />
+        </div>
+
+        {modals.locationEdit.loc.history && modals.locationEdit.loc.history.length > 0 && (
+          <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+            <div className="bg-slate-200/50 dark:bg-slate-900/50 p-2 border-b border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2 shrink-0">
+               <span className="material-icons text-slate-400 text-sm">history</span>
+               <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Istoric Editări</span>
+            </div>
+            <div className="overflow-y-auto max-h-[130px] md:max-h-[195px] p-3 space-y-2 relative">
+              {modals.locationEdit.loc.history.map((h, i) => {
+                let displayAction = h.actiune || 'A editat';
+                if (h.labelId) {
+                  const foundLabel = settings.labels.find(lbl => lbl.id === h.labelId);
+                  if (foundLabel) displayAction = foundLabel.label;
+                } else {
+                  const foundLabel = settings.labels.find(lbl => lbl.label === h.actiune);
+                  if (foundLabel && !h.actiune.includes('Notiț')) displayAction = foundLabel.label;
+                }
+                return (
+                  <div key={i} className="flex flex-col bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm shrink-0">
+                    <div className="flex justify-between items-start w-full gap-2 mb-1">
+                      <span className="text-xs font-black text-slate-700 dark:text-slate-200 leading-tight break-words flex-1">{h.name || 'Utilizator'}</span>
+                      <div className="flex flex-col items-end shrink-0">
+                        <span className="text-[9px] font-bold text-slate-400">{h.date}</span>
+                        <span className="text-[9px] font-bold text-slate-400">{h.time}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest">{displayAction}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {canEditStructure && (
+          <p className="text-[10px] font-bold text-center text-slate-400 bg-slate-100 dark:bg-slate-900 p-2 rounded-xl flex items-center justify-center gap-1 shrink-0">
+            <span className="material-icons text-sm">touch_app</span> Ține apăsat lung pătrățelul cu nr. apartament/casă pentru a le muta
+          </p>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
           {modals.settings && (
           
