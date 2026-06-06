@@ -1838,7 +1838,7 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
 
 
       
-     if (loading || authLoading) {
+    if (loading || authLoading) {
         return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se sincronizează...</div>;
       }
 
@@ -1847,11 +1847,6 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
           // Dacă avem un ID în memorie, dar teritoriul nu a fost găsit (încă) în lista Firebase, așteptăm!
           return <div className="h-screen flex items-center justify-center font-bold text-blue-600 animate-pulse text-xl">Se încarcă teritoriul...</div>;
       }
-      // -----------------------------------
-
-      if (!user) {
-        return ( 
-          //Return Princioal pentru logare
 
       if (!user) {
         return ( 
