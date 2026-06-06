@@ -1225,6 +1225,41 @@ const handleRenameGroup = (oldName, newName) => {
         throw e; // Aruncăm eroarea mai departe ca să o vadă handleToggleDone
     }
 };
+		// ADAUGĂ ACEASTĂ FUNCȚIE IMEDIAT SUB updateTerritory:
+      const safeUpdateLocation = async (territoryId, category, blockId, sectionId, locId, updateFn) => {
+        const docRef = category !== 'personal'
+            ? db.collection('shared_territories').doc(territoryId)
+            : db.collection('users').doc(userDocId).collection('territories').doc(territoryId);
+
+        try {
+            await db.runTransaction(async (transaction) => {
+                // 1. Citește cele mai noi date DIRECT de pe server
+                const doc = await transaction.get(docRef);
+                if (!doc.exists) return;
+                
+                const data = doc.data();
+                
+                // 2. Modifică doar apartamentul/casa vizată, păstrând restul intact
+                const newBlocks = data.blocks.map(b => {
+                    if (b.id !== blockId) return b;
+                    return { ...b, sections: b.sections.map(s => {
+                        if (s.id !== sectionId) return s;
+                        return { ...s, locations: s.locations.map(x => {
+                            if (x.id !== locId) return x;
+                            // Aplicăm funcția de modificare doar pe casa dorită
+                            return updateFn(x); 
+                        })};
+                    })};
+                });
+                
+                // 3. Salvează înapoi pe server
+                transaction.update(docRef, { blocks: newBlocks });
+            });
+        } catch (error) {
+            console.error("Eroare la tranzacție:", error);
+            setToast("Eroare la sincronizare. Mai încearcă o dată!");
+        }
+      };
 
       const parseNumbers = (input, forceEven = false, forceOdd = false) => {
         const locs = [];
@@ -2769,22 +2804,21 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
     <button key={l.id} 
       onClick={() => {
         const { blockId, sectionId, loc } = modals.locationEdit;
-        // 1. Calculăm noul istoric (această funcție o ai deja)
-        const newHistory = recordHistory(loc, 'status_change', l.id);
-        // 2. Facem update în Firebase
-        const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, status: l.id, history: newHistory } : x) } : s) } : b);
-        // 1. Trimitem la baza de date
-        updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-        // Fereastra nu se mai închide automat
-        // 2. ACTUALIZARE IMEDIATĂ (Asta lipsea)
-        // Actualizăm starea locală a modalului pentru ca React să aplice conturul instantaneu
-        // Aici adăugăm și "history: newHistory" în obiectul `loc`
+        const newHistoryLocal = recordHistory(loc, 'status_change', l.id);
+        
+        // 1. FOLOSIM NOUA FUNCȚIE SAFE PENTRU FIREBASE!
+        safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
+            // Aici Firebase calculează istoricul bazat pe ce e REAL pe server, nu pe memoria ta
+            const freshHistory = recordHistory(currentLocFromServer, 'status_change', l.id);
+            return { ...currentLocFromServer, status: l.id, history: freshHistory };
+        });
+
+        // 2. Actualizăm interfața vizuală INSTANTANEU ca să vezi chenarul negru aplicat
         setModals(prev => ({
            ...prev,
            locationEdit: {
              ...prev.locationEdit,
-             loc: { ...prev.locationEdit.loc, status: l.id,history: newHistory // <--- Această linie face magia! 
-                   }
+             loc: { ...prev.locationEdit.loc, status: l.id, history: newHistoryLocal }
            }
         }));
       }}
@@ -2806,14 +2840,26 @@ const handleToggleDone = async (t) => { // Am adăugat 'async'
                     <ResizableTextarea 
                       defaultValue={modals.locationEdit.loc.notes}
                       onBlur={(e) => {
-                         const val = e.target.value.trim();
-                         const { blockId, sectionId, loc } = modals.locationEdit;
-                         if (val !== loc.notes) {
-                             const newHistory = recordHistory(loc, 'A modificat Notița');
-                             const upd = selectedTerritory.blocks.map(b => b.id === blockId ? { ...b, sections: b.sections.map(s => s.id === sectionId ? { ...s, locations: s.locations.map(x => x.id === loc.id ? { ...x, notes: val, history: newHistory } : x) } : s) } : b);
-                             updateTerritory(selectedTerritory.id, selectedTerritory.category, { blocks: upd });
-                         }
-                      }}
+         const val = e.target.value.trim();
+         const { blockId, sectionId, loc } = modals.locationEdit;
+         
+         if (val !== loc.notes) {
+             // 1. FOLOSIM NOUA FUNCȚIE SAFE!
+             safeUpdateLocation(selectedTerritory.id, selectedTerritory.category, blockId, sectionId, loc.id, (currentLocFromServer) => {
+                 const freshHistory = recordHistory(currentLocFromServer, 'A modificat Notița');
+                 return { ...currentLocFromServer, notes: val, history: freshHistory };
+             });
+             
+             // 2. Actualizăm starea modalului pentru memorie
+             setModals(prev => ({
+                ...prev,
+                locationEdit: {
+                    ...prev.locationEdit,
+                    loc: { ...prev.locationEdit.loc, notes: val }
+                }
+             }));
+         }
+      }}
                       placeholder="Scrie o notiță (Ex: Revin mâine)..."
                       disabled={isReadOnly}
                     />
