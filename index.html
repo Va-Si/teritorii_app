@@ -392,9 +392,11 @@ document.addEventListener("visibilitychange", () => {
                 openEditModal(blockId, sec.id, loc, lIdx);
               }} 
               style={getLabelStyle(loc.status)}
-              className="square-btn rounded-lg shadow-sm" 
+              // 'select-none' blochează selectarea textului la apăsarea lungă cu degetul
+  			className="square-btn rounded-lg shadow-sm select-none"
           >
-              <span className="btn-text-truncate">{loc.number}</span>
+              {/* 'pointer-events-none' face cifra transparentă pentru atingeri */}
+  				<span className="btn-text-truncate pointer-events-none">{loc.number}</span>
               {loc.notes && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full border border-white"></div>}
             </button>
           ))}
