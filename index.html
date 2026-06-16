@@ -696,7 +696,7 @@ const generateTerritoryReport = (territoryRaw) => {
             const refuz = (sec.locations || []).filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
 			const casenoi = (sec.locations || []).filter(l => l.status === 'case-noi').map(l => l.number).join(', ');
             
-            if (rus || refuz || nou) {
+            if (rus || refuz || casenoi) {
                 const sectionName = sec.name ? sec.name : 'Case';
                 
                 blockContent += `  🔸 ${sectionName}:\n`;
