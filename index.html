@@ -125,13 +125,19 @@ document.addEventListener("visibilitychange", () => {
     const DEFAULT_LABELS = [
       { id: 'nevizitat', label: 'Nevizitat', color: '#ffffff', textColor: '#1e293b', isCampaignTarget: false },
       { id: 'lipsa', label: 'Lipsă', color: '#94a3b8', textColor: '#ffffff', isCampaignTarget: false },
-      { id: 'initiala', label: 'V. Inițială', color: '#facc15', textColor: '#000000', isCampaignTarget: false },
-      { id: 'ulterioara', label: 'V. Ulterioară', color: '#22c55e', textColor: '#ffffff', isCampaignTarget: false },
-      { id: 'rusa', label: 'Rusă', color: '#3b82f6', textColor: '#ffffff', isCampaignTarget: false },
-      { id: 'posta', label: 'În poștă', color: '#dc2626', textColor: '#ffffff', isCampaignTarget: true },
-      { id: 'invitatie', label: 'Invitație', color: '#a855f7', textColor: '#ffffff', isCampaignTarget: true },
-      { id: 'refuz', label: 'Refuz', color: '#ef4444', textColor: '#ffffff', isCampaignTarget: false },
-      { id: 'refuz-categoric', label: 'R. Categoric', color: '#7f1d1d', textColor: '#ffffff', isCampaignTarget: false }
+		{ id: '1780789988789', label: 'Fără interfon', color: '#a3849a', textColor: '#ffffff', isCampaignTarget: false },
+		{ id: '1781340929136', label: 'Nelocuibil', color: '#383838', textColor: '#ffffff', isCampaignTarget: true },
+		{ id: '1781387522583', label: 'Casă/app nou', color: '#a6ded6', textColor: '#ffffff', isCampaignTarget: true },
+		{ id: '1781341142556', label: 'Rus din fișă', color: '#00bbff', textColor: '#ffffff', isCampaignTarget: true },
+      { id: 'initiala', label: 'V. Inițială', color: '#daaf01', textColor: '#000000', isCampaignTarget: true },
+      { id: 'ulterioara', label: 'V. Ulterioară', color: '#22c55e', textColor: '#ffffff', isCampaignTarget: true },
+		{ id: '1780790009107', label: 'Studiu', color: '#e08e00', textColor: '#ffffff', isCampaignTarget: true },
+      { id: 'rusa', label: 'L. Rusă', color: '#0004ff', textColor: '#ffffff', isCampaignTarget: true },
+      { id: 'posta', label: 'În poștă', color: '#ad0589', textColor: '#ffffff', isCampaignTarget: true },
+      { id: 'invitatie', label: 'Invitație', color: '#8018e2', textColor: '#ffffff', isCampaignTarget: true },
+      { id: 'refuz', label: 'Refuz', color: '#ef4444', textColor: '#ffffff', isCampaignTarget: true },
+      { id: 'refuz-categoric', label: 'R. Categoric', color: '#7f1d1d', textColor: '#ffffff', isCampaignTarget: true },
+		  { id: '1780789998379', label: 'Martor/ă', color: '#00dbd8', textColor: '#ffffff', isCampaignTarget: true }
     ];
     
     const formatDate = (dateStr) => {
@@ -464,11 +470,15 @@ return (
         </h2>
       </div>
 
-      {canEditStructure && (
+     
+	   {/* Containerul care ține butoanele aliniate la dreapta */}
         <div className="flex items-center shrink-0 no-drag gap-2" onClick={e => e.stopPropagation()}>
-          {isBlockStrada && (
+		{/* 👉 1. Butonul ADAUGĂ (+) - Scos din cușcă, vizibil pentru toți userii: */}
+          {!isReadOnly && isBlockStrada && (
              <button onClick={() => setModals({...modals, stradaAddHouse: block.id})} className="material-icons text-blue-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm">add</button>
           )}
+		{/* 👉 2. Butonul ȘTERGE - Rămâne blocat doar pentru Admini: */}
+		{canEditStructure && (
           <button onClick={() => { 
               setAlertBox({
                   isOpen: true,
@@ -484,8 +494,8 @@ return (
                   }
                });
           }} className="material-icons text-red-500 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 p-2 rounded-xl hover:bg-red-50 hover:border-red-300 transition-all shadow-sm">delete</button>
-        </div>
-      )}
+      	)}  
+	  </div>
     </div>
 
          {!isBlockCollapsed && (
@@ -684,13 +694,15 @@ const generateTerritoryReport = (territoryRaw) => {
             // Acum 'sec.locations' există și este populat datorită pasului 2
             const rus = (sec.locations || []).filter(l => l.status === 'rusa').map(l => l.number).join(', ');
             const refuz = (sec.locations || []).filter(l => l.status === 'refuz-categoric').map(l => l.number).join(', ');
+			const nou = (sec.locations || []).filter(l => l.status === '1781387522583').map(l => l.number).join(', ');
             
-            if (rus || refuz) {
+            if (rus || refuz || nou) {
                 const sectionName = sec.name ? sec.name : 'Case';
                 
                 blockContent += `  🔸 ${sectionName}:\n`;
                 if (rus) blockContent += `    🗣️ Vorbitori de L. Rusă: ${rus}\n`;
                 if (refuz) blockContent += `    🚫 Refuzuri Categorice: ${refuz}\n`;
+				if (nou) blockContent += `    ➕ Case/Apartamente noi: ${refuz}\n`;
             }
         });
 
